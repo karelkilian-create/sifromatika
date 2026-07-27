@@ -19,6 +19,8 @@
 export type SkillTag =
   | 'arit.scitani-do-20'
   | 'arit.scitani-do-100'
+  | 'arit.odcitani-do-20'
+  | 'arit.odcitani-do-100'
   | 'arit.prechod-pres-desitku'
   | 'arit.mala-nasobilka'
   | 'arit.deleni-beze-zbytku'
@@ -160,6 +162,51 @@ export interface RelaxationLog {
   level: 'silent' | 'notice' | 'blocking'
   code: string
   message: string
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Kontrakt vrstvy úloh
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Kontext jednoho generování. `usedExpressions` brání tomu, aby na listu
+ * byla pětkrát tatáž úloha — naivní výběr to dělá překvapivě často.
+ */
+export interface GenContext {
+  profile: DifficultyProfile
+  /** Váhy povolených operací. Prázdné = všechny se stejnou vahou. */
+  mix: Partial<Record<OperationTag, number>>
+  usedExpressions: Set<string>
+}
+
+/**
+ * Generátor úloh. Dva režimy záměrně:
+ *
+ *  - `generateForValue` je levný pro aritmetiku, kde jde počítat pozpátku.
+ *  - `generatePool` bude jediný použitelný pro slovní úlohy a geometrii
+ *    v 0.5+, protože generovat je pozpátku z výsledku vyrábí nesmysly
+ *    („Jana koupila 47 rohlíků"). Viz docs/sifromatika-navrh-architektury.md §3.4.
+ *
+ * Ve verzi 0.1 implementuje aritmetika jen ten první; kontrakt je tu proto,
+ * aby druhý režim nešlo dodělat jen za cenu přepsání volajících.
+ */
+export interface TaskGenerator {
+  id: string
+  supports(profile: DifficultyProfile): boolean
+  /**
+   * Hodnoty, které tenhle generátor umí vyrobit při daném profilu A daném
+   * výběru operací.
+   *
+   * `mix` tu musí být: kdyby se počítalo se všemi operacemi a učitel měl
+   * zaškrtnuté jen násobení, šifra by umístila písmeno na kód 37 a teprve
+   * generátor by zjistil, že prvočíslo z malé násobilky nevyrobí.
+   */
+  reachableValues(
+    profile: DifficultyProfile,
+    mix: Partial<Record<OperationTag, number>>,
+  ): Set<number>
+  /** `null` = tuhle hodnotu neumím (nebo ne bez opakování už použitého výrazu). */
+  generateForValue(target: number, ctx: GenContext, rng: import('../rng/index.js').Rng): Task | null
 }
 
 export type VerificationReport =
