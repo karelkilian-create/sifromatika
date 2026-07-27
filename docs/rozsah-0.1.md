@@ -112,9 +112,16 @@ interface DidacticMeta {
 
 /** V 0.1 stačí pokrýt aritmetiku. Rozšiřuje se přidáním členu — TS vynutí doplnění všude. */
 type SkillTag =
-  | 'arit.scitani-do-20' | 'arit.scitani-do-100' | 'arit.prechod-pres-desitku'
+  | 'arit.scitani-do-20'  | 'arit.scitani-do-100'
+  | 'arit.odcitani-do-20' | 'arit.odcitani-do-100'
+  | 'arit.prechod-pres-desitku'
   | 'arit.mala-nasobilka' | 'arit.deleni-beze-zbytku' | 'arit.deleni-se-zbytkem'
 ```
+
+*(Původní návrh měl šest tagů a odčítání nemělo kam patřit — označovat `45 − 37`
+jako „sčítání do 100" by rozbilo právě to filtrování, kvůli kterému `skills`
+vznikly. Doplněno při implementaci, přesně tím způsobem, na který je union type
+stavěný: přidáním členu.)*
 
 **Jmenný prostor v tagu je záměr.** Za dva roky jich nebude šest, ale sedmdesát, a budou potřeba
 skupiny (`arit.` / `geom.` / `zlomky.` / `jednotky.`). Prefix zavedený teď stojí nula a seskupení
