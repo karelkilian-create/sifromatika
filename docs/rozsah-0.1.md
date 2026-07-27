@@ -269,3 +269,38 @@ Hlavní riziko 0.1 **není technické, ale rozsahové.** Oponentura sama přidal
 
 Pravidlo pro každý další nápad do 0.1: *stojí to méně než hodinu a plyne to z něčeho, co už
 v návrhu je?* Pokud ne, jde do roadmapy, ne do 0.1.
+
+---
+
+## 6. Stav
+
+Všech osm bodů Definition of Done splněno. 107 testů, `npm run check` (typecheck + lint +
+hranice vrstev + testy) prochází.
+
+| Bod | Stav | Čím doloženo |
+|---|---|---|
+| 1. Tajenka → list do 2 s | ✅ | generování běží v `useMemo`, bez efektů |
+| 2. Ruční dekódování dá tajenku | ✅ | `verifySheet` + property test + ověřeno na papíře |
+| 3. Příklady sedí | ✅ | nezávislý parser v `core/verify` |
+| 4. Tisk A4 s diakritikou | ✅ | ověřeno uživatelem (tisk do PDF) |
+| 5. Řešení samostatně | ✅ | `print-page-break` |
+| 6. 10 000 konfigurací | ✅ | 0 odmítnutých, 0 neverifikovaných, 0 výjimek |
+| 7. Golden test | ✅ | `tests/golden/sheet.test.ts`, tři zmrazené listy |
+| 8. `.sifra` kolečko | ✅ | `src/storage/sifra.test.ts` |
+
+### Co ukázaly golden snapshoty
+
+U šifry `grid-linear` v 5. ročníku vznikají příklady jako `649 − 648 = 1`. Je to důsledek
+kombinace malých kódů buněk (1..N) s velkým oborem čísel (do 1000) — filtr triviálních
+variant je nezachytí, protože oba operandy jsou velké.
+
+**Výchozí `grid-coord` tímhle netrpí**, protože kódy začínají na 11 a příklady vycházejí
+přirozeně (`98 − 65 = 33`, `68 : 2 = 34`). Necháváno vědomě: `grid-linear` je vedlejší
+varianta a snapshot to drží viditelné. Kdyby se stal důležitým, patří do 0.2 omezení
+velikosti operandů podle velikosti výsledku, ne jen podle oboru ročníku.
+
+### Co zbývá mimo 0.1
+
+Nejbližší položky roadmapy: skutečné PDF (0.3), PWA a sdílení odkazem (0.4), tlačítko
+„Kopírovat diagnostiku" (0.2). Druhý modul (0.8) zůstává tím, co teprve ověří slovo
+„platforma".

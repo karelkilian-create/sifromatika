@@ -8,6 +8,7 @@
  * bez zásahu do generátoru (docs/rozsah-0.1.md §3.2).
  */
 
+import { hashString } from '../../core/checksum/index.js'
 import { gradeProfile } from '../../core/constraints/index.js'
 import type {
   CipherTable,
@@ -237,4 +238,17 @@ export function worksheetTitle(sheet: CipherGridSheet): string | null {
 /** Na řešení se název tiskne vždy — je určeno učiteli. */
 export function solutionTitle(sheet: CipherGridSheet): string {
   return sheet.title
+}
+
+/**
+ * Kontrolní součet listu pro `.sifra`.
+ *
+ * Zahrnuje všechno, co učitel uvidí na papíře: rozložení tabulky i znění
+ * a pořadí příkladů. Nezahrnuje nic, co se netiskne — jinak by se soubory
+ * hlásily jako změněné kvůli detailu, který nikoho nezajímá.
+ */
+export function sheetChecksum(sheet: CipherGridSheet): string {
+  const table = sheet.table.cells.map((cell) => `${cell.code.n}:${cell.letter}`).join(',')
+  const tasks = sheet.slots.map((slot) => `${slot.code}=${slot.task.prompt.text}`).join(',')
+  return hashString(`${sheet.table.rows}x${sheet.table.cols}|${table}|${tasks}`)
 }

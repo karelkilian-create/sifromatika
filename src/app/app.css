@@ -181,6 +181,12 @@ body {
   border-color: #e8cf90;
 }
 
+.banner--info {
+  color: #1c4a63;
+  background: #e8f2f8;
+  border-color: #9dc4d8;
+}
+
 .banner--error {
   color: #7a1f1f;
   background: #fdecec;

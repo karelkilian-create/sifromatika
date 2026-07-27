@@ -30,10 +30,20 @@ export interface EditorPanelProps {
   onChange: (next: EditorState) => void
   onReroll: () => void
   onPrint: () => void
+  onSave: () => void
+  onOpen: () => void
   canPrint: boolean
 }
 
-export function EditorPanel({ state, onChange, onReroll, onPrint, canPrint }: EditorPanelProps) {
+export function EditorPanel({
+  state,
+  onChange,
+  onReroll,
+  onPrint,
+  onSave,
+  onOpen,
+  canPrint,
+}: EditorPanelProps) {
   const patch = (changes: Partial<EditorState>) => onChange({ ...state, ...changes })
 
   const toggleOperation = (operation: OperationTag) => {
@@ -77,6 +87,12 @@ export function EditorPanel({ state, onChange, onReroll, onPrint, canPrint }: Ed
         </button>
         <button type="button" className="button" onClick={onPrint} disabled={!canPrint}>
           Vytisknout
+        </button>
+        <button type="button" className="button" onClick={onSave} disabled={!canPrint}>
+          Uložit
+        </button>
+        <button type="button" className="button" onClick={onOpen}>
+          Otevřít
         </button>
       </div>
 
