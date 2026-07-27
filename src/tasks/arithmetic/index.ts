@@ -106,6 +106,24 @@ function divCandidates(target: number, profile: DifficultyProfile): Operands[] {
   return out
 }
 
+/**
+ * Odfiltruje triviální varianty jako `4 + 2`, `25 − 24` nebo `16 + 1`.
+ *
+ * Matematicky jsou v pořádku, ale na listu pro čtvrťáka vypadají jako chyba
+ * a podkopávají důvěru v celý vygenerovaný list dřív, než si ho učitel
+ * pořádně přečte. Když ale nic lepšího neexistuje (výsledek 3 jde vyrobit
+ * jen jako 1 + 2), vrací se původní seznam — žádný příklad je horší.
+ */
+function isSubstantial(operation: OperationTag, operands: Operands): boolean {
+  const floor = operation === 'add' || operation === 'sub' ? 3 : 2
+  return Math.min(operands.a, operands.b) >= floor
+}
+
+function preferSubstantial(operation: OperationTag, options: Operands[]): Operands[] {
+  const substantial = options.filter((operands) => isSubstantial(operation, operands))
+  return substantial.length > 0 ? substantial : options
+}
+
 function candidatesFor(
   operation: OperationTag,
   target: number,
@@ -240,14 +258,23 @@ export const arithmeticGenerator: TaskGenerator = {
     // Nabídneme jen operace, které tuhle hodnotu vůbec trefí; mezi nimi
     // rozhodne váha z uživatelského nastavení.
     const viable = operations
-      .map((operation) => ({ operation, options: candidatesFor(operation, target, ctx.profile) }))
-      .filter((entry) => entry.options.length > 0)
+      .map((operation) => {
+        const all = candidatesFor(operation, target, ctx.profile)
+        return { operation, options: preferSubstantial(operation, all), degenerate: all }
+      })
+      .filter((entry) => entry.degenerate.length > 0)
     if (viable.length === 0) return null
+
+    // Preferovat musíme už OPERACI, ne až operandy. Pro výsledek 99 nabízí
+    // odčítání jedinou možnost `100 − 1`, zatímco sčítání jich má desítky —
+    // kdyby se operace losovala první, `100 − 1` by se na list dostávalo.
+    const decent = viable.filter((entry) => isSubstantial(entry.operation, entry.options[0]!))
+    const pool = decent.length > 0 ? decent : viable
 
     // Několik pokusů: první volba může narazit na už použitý výraz.
     for (let attempt = 0; attempt < 12; attempt++) {
       const { operation, options } = rng.weighted(
-        viable.map((entry) => [entry, ctx.mix[entry.operation] ?? 1] as const),
+        pool.map((entry) => [entry, ctx.mix[entry.operation] ?? 1] as const),
       )
       const operands = rng.pick(options)
       const text = `${operands.a} ${SYMBOL[operation]} ${operands.b}`

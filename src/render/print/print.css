@@ -1,0 +1,54 @@
+/*
+ * Tisk.
+ *
+ * Ve verzi 0.1 je tisk z prohlížeče JEDINÝ způsob, jak dostat list na papír —
+ * žádná PDF knihovna (docs/rozsah-0.1.md §2). Důvod: nulová velikost bundlu
+ * a bezchybná diakritika všude, protože sází prohlížeč vlastními fonty.
+ * Skutečné PDF přijde v 0.3, až bude potřeba přesná kontrola zalomení.
+ */
+
+@page {
+  size: A4 portrait;
+  /* Okraje řeší .sheet vlastním paddingem, ať je náhled shodný s tiskem. */
+  margin: 0;
+}
+
+@media print {
+  /* Všechno, co není list, se netiskne: formulář, tlačítka, hlášky. */
+  .no-print {
+    display: none !important;
+  }
+
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    background: #fff;
+  }
+
+  .sheet {
+    width: auto;
+    min-height: auto;
+    margin: 0;
+    box-shadow: none;
+  }
+
+  /* Řešení vždy na samostatný list — učitel ho žákům nerozdává. */
+  .print-page-break {
+    break-before: page;
+  }
+
+  /* Tabulka ani řádek s tajenkou se nesmí rozpadnout přes stránky. */
+  .cipher-table,
+  .answer-row,
+  .solution-table tr {
+    break-inside: avoid;
+  }
+
+  /* Prohlížeče jinak vypínají tisk barev pozadí; tady na nich nezáleží,
+     ale linky a rámečky musí zůstat plné. */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

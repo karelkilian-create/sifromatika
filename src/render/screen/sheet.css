@@ -1,0 +1,181 @@
+/*
+ * Sazba pracovního listu.
+ *
+ * Psáno primárně pro TISK, ne pro obrazovku — obrazovka je jen náhled toho,
+ * co vyleze z tiskárny. Proto milimetry a body místo pixelů, černá na bílé
+ * a žádné stíny ani přechody, které by sežraly toner.
+ */
+
+.sheet {
+  --sheet-ink: #111;
+  --sheet-rule: #444;
+
+  box-sizing: border-box;
+  width: 210mm;
+  min-height: 297mm;
+  padding: 15mm 14mm;
+  margin: 0 auto;
+  background: #fff;
+  color: var(--sheet-ink);
+  font-family: 'Segoe UI', 'Noto Sans', system-ui, sans-serif;
+  font-size: 11pt;
+  line-height: 1.4;
+}
+
+.sheet__title {
+  margin: 0 0 2mm;
+  font-size: 16pt;
+  font-weight: 700;
+}
+
+.sheet__instructions {
+  margin: 0 0 6mm;
+  font-size: 10.5pt;
+}
+
+.sheet__section-heading {
+  margin: 0 0 3mm;
+  font-size: 11pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ── Šifrovací tabulka ────────────────────────────────────────────── */
+
+.cipher-table {
+  border-collapse: collapse;
+  margin: 0 auto 7mm;
+  table-layout: fixed;
+}
+
+.cipher-table td {
+  width: 15mm;
+  height: 13mm;
+  padding: 1mm;
+  border: 0.4mm solid var(--sheet-rule);
+  text-align: center;
+  vertical-align: middle;
+}
+
+.cipher-table__code {
+  display: block;
+  font-size: 8pt;
+  line-height: 1;
+  color: #555;
+}
+
+.cipher-table__letter {
+  display: block;
+  font-size: 15pt;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+/* ── Příklady ─────────────────────────────────────────────────────── */
+
+.task-list {
+  margin: 0 0 7mm;
+  padding: 0;
+  list-style: none;
+  column-gap: 10mm;
+}
+
+.task-list--two-columns {
+  column-count: 2;
+}
+
+.task-list__item {
+  display: flex;
+  align-items: baseline;
+  gap: 2mm;
+  margin-bottom: 3mm;
+  break-inside: avoid;
+}
+
+.task-list__number {
+  min-width: 7mm;
+  font-size: 10pt;
+  font-weight: 700;
+}
+
+.task-list__prompt {
+  font-size: 12pt;
+  font-variant-numeric: tabular-nums;
+}
+
+.task-list__blank {
+  flex: 1;
+  min-width: 12mm;
+  border-bottom: 0.3mm solid var(--sheet-rule);
+}
+
+/* ── Řádek na tajenku ─────────────────────────────────────────────── */
+
+.answer-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4mm 4mm;
+  /* Čísla pod rámečky jinak dosednou na následující nadpis. */
+  margin-bottom: 7mm;
+}
+
+.answer-word {
+  display: flex;
+  gap: 1mm;
+}
+
+.answer-box {
+  width: 9mm;
+  text-align: center;
+}
+
+.answer-box__cell {
+  height: 10mm;
+  border: 0.4mm solid var(--sheet-rule);
+}
+
+.answer-box__cell--filled {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13pt;
+  font-weight: 700;
+}
+
+.answer-box__index {
+  font-size: 7.5pt;
+  color: #555;
+}
+
+/* ── Řešení ───────────────────────────────────────────────────────── */
+
+.solution-message {
+  margin: 0 0 6mm;
+  font-size: 14pt;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.solution-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10pt;
+}
+
+.solution-table th,
+.solution-table td {
+  padding: 1.2mm 2mm;
+  border: 0.3mm solid var(--sheet-rule);
+  text-align: left;
+}
+
+.solution-table th {
+  font-size: 9pt;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.solution-table td:last-child {
+  font-weight: 700;
+}

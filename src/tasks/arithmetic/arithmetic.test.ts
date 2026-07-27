@@ -62,6 +62,18 @@ describe('arithmeticGenerator.generateForValue', () => {
     }
   })
 
+  it('nevyrábí triviální příklady, když existuje lepší varianta', () => {
+    const rng = createRng('netrivialni')
+    // Pro 6 existuje 4+2 i 3+3; pro 1 existuje jen n − (n−1), tam ústupek platí.
+    for (let target = 6; target <= 100; target++) {
+      const task = arithmeticGenerator.generateForValue(target, context(), rng)
+      if (task === null) continue
+      const [left, , right] = task.prompt.text.split(' ')
+      const smaller = Math.min(Number(left), Number(right))
+      expect(smaller, task.prompt.text).toBeGreaterThanOrEqual(2)
+    }
+  })
+
   it('vrátí null pro hodnotu, kterou v profilu nelze vyrobit', () => {
     const rng = createRng('mimo-obor')
     const profile = gradeProfile(4) // rozsah do 100
