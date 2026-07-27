@@ -45,6 +45,8 @@ function randomConfig(rng: Rng, index: number): ProjectConfig {
   config.payload.taskMix = mix
   config.payload.cipher.decoyDensity = rng.int(0, 60) / 100
   config.payload.cipher.distinctCellPerOccurrence = rng.chance(0.8)
+  // Obě šifrovací strategie musí obstát ve stejném testu.
+  config.payload.cipher.strategy = rng.chance(0.75) ? 'grid-coord' : 'grid-linear'
   if (rng.chance(0.3)) config.title = 'Vlastní název'
   return config
 }

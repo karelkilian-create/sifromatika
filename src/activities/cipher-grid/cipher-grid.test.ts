@@ -177,11 +177,56 @@ describe('generateCipherGrid — mřížka', () => {
     }
   })
 
-  it('kódy buněk jdou od 1 po řadě a nikde nechybí', () => {
+  it('buňky pokrývají celou mřížku', () => {
     const sheet = build('CESTA DO LESA')
+    expect(sheet.table.cells.length).toBe(sheet.table.rows * sheet.table.cols)
+    expect(new Set(sheet.table.cells.map((cell) => cell.code.n)).size).toBe(sheet.table.cells.length)
+  })
+})
+
+describe('generateCipherGrid — souřadnicová šifra (výchozí)', () => {
+  const sheet = build('POKLAD JE U BAZÉNU')
+
+  it('kód buňky je řádek a sloupec složené do dvojciferného čísla', () => {
     sheet.table.cells.forEach((cell, index) => {
+      expect(cell.code.kind).toBe('coord')
+      if (cell.code.kind !== 'coord') return
+      expect(cell.code.row).toBe(Math.floor(index / sheet.table.cols) + 1)
+      expect(cell.code.col).toBe((index % sheet.table.cols) + 1)
+      expect(cell.code.n).toBe(cell.code.row * 10 + cell.code.col)
+    })
+  })
+
+  it('mřížka nikdy nepřesáhne 9×9, jinak by dvouciferné čtení přestalo platit', () => {
+    const rng = createRng('meze')
+    for (let i = 0; i < 60; i++) {
+      const length = rng.int(4, 90)
+      const message = Array.from({ length }, () =>
+        rng.pick('ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')),
+      ).join('')
+      const outcome = generateCipherGrid(defaultConfig(message, 5, `mez${i}`))
+      if (!outcome.ok) continue
+      expect(outcome.sheet.table.rows).toBeLessThanOrEqual(9)
+      expect(outcome.sheet.table.cols).toBeLessThanOrEqual(9)
+      for (const slot of outcome.sheet.slots) {
+        // Výsledek musí být čitelný jako dvojice číslic 1–9.
+        expect(slot.code).toBeGreaterThanOrEqual(11)
+        expect(slot.code).toBeLessThanOrEqual(99)
+        expect(slot.code % 10).toBeGreaterThanOrEqual(1)
+      }
+    }
+  })
+
+  it('lineární variantu lze pořád zvolit', () => {
+    const config = defaultConfig('CESTA DO LESA', 4, 'linearni')
+    config.payload.cipher.strategy = 'grid-linear'
+    const outcome = generateCipherGrid(config)
+    expect(outcome.ok).toBe(true)
+    if (!outcome.ok) return
+    outcome.sheet.table.cells.forEach((cell, index) => {
+      expect(cell.code.kind).toBe('linear')
       expect(cell.code.n).toBe(index + 1)
     })
-    expect(sheet.table.cells.length).toBe(sheet.table.rows * sheet.table.cols)
+    expect(outcome.sheet.verification).toEqual({ ok: true })
   })
 })

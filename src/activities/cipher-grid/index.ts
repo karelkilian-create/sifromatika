@@ -20,7 +20,8 @@ import type {
 import { createRng } from '../../core/rng/index.js'
 import { normalizeMessage, plainLetters, type NormalizedMessage } from '../../core/text/index.js'
 import { verifySheet } from '../../core/verify/index.js'
-import { buildGridLinear } from '../../ciphers/grid-linear/index.js'
+import { cipherScheme } from '../../ciphers/registry.js'
+import { buildGrid } from '../../ciphers/grid/index.js'
 import { taskGenerators } from '../../tasks/registry.js'
 import { APP_VERSION, GENERATOR_VERSION } from '../../version.js'
 
@@ -61,7 +62,7 @@ export function defaultConfig(message: string, grade: Grade, seed: string): Proj
       difficulty: gradeProfile(grade),
       taskMix: { add: 1, sub: 1, mul: 1, div: 1 },
       cipher: {
-        strategy: 'grid-linear',
+        strategy: 'grid-coord',
         distinctCellPerOccurrence: true,
         decoyDensity: 0.35,
       },
@@ -136,7 +137,7 @@ function generateOnce(config: ProjectConfig): CipherGridOutcome {
     }
   }
 
-  const cipher = buildGridLinear(
+  const cipher = buildGrid(
     {
       message,
       reachable,
@@ -145,6 +146,7 @@ function generateOnce(config: ProjectConfig): CipherGridOutcome {
       gridOverride: payload.cipher.grid,
     },
     rng,
+    cipherScheme(payload.cipher.strategy),
   )
   relaxations.push(...cipher.relaxations)
   if (!cipher.ok) return { ok: false, reason: cipher.reason, relaxations }

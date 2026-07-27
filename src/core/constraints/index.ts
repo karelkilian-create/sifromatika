@@ -58,9 +58,17 @@ export function gradeProfile(grade: Grade): DifficultyProfile {
 export interface GridChoice {
   rows: number
   cols: number
-  /** Kódy 1..rows*cols, které vrstva úloh umí vyrobit. Jen sem smí přijít písmena tajenky. */
+  /** Kódy, které vrstva úloh umí vyrobit. Jen na ně smí přijít písmena tajenky. */
   usableCodes: number[]
 }
+
+/**
+ * Jak se z pozice v mřížce spočítá kód buňky. Řádky i sloupce jsou od 1.
+ *
+ * Právě tahle funkce odlišuje `grid-linear` od `grid-coord`; volba mřížky
+ * sama o strategii nic vědět nemusí.
+ */
+export type CodeForCell = (row: number, col: number, rows: number, cols: number) => number
 
 export interface GridRequest {
   /** Kolik buněk musí být k dispozici pro písmena tajenky. */
@@ -69,12 +77,15 @@ export interface GridRequest {
   totalCells: number
   /** Hodnoty dosažitelné vrstvou úloh. */
   reachable: ReadonlySet<number>
+  codeFor: CodeForCell
+  /** Horní mez strany. `grid-coord` má 9 kvůli číslicím, `grid-linear` víc. */
+  maxSide?: number
   /** Ruční override od uživatele. Když je zadaný, respektuje se i za cenu ústupků jinde. */
   override?: { rows: number; cols: number }
 }
 
 const MIN_SIDE = 3
-const MAX_SIDE = 12
+const DEFAULT_MAX_SIDE = 12
 
 /**
  * Nejdelší přípustný poměr stran.
@@ -93,18 +104,20 @@ const MAX_ASPECT_RATIO = 2
  * co nejmenší → co nejblíž čtverci.
  */
 export function chooseGrid(request: GridRequest): GridChoice | null {
+  const maxSide = request.maxSide ?? DEFAULT_MAX_SIDE
+
   if (request.override) {
     const { rows, cols } = request.override
-    return { rows, cols, usableCodes: usableCodesFor(rows * cols, request.reachable) }
+    return { rows, cols, usableCodes: usableCodesFor(rows, cols, request) }
   }
 
   let best: GridChoice | null = null
-  for (let rows = MIN_SIDE; rows <= MAX_SIDE; rows++) {
-    for (let cols = MIN_SIDE; cols <= MAX_SIDE; cols++) {
+  for (let rows = MIN_SIDE; rows <= maxSide; rows++) {
+    for (let cols = MIN_SIDE; cols <= maxSide; cols++) {
       if (Math.max(rows, cols) / Math.min(rows, cols) > MAX_ASPECT_RATIO) continue
       const capacity = rows * cols
       if (capacity < request.totalCells) continue
-      const usableCodes = usableCodesFor(capacity, request.reachable)
+      const usableCodes = usableCodesFor(rows, cols, request)
       if (usableCodes.length < request.letterCells) continue
 
       if (
@@ -120,10 +133,13 @@ export function chooseGrid(request: GridRequest): GridChoice | null {
   return best
 }
 
-function usableCodesFor(capacity: number, reachable: ReadonlySet<number>): number[] {
+function usableCodesFor(rows: number, cols: number, request: GridRequest): number[] {
   const codes: number[] = []
-  for (let code = 1; code <= capacity; code++) {
-    if (reachable.has(code)) codes.push(code)
+  for (let row = 1; row <= rows; row++) {
+    for (let col = 1; col <= cols; col++) {
+      const code = request.codeFor(row, col, rows, cols)
+      if (request.reachable.has(code)) codes.push(code)
+    }
   }
   return codes
 }

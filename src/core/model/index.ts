@@ -66,8 +66,17 @@ export interface Task {
 // Šifra
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Ve verzi 0.1 existuje jen `linear`; `coord` přijde v 0.2 se šifrou grid-coord. */
-export type CodeToken = { kind: 'linear'; n: number }
+/**
+ * Kód buňky — číslo, které musí dítě spočítat, aby buňku našlo.
+ *
+ * `n` je u obou variant totéž: hodnota, kterou má dát výsledek příkladu.
+ * U `coord` je odvozená z řádku a sloupce (34 = 3. řádek, 4. sloupec), ale
+ * ukládá se, aby verifikace i vrstva úloh mohly pracovat jednotně s `n`
+ * a nemusely rozlišovat strategii.
+ */
+export type CodeToken =
+  | { kind: 'linear'; n: number }
+  | { kind: 'coord'; n: number; row: number; col: number }
 
 export interface CipherCell {
   code: CodeToken
@@ -83,6 +92,13 @@ export interface CipherTable {
   /** V pořadí čtení: řádek po řádku. */
   cells: CipherCell[]
 }
+
+/**
+ * `grid-coord` je výchozí: tabulka se záhlavím řádků a sloupců připravuje děti
+ * na soustavu souřadnic, kterou se budou učit později. `grid-linear` (buňky
+ * číslované 1..N popořadě) zůstává jako jednodušší varianta.
+ */
+export type CipherStrategyId = 'grid-coord' | 'grid-linear'
 
 export interface CipherArtifact {
   table: CipherTable
@@ -114,7 +130,7 @@ export interface CipherGridConfig {
   /** Váhy jednotlivých typů úloh, nikoli booleany. */
   taskMix: Partial<Record<OperationTag, number>>
   cipher: {
-    strategy: 'grid-linear'
+    strategy: CipherStrategyId
     /** Volitelný override. Když chybí, odvodí se z tajenky a obtížnosti. */
     grid?: { rows: number; cols: number }
     distinctCellPerOccurrence: boolean

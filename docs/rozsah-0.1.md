@@ -12,7 +12,9 @@ Správné hranice vrstev od prvního commitu, minimum funkcí.
 ## 1. Co v 0.1 JE
 
 ### Funkce
-- ✅ Jedna šifra: `grid-linear` (výsledek příkladu = pořadové číslo buňky v tabulce)
+- ✅ Souřadnicová šifra `grid-coord` (**výchozí**) — tabulka se záhlavím řádků a sloupců,
+  výsledek příkladu je dvouciferná souřadnice: `34` = 3. řádek, 4. sloupec
+- ✅ Jednodušší `grid-linear` (výsledek = pořadové číslo buňky) jako alternativa
 - ✅ Čtyři operace: `+`, `−`, `×`, `÷`
 - ✅ Zadání tajenky + volba ročníku (3.–5.)
 - ✅ Tlačítko „Jiná varianta" (= seed + 1)
@@ -56,7 +58,6 @@ core → nic
 | Presety v IndexedDB | 0.4 |
 | Kalibrace času, RVP mapování, „aktivita na 15 minut" | 0.5+ |
 | Tlačítko „Kopírovat diagnostiku" (pole `appVersion` je ale už v 0.1) | 0.2 |
-| Druhá šifra (`grid-coord`) | 0.2 |
 | Ročníky 6.–9. | 0.6+ |
 | i18n infrastruktura | 0.9 |
 | Monorepo / pnpm workspace | až vznikne druhý konzument `core` |
@@ -156,6 +157,28 @@ proto je v 0.1 zdarma.
 **Pojistka proti driftu determinismu:** v souboru se uloží i kontrolní součet vygenerovaného
 výstupu. Při otevření se list přegeneruje a součet porovná; při neshodě varování
 *„tento list vznikl ve verzi X, výstup se může lišit"*. Tiché selhání se tím mění na viditelné.
+
+### 3.4b Souřadnicová šifra je výchozí — doplněno po náhledu první verze
+Původní zadání zmiňovalo „souřadnice tajenky", ale první verze je odsunula do 0.2 a použila
+lineární číslování buněk. Chyba v pochopení zadání; opraveno hned.
+
+**Zvolený tvar:** jeden příklad na písmeno, výsledek se čte jako dvojice číslic —
+`34` = 3. řádek, 4. sloupec. Zvažovaná alternativa (dva příklady na písmeno, zvlášť řádek
+a zvlášť sloupec) by zdvojnásobila délku listu; tenhle tvar ji zachovává.
+
+**Dva důsledky, které z toho plynou a musí být vidět v kódu:**
+
+1. **Mřížka nesmí přesáhnout 9×9.** Desátý řádek by dal kód `104` a dvouciferné čtení by
+   přestalo platit. Je to vlastnost zápisu, ne libovolný limit — proto sedí v `GridScheme`
+   jako `maxSide`, ne v konfiguraci.
+2. **Obor výsledků se zúží** na čísla, jejichž obě číslice padnou do rozměrů mřížky
+   (pro 5×5 jen 25 hodnot z rozsahu 11–55). O tohle se stará stávající vrstva omezení:
+   `chooseGrid` dostává funkci `codeFor(row, col)` a sama zjistí, kolik buněk je vůbec
+   dosažitelných.
+
+**Co si vyžádala výměna šifry:** nový `ciphers/grid` se sdíleným rozmísťováním, dva
+`GridScheme`, úprava vykreslení tabulky. **Ani řádek v `core/` ani v `tasks/`.** To byla
+celá pointa oddělení vrstev — tady se poprvé vyplatilo.
 
 ### 3.5 Klamná písmena — potvrzeno jako povinné
 Bez nich jde tajenka uhodnout bez počítání, což ruší smysl aktivity. Rozložení podle obecné
