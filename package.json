@@ -2,6 +2,7 @@
   "name": "sifromatika",
   "private": true,
   "version": "0.1.0-dev",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",

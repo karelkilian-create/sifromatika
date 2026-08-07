@@ -109,6 +109,7 @@ znovupoužitelné.
 
 Podrobněji:
 
+- [Vize](VISION.md) — proč projekt vzniká a podle čeho se rozhoduje, co do něj patří
 - [Návrh architektury](docs/sifromatika-navrh-architektury.md) — proč to stojí takhle,
   včetně míst, kde se návrh rozešel s původním zadáním
 - [Rozsah verze 0.1](docs/rozsah-0.1.md) — co je hotové, co vědomě není a proč
@@ -143,5 +144,5 @@ se měnit nemá. Před odesláním prosím spusť `npm run check`.
 
 ## Licence
 
-Zatím nestanovena. Do prvního veřejného vydání je potřeba doplnit — bez licence platí, že
-dílo použít nelze.
+[MIT](LICENSE). Kód i vygenerované listy smíš používat ve výuce i mimo ni, upravovat
+a šířit dál.

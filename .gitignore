@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Pracovní podklady (návrhy, exporty, ukázkové výstupy)
+ChatGPT_návrh.odt
+ChatGPT_návrh.zip
