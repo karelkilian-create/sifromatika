@@ -112,18 +112,22 @@ export function EditorPanel({
           </select>
         </label>
 
-        <button type="button" className="button button--primary" onClick={onReroll}>
-          Jiná varianta
-        </button>
-        <button type="button" className="button" onClick={onPrint} disabled={!canPrint}>
-          Vytisknout
-        </button>
-        <button type="button" className="button" onClick={onSave} disabled={!canPrint}>
-          Uložit
-        </button>
-        <button type="button" className="button" onClick={onOpen}>
-          Otevřít
-        </button>
+        {/* Tlačítka drží pohromadě v jednom prvku, aby na telefonu mohla
+            zůstat v řádku i ve chvíli, kdy se pole nad nimi skládají pod sebe. */}
+        <div className="editor__actions">
+          <button type="button" className="button button--primary" onClick={onReroll}>
+            Jiná varianta
+          </button>
+          <button type="button" className="button" onClick={onPrint} disabled={!canPrint}>
+            Vytisknout
+          </button>
+          <button type="button" className="button" onClick={onSave} disabled={!canPrint}>
+            Uložit
+          </button>
+          <button type="button" className="button" onClick={onOpen}>
+            Otevřít zadání
+          </button>
+        </div>
       </div>
 
       <details className="editor__advanced">

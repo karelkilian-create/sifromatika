@@ -9,7 +9,7 @@
  * Samotné aktivity o sobě navzájem nevědí.
  */
 
-import { useMemo, useRef, useState } from 'react'
+import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import {
   generateCipherGrid,
   sheetChecksum as cipherChecksum,
@@ -42,6 +42,44 @@ const SEQUENCE_INSTRUCTIONS =
 interface FileNotice {
   level: 'info' | 'error'
   message: string
+}
+
+/** Šířka listu (210 mm) v CSS pixelech — CSS počítá 96 px na palec. */
+const SHEET_WIDTH_PX = (210 * 96) / 25.4
+
+/**
+ * Obal náhledu, který si hlídá měřítko listu.
+ *
+ * Jediný stav v aplikaci, který nejde spočítat z konfigurace: šířku okna
+ * neví nikdo než prohlížeč. Odsud `useEffect` — a jen odsud.
+ *
+ * Měří se obal, ne list. Obal je blokový a bez `overflow`, takže jeho šířku
+ * určuje výhradně rodič; zmenšený list ji zpětně neovlivní a pozorování se
+ * nemůže rozkmitat.
+ */
+function Preview({ children }: { children: ReactNode }) {
+  const frame = useRef<HTMLElement>(null)
+  const [zoom, setZoom] = useState(1)
+
+  useEffect(() => {
+    const element = frame.current
+    if (element === null) return
+
+    const observer = new ResizeObserver(([entry]) => {
+      const width = entry?.contentRect.width ?? 0
+      // Zvětšovat nemá smysl: na širokém monitoru chceme list ve skutečné
+      // velikosti, ne roztažený přes celou obrazovku.
+      setZoom(width > 0 ? Math.min(1, width / SHEET_WIDTH_PX) : 1)
+    })
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
+
+  return (
+    <main className="app__preview" ref={frame} style={{ '--sheet-zoom': zoom } as CSSProperties}>
+      {children}
+    </main>
+  )
 }
 
 /**
@@ -120,7 +158,10 @@ export function App() {
     <div className="app">
       <header className="app__header no-print">
         <h1 className="app__title">Šifromatika</h1>
-        <p className="app__subtitle">Matematické aktivity na pár kliknutí</p>
+        <p className="app__subtitle">
+          Pracovní listy z matematiky na pár kliknutí — vyber aktivitu a ročník, zadej téma
+          a vytiskni pracovní list a list s řešením.
+        </p>
       </header>
 
       <ActivityNav
@@ -190,7 +231,7 @@ export function App() {
       )}
 
       {generated.kind === 'cipher-grid' && generated.outcome.ok && verified && (
-        <main className="app__preview">
+        <Preview>
           <WorksheetView
             title={cipherWorksheetTitle(generated.outcome.sheet)}
             table={generated.outcome.sheet.table}
@@ -211,11 +252,11 @@ export function App() {
               wordLengths={generated.outcome.sheet.message.wordLengths}
             />
           </div>
-        </main>
+        </Preview>
       )}
 
       {generated.kind === 'sequence-sheet' && generated.outcome.ok && verified && (
-        <main className="app__preview">
+        <Preview>
           <TaskSheetView
             title={sequenceWorksheetTitle(generated.outcome.sheet)}
             instructions={SEQUENCE_INSTRUCTIONS}
@@ -228,7 +269,7 @@ export function App() {
               tasks={generated.outcome.sheet.tasks}
             />
           </div>
-        </main>
+        </Preview>
       )}
     </div>
   )

@@ -107,6 +107,26 @@ body {
   margin-top: 1.25rem;
 }
 
+/*
+ * Náhled se na úzké obrazovce ZMENŠUJE, nepřelévá.
+ *
+ * List je papír: 210 mm zůstane 210 mm i na telefonu. Kdyby se přeléval do
+ * jedné úzké sloupcové sazby, učitel by na displeji viděl něco jiného, než co
+ * mu vyleze z tiskárny — a náhled by přestal být náhledem. Tabulka a rámečky
+ * na tajenku jsou navíc v milimetrech, takže by se do 380 px stejně nevešly.
+ *
+ * `zoom` (ne `transform`) proto, že zmenší i místo, které list zabírá v toku;
+ * po `transform: scale()` by pod ním zůstala díra přes celou původní výšku.
+ * Měřítko počítá `Preview` v App.tsx, tady je jen defaultní 1 pro jistotu.
+ *
+ * Jen `screen` — v tisku se list nesmí zmenšit ani o procento.
+ */
+@media screen {
+  .app__preview .sheet {
+    zoom: var(--sheet-zoom, 1);
+  }
+}
+
 .app__preview .sheet {
   box-shadow: 0 1px 6px rgb(0 0 0 / 12%);
 }
@@ -124,6 +144,11 @@ body {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.editor__actions {
+  display: flex;
   gap: 0.75rem;
 }
 
@@ -254,14 +279,29 @@ body {
 }
 
 @media (max-width: 700px) {
+  /* Každý milimetr šířky se na telefonu přepočítá na velikost náhledu. */
+  .app {
+    padding: 1rem 0.75rem 3rem;
+  }
+
   .editor__primary {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .app__preview .sheet {
-    width: 100%;
-    min-height: auto;
-    padding: 6mm;
+  /* `flex-basis: 18rem` je ve sloupci VÝŠKA — pole na tajenku by bez tohohle
+     bylo vysoké přes půl displeje. */
+  .editor__primary .field--grow {
+    flex: 0 0 auto;
+  }
+
+  /* Pole pod sebe, ale tlačítka ne — čtyři přes celou šířku by odsunula
+     náhled až pod ohyb. */
+  .editor__actions {
+    flex-wrap: wrap;
+  }
+
+  .editor__actions .button {
+    flex: 1 1 8rem;
   }
 }
