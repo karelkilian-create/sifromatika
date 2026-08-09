@@ -249,3 +249,34 @@ describe('zápis matematiky', () => {
     expect(report.failures.map((f) => f.code)).toContain('malformed-notation')
   })
 })
+
+describe('mocniny a odmocniny', () => {
+  it.each([
+    ['7²', 49],
+    ['2³', 8],
+    ['√81', 9],
+    ['√81 + 25', 34],
+    ['7² − 16', 33],
+    ['100 − √64', 92],
+    ['√(16 + 9)', 5],
+    ['2 · 3²', 18], // mocnina se váže těsněji než násobení
+    ['(2 · 3)²', 36],
+    ['−7²', -49], // standardní úmluva: umocní se 7, pak se to zneguje
+    ['2³ · 3', 24],
+    ['√81 · 2', 18],
+  ])('%s = %i', (input, expected) => {
+    expect(evaluateExpression(input)).toBe(expected)
+  })
+
+  it('odmocnina ze záporného čísla je chyba, ne NaN', () => {
+    expect(() => evaluateExpression('√(4 − 9)')).toThrow(/záporného/)
+  })
+
+  it('odmocnina není operátor, takže „2 · √9" projde kontrolou zápisu', () => {
+    expect(hasAdjacentOperators('2 · √9')).toBe(false)
+    expect(hasAdjacentOperators('5 − √16')).toBe(false)
+    expect(hasAdjacentOperators('3² + 4')).toBe(false)
+    // Dva skutečné operátory ale chytit musí i tady.
+    expect(hasAdjacentOperators('√9 · −2')).toBe(true)
+  })
+})

@@ -29,6 +29,9 @@ export type SkillTag =
   | 'arit.zavorky'
   | 'cela.scitani-odcitani'
   | 'cela.nasobeni-deleni'
+  | 'moc.druha-mocnina'
+  | 'moc.treti-mocnina'
+  | 'moc.druha-odmocnina'
   | 'rady.konstantni-krok'
   | 'rady.stridavy-krok'
   | 'rady.rostouci-krok'
@@ -141,6 +144,8 @@ export interface DifficultyProfile {
   multiplicationTables: number[]
   divisionExactOnly: boolean
   maxOperands: number
+  /** Smí se objevit druhá a třetí mocnina a druhá odmocnina? Od 8. ročníku. */
+  powers: boolean
 }
 
 export interface CipherGridConfig {

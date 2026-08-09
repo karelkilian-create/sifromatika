@@ -222,6 +222,8 @@ interface CompoundShape {
   requires: OperationTag[]
   /** Vyžaduje profil povolující záporná čísla? */
   needsNegatives: boolean
+  /** Vyžaduje profil povolující mocniny a odmocniny? */
+  needsPowers?: boolean
   skills: SkillTag[]
   effort: number
   build(target: number, profile: DifficultyProfile, rng: Rng): string | null
@@ -233,6 +235,23 @@ function pickFactor(rng: Rng): number {
 }
 
 const MIN_OPERAND = 2
+
+/**
+ * Meze základů mocnin.
+ *
+ * Osmák zná zpaměti druhé mocniny do dvaceti a třetí do pěti. Vyšší základ
+ * není těžší úloha, jen delší počítání na papíře — a to není, co chceme.
+ */
+const MAX_SQUARE_BASE = 20
+const MAX_CUBE_BASE = 5
+
+/**
+ * Nejvyšší druhý člen u mocninných tvarů.
+ *
+ * Bez něj vzniká `18² − 283`: mocnina se vylosuje velká, cíl je malý a rozdíl
+ * pak zabere víc počítání než samotná mocnina, kvůli které úloha vznikla.
+ */
+const MAX_POWER_REMAINDER = 100
 
 function inRange(value: number, profile: DifficultyProfile): boolean {
   return value >= MIN_OPERAND && value <= profile.numberRange.max
@@ -389,6 +408,78 @@ const COMPOUND_SHAPES: readonly CompoundShape[] = [
       return `${first} ${SYMBOL.sub} (${SYMBOL.sub}${subtracted})`
     },
   },
+  {
+    id: 'square-then-add',
+    requires: ['mul', 'add'],
+    needsNegatives: false,
+    needsPowers: true,
+    skills: ['moc.druha-mocnina'],
+    effort: 3,
+    build(target, profile, rng) {
+      const base = rng.int(2, MAX_SQUARE_BASE)
+      const rest = target - base ** 2
+      if (base ** 2 > profile.numberRange.max || !inRange(rest, profile)) return null
+      return `${base}² ${SYMBOL.add} ${rest}`
+    },
+  },
+  {
+    id: 'square-then-sub',
+    requires: ['mul', 'sub'],
+    needsNegatives: false,
+    needsPowers: true,
+    skills: ['moc.druha-mocnina'],
+    effort: 3,
+    build(target, profile, rng) {
+      const base = rng.int(2, MAX_SQUARE_BASE)
+      const rest = base ** 2 - target
+      if (base ** 2 > profile.numberRange.max || !inRange(rest, profile)) return null
+      if (rest > MAX_POWER_REMAINDER) return null
+      return `${base}² ${SYMBOL.sub} ${rest}`
+    },
+  },
+  {
+    id: 'cube-then-add',
+    requires: ['mul', 'add'],
+    needsNegatives: false,
+    needsPowers: true,
+    skills: ['moc.treti-mocnina'],
+    effort: 4,
+    build(target, profile, rng) {
+      const base = rng.int(2, MAX_CUBE_BASE)
+      const rest = target - base ** 3
+      if (base ** 3 > profile.numberRange.max || !inRange(rest, profile)) return null
+      return `${base}³ ${SYMBOL.add} ${rest}`
+    },
+  },
+  {
+    id: 'root-then-add',
+    requires: ['add'],
+    needsNegatives: false,
+    needsPowers: true,
+    skills: ['moc.druha-odmocnina'],
+    effort: 3,
+    build(target, profile, rng) {
+      const root = rng.int(2, MAX_SQUARE_BASE)
+      const rest = target - root
+      // Odmocňovat se smí jen z úplného čtverce, jinak vyjde iracionální číslo.
+      if (root ** 2 > profile.numberRange.max || !inRange(rest, profile)) return null
+      return `√${root ** 2} ${SYMBOL.add} ${rest}`
+    },
+  },
+  {
+    id: 'root-then-sub',
+    requires: ['sub'],
+    needsNegatives: false,
+    needsPowers: true,
+    skills: ['moc.druha-odmocnina'],
+    effort: 4,
+    build(target, profile, rng) {
+      const root = rng.int(2, MAX_SQUARE_BASE)
+      const first = target + root
+      if (root ** 2 > profile.numberRange.max || !inRange(first, profile)) return null
+      return `${first} ${SYMBOL.sub} √${root ** 2}`
+    },
+  },
 ]
 
 /**
@@ -407,8 +498,9 @@ function compoundShapesFor(
 ): CompoundShape[] {
   const operations = new Set(enabledOperations(mix))
   return COMPOUND_SHAPES.filter((shape) => {
+    if (shape.needsPowers === true && !profile.powers) return false
     if (shape.needsNegatives && !profile.allowNegatives) return false
-    if (!shape.needsNegatives && profile.maxOperands < 3) return false
+    if (!shape.needsNegatives && shape.needsPowers !== true && profile.maxOperands < 3) return false
     return shape.requires.every((operation) => operations.has(operation))
   })
 }

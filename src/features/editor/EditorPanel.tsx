@@ -104,10 +104,11 @@ export function EditorPanel({
             <option value={3}>3. třída</option>
             <option value={4}>4. třída</option>
             <option value={5}>5. třída</option>
-            {/* 8. a 9. ročník se nenabízí, dokud nemají vlastní profil —
+            {/* 9. ročník se nenabízí, dokud nemá vlastní profil —
                 viz komentář v `core/constraints`. */}
             <option value={6}>6. třída</option>
             <option value={7}>7. třída</option>
+            <option value={8}>8. třída</option>
           </select>
         </label>
 

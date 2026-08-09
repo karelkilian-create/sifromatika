@@ -24,10 +24,21 @@ import { inferMissing, parseSequence, SequenceError } from '../sequence/index.js
 
 export class ExpressionError extends Error {}
 
+/**
+ * Mocnina a odmocnina mají VLASTNÍ druh tokenu, nejsou to `op`.
+ *
+ * Není to kosmetika. Kontrola „dva operátory vedle sebe" by jinak označila
+ * `2 · √9` za chybný zápis, přestože je správně — odmocnina je předpona
+ * čísla, ne binární operátor mezi dvěma čísly.
+ */
 type Token =
   | { kind: 'num'; value: number }
   | { kind: 'op'; value: '+' | '-' | '*' | '/' }
   | { kind: 'paren'; value: '(' | ')' }
+  /** Horní index `²` nebo `³` — připojuje se zprava k číslu nebo závorce. */
+  | { kind: 'power'; exponent: number }
+  /** Znak `√` — předpona toho, co následuje. */
+  | { kind: 'root' }
 
 /**
  * Zápisy, které se na českém pracovním listu reálně objeví.
@@ -47,6 +58,15 @@ const OPERATOR_ALIASES: Readonly<Record<string, '+' | '-' | '*' | '/'>> = {
   ':': '/',
   '÷': '/', // ÷ DIVISION SIGN
 }
+
+/** Horní indexy tak, jak se sázejí na list. Vyšší než třetí mocninu nepíšeme. */
+const SUPERSCRIPTS: Readonly<Record<string, number>> = {
+  '²': 2, // U+00B2
+  '³': 3, // U+00B3
+}
+
+/** U+221A SQUARE ROOT */
+const ROOT_SIGN = '√'
 
 function tokenize(input: string): Token[] {
   // Koncové „=" nebo „= ?" na listu je součást sazby, ne výrazu.
@@ -72,6 +92,17 @@ function tokenize(input: string): Token[] {
     }
     if (char === '(' || char === ')') {
       tokens.push({ kind: 'paren', value: char })
+      i++
+      continue
+    }
+    const exponent = SUPERSCRIPTS[char]
+    if (exponent !== undefined) {
+      tokens.push({ kind: 'power', exponent })
+      i++
+      continue
+    }
+    if (char === ROOT_SIGN) {
+      tokens.push({ kind: 'root' })
       i++
       continue
     }
@@ -119,7 +150,8 @@ export function hasAdjacentOperators(input: string): boolean {
 /**
  * Spočítá hodnotu aritmetického výrazu.
  *
- * Podporuje `+ − × ÷`, závorky a unární mínus, se standardní prioritou.
+ * Podporuje `+ − · :`, závorky, unární mínus, mocniny `²` a `³` a odmocninu
+ * `√`, se standardní prioritou.
  * Záměrně NEpoužívá `eval` ani `new Function` — kdyby se sem někdy dostal
  * text z importovaného `.sifra` souboru, byla by to díra.
  */
@@ -164,7 +196,30 @@ export function evaluateExpression(input: string): number {
       position++
       return -parseUnary()
     }
-    return parsePrimary()
+    if (token?.kind === 'root') {
+      position++
+      const radicand = parseUnary()
+      if (radicand < 0) {
+        throw new ExpressionError(`Odmocnina ze záporného čísla ve výrazu ${JSON.stringify(input)}`)
+      }
+      return Math.sqrt(radicand)
+    }
+    return parsePostfix()
+  }
+
+  /**
+   * Mocnina se váže těsněji než násobení i než unární mínus:
+   * `2 · 3²` je 2 · 9, nikoli (2 · 3)², a `−7²` je −49, nikoli 49.
+   */
+  const parsePostfix = (): number => {
+    let value = parsePrimary()
+    for (;;) {
+      const token = peek()
+      if (token?.kind !== 'power') break
+      position++
+      value = value ** token.exponent
+    }
+    return value
   }
 
   const parsePrimary = (): number => {

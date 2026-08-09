@@ -190,6 +190,31 @@ describe('DoD 0.1 bod 7 — zmrazený výstup', () => {
     `)
   })
 
+  it('šifra pro 8. ročník — mocniny a odmocniny', () => {
+    const sheet = build('DRUHA MOCNINA', 8, 'golden-8')
+    expect(sheet.slots.some((slot) => /[²³√]/u.test(slot.task.prompt.text))).toBe(true)
+    expect(render(sheet)).toMatchInlineSnapshot(`
+      "mřížka 4×5
+        1 | D R R O N
+        2 | I Y E A O
+        3 | U A R U C
+        4 | U N M O H
+         1. −50 + 61 = 11
+         2. 6 + 6 = 12
+         3. 8 · 4 + 2 = 34
+         4. 5 · 9 = 45
+         5. 29 − 5 = 24
+         6. 38 + 5 = 43
+         7. 10 + 4 = 14
+         8. √256 + 19 = 35
+         9. 7 · 6 = 42
+        10. 2 · 6 + 9 = 21
+        11. 33 − √324 = 15
+        12. √9 + 29 = 32
+      součet caa3641f"
+    `)
+  })
+
   it('stejný seed dá stejný součet i po opakovaném generování', () => {
     const first = build('POKLAD JE U BAZÉNU', 4, 'golden-1')
     const second = build('POKLAD JE U BAZÉNU', 4, 'golden-1')

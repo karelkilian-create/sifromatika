@@ -27,6 +27,7 @@ export function gradeProfile(grade: Grade): DifficultyProfile {
         multiplicationTables: [2, 3, 4, 5, 10],
         divisionExactOnly: true,
         maxOperands: 2,
+        powers: false,
       }
     case 4:
       return {
@@ -37,6 +38,7 @@ export function gradeProfile(grade: Grade): DifficultyProfile {
         multiplicationTables: [2, 3, 4, 5, 6, 7, 8, 9, 10],
         divisionExactOnly: true,
         maxOperands: 2,
+        powers: false,
       }
     case 5:
       return {
@@ -47,6 +49,7 @@ export function gradeProfile(grade: Grade): DifficultyProfile {
         multiplicationTables: [2, 3, 4, 5, 6, 7, 8, 9, 10],
         divisionExactOnly: true,
         maxOperands: 2,
+        powers: false,
       }
     case 6:
       // Šestá třída: obor se rozšiřuje a přichází pořadí operací se závorkami.
@@ -59,6 +62,7 @@ export function gradeProfile(grade: Grade): DifficultyProfile {
         multiplicationTables: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
         divisionExactOnly: true,
         maxOperands: 3,
+        powers: false,
       }
     case 7:
       // Sedmá třída: celá čísla, tedy poprvé i záporné operandy.
@@ -70,17 +74,31 @@ export function gradeProfile(grade: Grade): DifficultyProfile {
         multiplicationTables: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
         divisionExactOnly: true,
         maxOperands: 3,
+        powers: false,
+      }
+    case 8:
+      // Osmá třída: druhá a třetí mocnina, druhá odmocnina. Obor se rozšiřuje,
+      // protože už 15² je 225 a s přičtením dalšího členu se to rychle sčítá.
+      return {
+        grade,
+        numberRange: { min: -1000, max: 10_000 },
+        allowNegatives: true,
+        crossesTen: true,
+        multiplicationTables: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+        divisionExactOnly: true,
+        maxOperands: 3,
+        powers: true,
       }
     default:
-      // ⚠ 8. a 9. ročník zatím vlastní profil NEMAJÍ, a proto se v UI ani
-      //   nenabízejí. Tahle větev je jen pojistka totality typu.
+      // ⚠ 9. ročník zatím vlastní profil NEMÁ, a proto se v UI nenabízí.
+      //   Tahle větev je jen pojistka totality typu.
       //
-      //   Přidat je do rozbalovátka dřív, než pro ně vznikne obsah (mocniny,
-      //   odmocniny, desetinná čísla, rovnice), by znamenalo dát osmákovi
-      //   sedmáckou matematiku pod nadpisem „8. třída". Vygenerovaný list by
-      //   byl matematicky správně, takže by to neodhalila ani verifikace —
+      //   Přidat ho do rozbalovátka dřív, než pro něj vznikne obsah (rovnice,
+      //   lomené výrazy, procenta), by znamenalo dát deváťákovi osmáckou
+      //   matematiku pod nadpisem „9. třída". Vygenerovaný list by byl
+      //   matematicky správně, takže by to neodhalila ani verifikace —
       //   jen učitel, až by ho rozdal.
-      return { ...gradeProfile(7), grade }
+      return { ...gradeProfile(8), grade }
   }
 }
 

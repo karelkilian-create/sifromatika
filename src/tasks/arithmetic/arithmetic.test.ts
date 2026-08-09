@@ -272,3 +272,69 @@ describe('arithmeticGenerator — strop menšence', () => {
     }
   })
 })
+
+describe('arithmeticGenerator — mocniny a odmocniny (8. ročník)', () => {
+  const hasPowerOrRoot = (text: string) => /[²³√]/u.test(text)
+
+  const collect = (grade: 3 | 4 | 5 | 6 | 7 | 8) => {
+    const rng = createRng(`mocniny-${grade}`)
+    const ctx = context({ profile: gradeProfile(grade) })
+    const texts: string[] = []
+    for (let target = 11; target <= 99; target++) {
+      const task = arithmeticGenerator.generateForValue(target, ctx, rng)
+      if (task !== null) texts.push(task.prompt.text)
+    }
+    return texts
+  }
+
+  it('osmý ročník dostane mocniny i odmocniny', () => {
+    const texts = collect(8)
+    expect(texts.filter(hasPowerOrRoot).length).toBeGreaterThan(10)
+    expect(texts.some((text) => text.includes('²'))).toBe(true)
+    expect(texts.some((text) => text.includes('√'))).toBe(true)
+  })
+
+  it('do sedmého ročníku se mocnina ani odmocnina neobjeví', () => {
+    for (const grade of [3, 4, 5, 6, 7] as const) {
+      expect(collect(grade).some(hasPowerOrRoot), `${grade}. ročník`).toBe(false)
+    }
+  })
+
+  it('každý výraz s mocninou se nezávisle přepočítá na cílovou hodnotu', () => {
+    const rng = createRng('prepocet-8')
+    const ctx = context({ profile: gradeProfile(8) })
+
+    for (let target = 11; target <= 99; target++) {
+      const task = arithmeticGenerator.generateForValue(target, ctx, rng)
+      if (task === null) continue
+      expect(evaluateExpression(task.prompt.text), task.prompt.text).toBe(target)
+    }
+  })
+
+  it('odmocňuje se jen z úplných čtverců — na listu nesmí být iracionální číslo', () => {
+    const rng = createRng('ctverce')
+    const ctx = context({ profile: gradeProfile(8) })
+
+    for (let target = 11; target <= 99; target++) {
+      const task = arithmeticGenerator.generateForValue(target, ctx, rng)
+      if (task === null) continue
+
+      for (const match of task.prompt.text.matchAll(/√(\d+)/gu)) {
+        const radicand = Number(match[1])
+        expect(Number.isInteger(Math.sqrt(radicand)), task.prompt.text).toBe(true)
+      }
+    }
+  })
+
+  it('mocniny se řídí zaškrtnutým násobením, odmocniny ne', () => {
+    // Druhá mocnina JE opakované násobení, takže bez násobení nedává smysl.
+    const rng = createRng('bez-nasobeni-8')
+    const ctx = context({ profile: gradeProfile(8), mix: { add: 1, sub: 1 } })
+
+    for (let target = 11; target <= 99; target++) {
+      const task = arithmeticGenerator.generateForValue(target, ctx, rng)
+      if (task === null) continue
+      expect(task.prompt.text, task.prompt.text).not.toMatch(/[²³]/u)
+    }
+  })
+})
