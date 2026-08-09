@@ -27,7 +27,7 @@ describe('arithmeticGenerator.generateForValue', () => {
   })
 
   it('pro stejný výsledek vyrábí různé příklady', () => {
-    // Požadavek ze zadání: 24 = 18+6 = 30−6 = 6×4 = 48:2
+    // Požadavek ze zadání: 24 = 18+6 = 30−6 = 6·4 = 48:2
     const rng = createRng('varianty')
     const ctx = context()
     const texts = new Set<string>()
@@ -46,7 +46,7 @@ describe('arithmeticGenerator.generateForValue', () => {
       const task = arithmeticGenerator.generateForValue(24, ctx, rng)
       if (task === null) continue
       expect(task.didactic.operations).toEqual(['mul'])
-      expect(task.prompt.text).toContain('×')
+      expect(task.prompt.text).toContain('·')
     }
   })
 
@@ -152,6 +152,123 @@ describe('arithmeticGenerator — profil obtížnosti', () => {
       expect(task!.didactic.effort).toBeGreaterThan(0)
       expect(task!.didactic.grade).toBe(4)
       for (const skill of task!.didactic.skills) expect(skill).toMatch(/^arit\./)
+    }
+  })
+})
+
+describe('arithmeticGenerator — druhý stupeň', () => {
+  /** Kolik čísel výraz obsahuje. Tři a víc = složený výraz. */
+  function operandCount(text: string): number {
+    return (text.match(/\d+/gu) ?? []).length
+  }
+
+  it('šestý a sedmý ročník dostanou i složené výrazy', () => {
+    for (const grade of [6, 7] as const) {
+      const rng = createRng(`slozene-${grade}`)
+      const ctx = context({ profile: gradeProfile(grade) })
+      const texts: string[] = []
+
+      for (let target = 11; target <= 99; target++) {
+        const task = arithmeticGenerator.generateForValue(target, ctx, rng)
+        if (task !== null) texts.push(task.prompt.text)
+      }
+
+      expect(texts.length).toBeGreaterThan(50)
+      expect(texts.filter((text) => operandCount(text) >= 3).length).toBeGreaterThan(10)
+    }
+  })
+
+  it('třetí až pátý ročník složené výrazy nikdy nedostanou', () => {
+    for (const grade of [3, 4, 5] as const) {
+      const rng = createRng(`bez-slozenych-${grade}`)
+      const ctx = context({ profile: gradeProfile(grade) })
+
+      for (let target = 11; target <= 99; target++) {
+        const task = arithmeticGenerator.generateForValue(target, ctx, rng)
+        if (task === null) continue
+        expect(operandCount(task.prompt.text), task.prompt.text).toBe(2)
+        expect(task.prompt.text).not.toContain('(')
+      }
+    }
+  })
+
+  it('záporné operandy se objeví od sedmého ročníku, dřív nikdy', () => {
+    const hasNegativeOperand = (text: string) => /(^|[(\s])[−-]\d/u.test(text)
+
+    const collect = (grade: 3 | 4 | 5 | 6 | 7) => {
+      const rng = createRng(`zaporna-${grade}`)
+      const ctx = context({ profile: gradeProfile(grade) })
+      const texts: string[] = []
+      for (let target = 11; target <= 99; target++) {
+        const task = arithmeticGenerator.generateForValue(target, ctx, rng)
+        if (task !== null) texts.push(task.prompt.text)
+      }
+      return texts
+    }
+
+    for (const grade of [3, 4, 5, 6] as const) {
+      expect(collect(grade).some(hasNegativeOperand), `${grade}. ročník`).toBe(false)
+    }
+    expect(collect(7).some(hasNegativeOperand)).toBe(true)
+  })
+
+  it('každý složený výraz se nezávisle přepočítá na cílovou hodnotu', () => {
+    for (const grade of [6, 7] as const) {
+      const rng = createRng(`prepocet-${grade}`)
+      const ctx = context({ profile: gradeProfile(grade) })
+
+      for (let target = 11; target <= 99; target++) {
+        const task = arithmeticGenerator.generateForValue(target, ctx, rng)
+        if (task === null) continue
+        expect(evaluateExpression(task.prompt.text), task.prompt.text).toBe(target)
+        expect(task.value).toBe(target)
+      }
+    }
+  })
+
+  it('výsledek zůstává kladný — je to kód políčka v šifře', () => {
+    const rng = createRng('kladny-vysledek')
+    const ctx = context({ profile: gradeProfile(7) })
+
+    for (let target = 11; target <= 99; target++) {
+      const task = arithmeticGenerator.generateForValue(target, ctx, rng)
+      if (task === null) continue
+      expect(task.value).toBeGreaterThan(0)
+    }
+  })
+})
+
+describe('arithmeticGenerator — strop menšence', () => {
+  it('nevyrábí příklady typu 711 − 708, kde se odečítají skoro stejná čísla', () => {
+    for (const grade of [5, 6] as const) {
+      const profile = gradeProfile(grade)
+      const rng = createRng(`strop-${grade}`)
+      const ctx = context({ profile, mix: { sub: 1 } })
+
+      for (const target of [1, 3, 7, 10, 25]) {
+        const task = arithmeticGenerator.generateForValue(target, ctx, rng)
+        if (task === null) continue
+
+        const numbers = (task.prompt.text.match(/\d+/gu) ?? []).map(Number)
+        const minuend = numbers[0] ?? 0
+        // Menšenec se musí držet řádově u výsledku, ne u horní meze oboru.
+        expect(minuend, task.prompt.text).toBeLessThanOrEqual(target + Math.max(20, target * 2))
+      }
+    }
+  })
+
+  it('reachableValues zůstává poctivé i se stropem', () => {
+    for (const grade of [5, 6, 7] as const) {
+      const profile = gradeProfile(grade)
+      const mix: Partial<Record<OperationTag, number>> = { sub: 1 }
+      const reachable = [...arithmeticGenerator.reachableValues(profile, mix)]
+      expect(reachable.length).toBeGreaterThan(10)
+
+      for (const target of reachable.slice(0, 60)) {
+        const ctx = context({ profile, mix })
+        const task = arithmeticGenerator.generateForValue(target, ctx, createRng(`p-${target}`))
+        expect(task, `${grade}. ročník, hodnota ${target}`).not.toBeNull()
+      }
     }
   })
 })

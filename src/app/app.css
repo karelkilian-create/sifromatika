@@ -30,6 +30,66 @@ body {
   margin-bottom: 1.25rem;
 }
 
+/* ── Volba aktivity ───────────────────────────────────────────────── */
+
+.activity-nav {
+  margin-bottom: 1rem;
+}
+
+.activity-nav__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.activity-nav__item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 10rem;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  background: var(--ui-surface);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.activity-nav__item:hover:not(:disabled) {
+  border-color: var(--ui-accent);
+}
+
+.activity-nav__item--selected {
+  border-color: var(--ui-accent);
+  background: var(--ui-accent);
+  color: #fff;
+}
+
+/*
+ * Připravovaná aktivita zůstává čitelná, jen zjevně nedostupná. Kdyby zmizela,
+ * učitel by nevěděl, že se na ni má za měsíc podívat znovu.
+ */
+.activity-nav__item--planned {
+  border-style: dashed;
+  background: transparent;
+  color: var(--ui-muted);
+  cursor: not-allowed;
+}
+
+.activity-nav__label {
+  font-weight: 600;
+}
+
+.activity-nav__tagline {
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+
 .app__title {
   margin: 0;
   font-size: 1.6rem;

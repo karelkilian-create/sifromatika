@@ -1,16 +1,33 @@
 import { describe, expect, it } from 'vitest'
+import type {
+  CipherGridProject,
+  ProjectConfig,
+  SequenceSheetProject,
+} from '../core/model/index.js'
 import {
   defaultConfig,
   generateCipherGrid,
   sheetChecksum,
 } from '../activities/cipher-grid/index.js'
-import { fromConfig, toConfig } from '../features/editor/state.js'
+import {
+  generateSequenceSheet,
+  sheetChecksum as sequenceChecksum,
+} from '../activities/sequence-sheet/index.js'
+import { INITIAL_EDITOR_STATE, fromConfig, toConfig } from '../features/editor/state.js'
 import { parseSifra, serializeSifra, suggestFileName } from './sifra.js'
 
 function sheetOf(config: ReturnType<typeof defaultConfig>) {
   const outcome = generateCipherGrid(config)
   if (!outcome.ok) throw new Error(outcome.reason)
   return outcome.sheet
+}
+
+/** Zúžení unie v testech, které pracují výhradně se šifrou. */
+function asCipher(config: ProjectConfig): CipherGridProject {
+  if (config.activity !== 'cipher-grid') {
+    throw new Error(`Očekávána šifra, přišlo ${config.activity}`)
+  }
+  return config
 }
 
 describe('.sifra — uložení a načtení', () => {
@@ -22,7 +39,7 @@ describe('.sifra — uložení a načtení', () => {
     expect(parsed.ok).toBe(true)
     if (!parsed.ok) return
 
-    const restored = sheetOf(parsed.file.config)
+    const restored = sheetOf(asCipher(parsed.file.config))
     expect(sheetChecksum(restored)).toBe(sheetChecksum(original))
     expect(restored.table.cells).toEqual(original.table.cells)
     expect(restored.slots.map((s) => s.task.prompt.text)).toEqual(
@@ -44,10 +61,13 @@ describe('.sifra — uložení a načtení', () => {
 
   it('projde celým kolečkem formulář → soubor → formulář', () => {
     const before = { ...toConfig({
+      activity: 'cipher-grid',
       message: 'ZLATÝ KLÍČ',
       grade: 5,
       title: 'Lov pirátského pokladu',
       operations: { add: true, sub: false, mul: true, div: false },
+      sequences: true,
+      taskCount: 12,
       decoyDensity: 0.5,
       distinctCellPerOccurrence: false,
       printTitleOnWorksheet: true,
@@ -63,9 +83,63 @@ describe('.sifra — uložení a načtení', () => {
     expect(round.state.grade).toBe(5)
     expect(round.state.title).toBe('Lov pirátského pokladu')
     expect(round.state.operations).toEqual({ add: true, sub: false, mul: true, div: false })
+    expect(round.state.sequences).toBe(true)
     expect(round.state.decoyDensity).toBe(0.5)
     expect(round.state.distinctCellPerOccurrence).toBe(false)
     expect(round.state.printTitleOnWorksheet).toBe(true)
+  })
+
+  it('projde kolečkem i list číselných řad', () => {
+    const before = toConfig(
+      {
+        ...INITIAL_EDITOR_STATE,
+        activity: 'sequence-sheet',
+        grade: 5,
+        taskCount: 9,
+        title: 'Rozcvička na řady',
+        operations: { add: true, sub: true, mul: false, div: false },
+      },
+      'kolecko-rady',
+    )
+
+    const parsed = parseSifra(serializeSifra(before, 'abc'))
+    expect(parsed.ok).toBe(true)
+    if (!parsed.ok) return
+    expect(parsed.file.config.activity).toBe('sequence-sheet')
+
+    const round = fromConfig(parsed.file.config)
+    expect(round.seed).toBe('kolecko-rady')
+    expect(round.state.activity).toBe('sequence-sheet')
+    expect(round.state.grade).toBe(5)
+    expect(round.state.taskCount).toBe(9)
+    expect(round.state.title).toBe('Rozcvička na řady')
+    expect(round.state.operations).toEqual({ add: true, sub: true, mul: false, div: false })
+
+    // A list z načtené konfigurace musí být bit shodný s původním.
+    const original = generateSequenceSheet(before as SequenceSheetProject)
+    const restored = generateSequenceSheet(parsed.file.config as SequenceSheetProject)
+    expect(original.ok && restored.ok).toBe(true)
+    if (!original.ok || !restored.ok) return
+    expect(sequenceChecksum(restored.sheet)).toBe(sequenceChecksum(original.sheet))
+  })
+
+  it('přepnutí aktivity nesmaže rozdělanou tajenku', () => {
+    // Učitelka si napíše tajenku, zvědavě klikne na Číselné řady a vrátí se.
+    // Kdyby tam tajenka nebyla, podruhé už nikam neklikne.
+    const withMessage = { ...INITIAL_EDITOR_STATE, message: 'ZLATÝ KLÍČ' }
+    const switched = { ...withMessage, activity: 'sequence-sheet' as const }
+    const back = { ...switched, activity: 'cipher-grid' as const }
+
+    const config = toConfig(back, 'prepnuti')
+    expect(config.activity).toBe('cipher-grid')
+    expect(asCipher(config).payload.message).toBe('ZLATÝ KLÍČ')
+  })
+
+  it('odmítne soubor s neznámou aktivitou místo tichého převodu na šifru', () => {
+    const parsed = parseSifra(
+      '{"format":"sifromatika","schemaVersion":1,"checksum":"a","config":{"schemaVersion":1,"generatorVersion":1,"appVersion":"9.9","activity":"bingo","seed":"s","locale":"cs","payload":{"difficulty":{"grade":4},"taskMix":{"add":1},"output":{}}}}',
+    )
+    expect(parsed.ok).toBe(false)
   })
 
   it('změna generátoru se pozná podle kontrolního součtu', () => {
@@ -74,7 +148,7 @@ describe('.sifra — uložení a načtení', () => {
     const parsed = parseSifra(text)
     expect(parsed.ok).toBe(true)
     if (!parsed.ok) return
-    expect(sheetChecksum(sheetOf(parsed.file.config))).not.toBe(parsed.file.checksum)
+    expect(sheetChecksum(sheetOf(asCipher(parsed.file.config)))).not.toBe(parsed.file.checksum)
   })
 })
 
@@ -108,11 +182,29 @@ describe('.sifra — nedůvěryhodný vstup', () => {
     )
     expect(parsed.ok).toBe(true)
     if (!parsed.ok) return
-    expect(parsed.file.config.payload.cipher.decoyDensity).toBe(0.35)
-    expect(parsed.file.config.payload.output.printTitleOnWorksheet).toBe(false)
+    expect(asCipher(parsed.file.config).payload.cipher.decoyDensity).toBe(0.35)
+    expect(asCipher(parsed.file.config).payload.output.printTitleOnWorksheet).toBe(false)
     // Profil obtížnosti se odvodí z ročníku, ne ze souboru.
-    expect(parsed.file.config.payload.difficulty.multiplicationTables.length).toBeGreaterThan(0)
-    expect(generateCipherGrid(parsed.file.config).ok).toBe(true)
+    expect(asCipher(parsed.file.config).payload.difficulty.multiplicationTables.length).toBeGreaterThan(0)
+    expect(generateCipherGrid(asCipher(parsed.file.config)).ok).toBe(true)
+  })
+
+  it('soubor bez generatorMix zůstane u aritmetiky, i když přibyly další generátory', () => {
+    // Tenhle soubor vznikl dřív, než existovaly číselné řady. Kdyby se mu
+    // doplnil dnešní default, vytiskl by po letech jiný list — a tím padá
+    // třetí bod vize („otevřu loňskou aktivitu a vytisknu ji beze změny").
+    const parsed = parseSifra(
+      '{"format":"sifromatika","schemaVersion":1,"checksum":"a","config":{"schemaVersion":1,"generatorVersion":1,"appVersion":"0.1","activity":"cipher-grid","seed":"s","locale":"cs","payload":{"message":"AHOJ","difficulty":{"grade":5},"taskMix":{"add":1,"sub":1,"mul":1,"div":1},"cipher":{"strategy":"grid-coord"},"output":{}}}}',
+    )
+    expect(parsed.ok).toBe(true)
+    if (!parsed.ok) return
+
+    expect(asCipher(parsed.file.config).payload.generatorMix).toEqual({ arithmetic: 1 })
+
+    const outcome = generateCipherGrid(asCipher(parsed.file.config))
+    expect(outcome.ok).toBe(true)
+    if (!outcome.ok) return
+    expect(outcome.sheet.slots.every((slot) => slot.task.generatorId === 'arithmetic')).toBe(true)
   })
 
   it('nespadne na libovolném balastu', () => {

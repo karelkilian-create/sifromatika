@@ -52,23 +52,105 @@ export function WorksheetView({
             rámečku se stejným číslem, jaké má příklad.
           </>
         )}
+        {slots.some((slot) => slot.task.prompt.kind === 'sequence') && (
+          <> U číselné řady doplň číslo, které patří místo otazníku.</>
+        )}
       </p>
 
       <CipherTableView table={table} />
 
       <h2 className="sheet__section-heading">Příklady</h2>
-      <ol className={`task-list${columns === 2 ? ' task-list--two-columns' : ''}`}>
-        {slots.map((slot, index) => (
-          <li className="task-list__item" key={`${slot.task.id}-${index}`}>
-            <span className="task-list__number">{index + 1}.</span>
-            <span className="task-list__prompt">{slot.task.prompt.text} =</span>
-            <span className="task-list__blank" />
-          </li>
-        ))}
-      </ol>
+      <TaskList tasks={slots.map((slot) => slot.task)} columns={columns} />
 
       <h2 className="sheet__section-heading">Tajenka</h2>
       <AnswerRow wordLengths={wordLengths} />
+    </article>
+  )
+}
+
+/**
+ * Očíslovaný seznam úloh s linkou na odpověď.
+ *
+ * Sdílený mezi aktivitami schválně: dítě má na obou listech vidět totéž,
+ * a kdyby se sazba lišila, poznalo by to dřív než my.
+ */
+export function TaskList({
+  tasks,
+  columns = 2,
+}: {
+  tasks: readonly Task[]
+  columns?: 1 | 2
+}) {
+  return (
+    <ol className={`task-list${columns === 2 ? ' task-list--two-columns' : ''}`}>
+      {tasks.map((task, index) => {
+        const isSequence = task.prompt.kind === 'sequence'
+        return (
+          <li
+            className={`task-list__item${isSequence ? ' task-list__item--sequence' : ''}`}
+            key={`${task.id}-${index}`}
+          >
+            <span className="task-list__number">{index + 1}.</span>
+            {/* Řada už otazník obsahuje — rovnítko za ní by bylo navíc. */}
+            <span className="task-list__prompt">
+              {isSequence ? task.prompt.text : `${task.prompt.text} =`}
+            </span>
+            <span className="task-list__blank" />
+          </li>
+        )
+      })}
+    </ol>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// List samotných úloh (bez šifry)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface TaskSheetViewProps {
+  title: string
+  /** Zadání pro děti. Liší se podle toho, co je na listu. */
+  instructions: string
+  tasks: readonly Task[]
+  columns?: 1 | 2
+}
+
+export function TaskSheetView({ title, instructions, tasks, columns = 2 }: TaskSheetViewProps) {
+  return (
+    <article className="sheet">
+      <h1 className="sheet__title">{title}</h1>
+      <p className="sheet__instructions">{instructions}</p>
+      <TaskList tasks={tasks} columns={columns} />
+    </article>
+  )
+}
+
+export function TaskSolutionView({ title, tasks }: { title: string; tasks: readonly Task[] }) {
+  return (
+    <article className="sheet">
+      <h1 className="sheet__title">{title} — řešení</h1>
+      <table className="solution-table">
+        <thead>
+          <tr>
+            <th scope="col">Č.</th>
+            <th scope="col">Zadání</th>
+            <th scope="col">Výsledek</th>
+            {/* Pravidlo je tu kvůli opravování: u řady se z výsledku samotného
+                nepozná, jestli dítě uvažovalo správně, nebo mělo štěstí. */}
+            <th scope="col">Pravidlo</th>
+          </tr>
+        </thead>
+        <tbody>
+          {tasks.map((task, index) => (
+            <tr key={`${task.id}-${index}`}>
+              <td>{index + 1}.</td>
+              <td>{task.prompt.text}</td>
+              <td>{task.value}</td>
+              <td>{task.solutionSteps[0]?.text ?? '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </article>
   )
 }

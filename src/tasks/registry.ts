@@ -8,8 +8,15 @@
 
 import type { TaskGenerator } from '../core/model/index.js'
 import { arithmeticGenerator } from './arithmetic/index.js'
+import { sequenceGenerator } from './sequence/index.js'
 
-export const taskGenerators: readonly TaskGenerator[] = [arithmeticGenerator]
+/**
+ * ⚠ Samotné přidání generátoru do tohohle pole NESMÍ změnit výstup dosud
+ *   uložených aktivit. O tom, které generátory se pro konkrétní list použijí,
+ *   rozhoduje `generatorMix` v konfiguraci — a jeho absence znamená pouze
+ *   aritmetiku. Viz `CipherGridConfig.generatorMix`.
+ */
+export const taskGenerators: readonly TaskGenerator[] = [arithmeticGenerator, sequenceGenerator]
 
 export function findTaskGenerator(id: string): TaskGenerator | undefined {
   return taskGenerators.find((generator) => generator.id === id)

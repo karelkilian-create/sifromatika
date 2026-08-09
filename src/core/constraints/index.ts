@@ -48,11 +48,54 @@ export function gradeProfile(grade: Grade): DifficultyProfile {
         divisionExactOnly: true,
         maxOperands: 2,
       }
+    case 6:
+      // Šestá třída: obor se rozšiřuje a přichází pořadí operací se závorkami.
+      // Záporná čísla ještě ne — ta jsou látka sedmého ročníku.
+      return {
+        grade,
+        numberRange: { min: 0, max: 10_000 },
+        allowNegatives: false,
+        crossesTen: true,
+        multiplicationTables: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+        divisionExactOnly: true,
+        maxOperands: 3,
+      }
+    case 7:
+      // Sedmá třída: celá čísla, tedy poprvé i záporné operandy.
+      return {
+        grade,
+        numberRange: { min: -1000, max: 1000 },
+        allowNegatives: true,
+        crossesTen: true,
+        multiplicationTables: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+        divisionExactOnly: true,
+        maxOperands: 3,
+      }
     default:
-      // Ročníky 6.–9. jsou mimo rozsah 0.1 (viz docs/rozsah-0.1.md §2).
-      // Vracíme profil 5. ročníku, aby typ zůstal totální a nic nespadlo.
-      return { ...gradeProfile(5), grade }
+      // ⚠ 8. a 9. ročník zatím vlastní profil NEMAJÍ, a proto se v UI ani
+      //   nenabízejí. Tahle větev je jen pojistka totality typu.
+      //
+      //   Přidat je do rozbalovátka dřív, než pro ně vznikne obsah (mocniny,
+      //   odmocniny, desetinná čísla, rovnice), by znamenalo dát osmákovi
+      //   sedmáckou matematiku pod nadpisem „8. třída". Vygenerovaný list by
+      //   byl matematicky správně, takže by to neodhalila ani verifikace —
+      //   jen učitel, až by ho rozdal.
+      return { ...gradeProfile(7), grade }
   }
+}
+
+/**
+ * Kolik úloh smí být na listu, který si počet řídí sám (list řad, později bingo).
+ *
+ * Meze jsou tady, a ne v aktivitě, protože je potřebuje i parser `.sifra`:
+ * počet z nedůvěryhodného souboru se musí ořezat na totéž, co dovolí UI.
+ */
+export const TASK_COUNT_LIMITS = { min: 4, max: 30, fallback: 12 } as const
+
+export function clampTaskCount(value: unknown): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return TASK_COUNT_LIMITS.fallback
+  const rounded = Math.round(value)
+  return Math.min(Math.max(rounded, TASK_COUNT_LIMITS.min), TASK_COUNT_LIMITS.max)
 }
 
 export interface GridChoice {

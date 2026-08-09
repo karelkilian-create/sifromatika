@@ -10,13 +10,24 @@
  * (dlouhá tajenka v malém oboru čísel je legitimně neřešitelná), ale NESMÍ
  * nikdy vrátit list, který neprošel verifikací. Učiteli se rozbitý list
  * nesmí dostat do ruky ani omylem.
+ *
+ * U číselných řad k tomu přibývá druhý druh vady: řada může být matematicky
+ * v pořádku a přesto vadná, když na ni sedí dvě různá pravidla. Proto se
+ * v části konfigurací řady zapínají a u každé se pravidlo odvozuje zpátky
+ * z vytištěných čísel.
  */
 
 import { describe, expect, it } from 'vitest'
 import fc from 'fast-check'
+import {
+  defaultSequenceSheetConfig,
+  generateSequenceSheet,
+} from '../../src/activities/sequence-sheet/index.js'
+import { TASK_COUNT_LIMITS } from '../../src/core/constraints/index.js'
 import { createRng } from '../../src/core/rng/index.js'
 import { plainLetters } from '../../src/core/text/index.js'
-import { decode, evaluateExpression } from '../../src/core/verify/index.js'
+import { inferMissing, parseSequence } from '../../src/core/sequence/index.js'
+import { decode, evaluateExpression, hasAdjacentOperators } from '../../src/core/verify/index.js'
 import { defaultConfig, generateCipherGrid, worksheetTitle } from '../../src/activities/cipher-grid/index.js'
 import type { Grade, OperationTag, ProjectConfig } from '../../src/core/model/index.js'
 import type { Rng } from '../../src/core/rng/index.js'
@@ -33,7 +44,7 @@ const OPERATIONS: OperationTag[] = ['add', 'sub', 'mul', 'div']
 function randomConfig(rng: Rng, index: number): ProjectConfig {
   const wordCount = rng.int(1, 5)
   const message = Array.from({ length: wordCount }, () => rng.pick(WORDS)).join(' ')
-  const grade = rng.pick([3, 4, 5]) as Grade
+  const grade = rng.pick([3, 4, 5, 6, 7]) as Grade
 
   const config = defaultConfig(message, grade, `prop-${index}`)
 
@@ -43,6 +54,11 @@ function randomConfig(rng: Rng, index: number): ProjectConfig {
     mix[operation] = rng.int(1, 3)
   }
   config.payload.taskMix = mix
+  // Aritmetika zůstává vždycky zapnutá — stejně jako v UI, kde jsou řady
+  // příměs, ne náhrada. Bez záložního generátoru by test měřil něco jiného.
+  config.payload.generatorMix = rng.chance(0.5)
+    ? { arithmetic: rng.int(1, 3), sequence: rng.int(1, 3) }
+    : { arithmetic: 1 }
   config.payload.cipher.decoyDensity = rng.int(0, 60) / 100
   config.payload.cipher.distinctCellPerOccurrence = rng.chance(0.8)
   // Obě šifrovací strategie musí obstát ve stejném testu.
@@ -58,6 +74,7 @@ describe('DoD 0.1 bod 6 — 10 000 konfigurací', () => {
     const rng = createRng('dod-6')
     let generated = 0
     let refused = 0
+    let sequenceTasks = 0
 
     for (let index = 0; index < 10_000; index++) {
       const config = randomConfig(rng, index)
@@ -85,9 +102,24 @@ describe('DoD 0.1 bod 6 — 10 000 konfigurací', () => {
       const values = sheet.slots.map((slot) => slot.task.value)
       expect(decode(sheet.table, values)).toBe(plainLetters(sheet.message))
 
-      // 3. Každý příklad se dá spočítat a ukazuje na svou buňku.
+      // 3. Každá úloha se dá vyřešit a ukazuje na svou buňku. U řady je
+      //    součástí řešitelnosti i to, že řešení existuje právě jedno.
       for (const slot of sheet.slots) {
-        expect(evaluateExpression(slot.task.prompt.text)).toBe(slot.code)
+        const prompt = slot.task.prompt
+        const where = `konfigurace ${index}: ${prompt.text}`
+
+        if (prompt.kind === 'sequence') {
+          sequenceTasks++
+          const inference = inferMissing(parseSequence(prompt.text))
+          expect(inference.kind, where).toBe('unique')
+          if (inference.kind !== 'unique') continue
+          expect(inference.value, where).toBe(slot.code)
+        } else {
+          expect(evaluateExpression(prompt.text), where).toBe(slot.code)
+          // Zápis, ne jen výsledek: `−7 · −2` se spočítá správně a přesto
+          // je to na listu pro děti chyba.
+          expect(hasAdjacentOperators(prompt.text), where).toBe(false)
+        }
       }
 
       // 4. Počet úloh sedí s délkou tajenky.
@@ -100,13 +132,61 @@ describe('DoD 0.1 bod 6 — 10 000 konfigurací', () => {
     // Kdyby generátor odmítal skoro všechno, test by byl zelený a prázdný.
     expect(generated + refused).toBe(10_000)
     expect(generated / 10_000).toBeGreaterThan(0.9)
+    // Kdyby řady z listů vypadly úplně, byla by celá jejich část testu tichá.
+    expect(sequenceTasks).toBeGreaterThan(1000)
+  })
+})
+
+describe('DoD 0.1 bod 6 — totéž pro list číselných řad', () => {
+  it('nevrátí ani jeden neverifikovaný list', { timeout: 120_000 }, () => {
+    const rng = createRng('dod-6-rady')
+    let generated = 0
+    let checked = 0
+
+    for (let index = 0; index < 2_000; index++) {
+      const grade = rng.pick([3, 4, 5, 6, 7]) as Grade
+      const count = rng.int(TASK_COUNT_LIMITS.min, TASK_COUNT_LIMITS.max)
+      const config = defaultSequenceSheetConfig(grade, `rady-${index}`, count)
+
+      const enabled = OPERATIONS.filter(() => rng.chance(0.6))
+      const mix: Partial<Record<OperationTag, number>> = {}
+      for (const operation of enabled.length > 0 ? enabled : ['add' as const]) {
+        mix[operation] = rng.int(1, 3)
+      }
+      config.payload.taskMix = mix
+
+      const outcome = generateSequenceSheet(config)
+      if (!outcome.ok) {
+        expect(outcome.reason.length, `konfigurace ${index}`).toBeGreaterThan(0)
+        continue
+      }
+
+      generated++
+      const sheet = outcome.sheet
+      expect(sheet.verification, `konfigurace ${index}`).toEqual({ ok: true })
+
+      // Dvakrát tatáž řada na jednom listu vypadá jako chyba tisku.
+      const texts = sheet.tasks.map((task) => task.prompt.text)
+      expect(new Set(texts).size, `konfigurace ${index}`).toBe(texts.length)
+
+      for (const task of sheet.tasks) {
+        checked++
+        const inference = inferMissing(parseSequence(task.prompt.text))
+        expect(inference.kind, `konfigurace ${index}: ${task.prompt.text}`).toBe('unique')
+        if (inference.kind !== 'unique') continue
+        expect(inference.value, `konfigurace ${index}: ${task.prompt.text}`).toBe(task.value)
+      }
+    }
+
+    expect(generated / 2_000).toBeGreaterThan(0.9)
+    expect(checked).toBeGreaterThan(10_000)
   })
 })
 
 describe('Invarianty nad libovolným vstupem', () => {
   it('nespadne ani na nesmyslné tajence', () => {
     fc.assert(
-      fc.property(fc.string(), fc.constantFrom(3, 4, 5), fc.string({ minLength: 1 }), (message, grade, seed) => {
+      fc.property(fc.string(), fc.constantFrom(3, 4, 5, 6, 7), fc.string({ minLength: 1 }), (message, grade, seed) => {
         const outcome = generateCipherGrid(defaultConfig(message, grade as Grade, seed))
         if (outcome.ok) {
           expect(outcome.sheet.verification).toEqual({ ok: true })

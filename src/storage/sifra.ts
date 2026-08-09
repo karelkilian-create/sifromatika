@@ -14,12 +14,15 @@
  *   a nikde se nepoužije `as` bez ověření.
  */
 
-import { gradeProfile } from '../core/constraints/index.js'
+import { clampTaskCount, gradeProfile } from '../core/constraints/index.js'
 import type {
+  CipherGridConfig,
   CipherStrategyId,
   Grade,
   OperationTag,
+  OutputConfig,
   ProjectConfig,
+  SequenceSheetConfig,
 } from '../core/model/index.js'
 
 export const SIFRA_FORMAT = 'sifromatika'
@@ -50,6 +53,16 @@ export type SifraParseResult =
 const GRADES: Grade[] = [3, 4, 5, 6, 7, 8, 9]
 const STRATEGIES: CipherStrategyId[] = ['grid-coord', 'grid-linear']
 const OPERATIONS: OperationTag[] = ['add', 'sub', 'mul', 'div']
+
+/**
+ * Známá id generátorů úloh.
+ *
+ * Vypsané ručně, stejně jako `STRATEGIES` a `OPERATIONS` — parser
+ * nedůvěryhodného vstupu nemá sahat do registru generátorů. Neznámé id ze
+ * souboru z novější verze se tiše zahodí; horší je spadnout na souboru,
+ * který kolegyně poslala e-mailem.
+ */
+const GENERATORS = ['arithmetic', 'sequence']
 
 export function parseSifra(text: string): SifraParseResult {
   let raw: unknown
@@ -82,28 +95,81 @@ export function parseSifra(text: string): SifraParseResult {
 function parseConfig(raw: unknown): ProjectConfig | null {
   if (!isRecord(raw)) return null
   if (raw.schemaVersion !== 1) return null
-  if (raw.activity !== 'cipher-grid') return null
   if (typeof raw.seed !== 'string' || raw.seed === '') return null
   if (typeof raw.generatorVersion !== 'number') return null
   if (typeof raw.appVersion !== 'string') return null
   if (raw.title !== undefined && typeof raw.title !== 'string') return null
 
-  const payload = parsePayload(raw.payload)
-  if (payload === null) return null
-
-  return {
-    schemaVersion: 1,
+  const base = {
+    schemaVersion: 1 as const,
     generatorVersion: raw.generatorVersion,
     appVersion: raw.appVersion,
-    activity: 'cipher-grid',
     seed: raw.seed,
-    locale: 'cs',
+    locale: 'cs' as const,
     title: raw.title,
-    payload,
+  }
+
+  // Neznámá aktivita = soubor z novější Šifromatiky. Tichý převod na šifru by
+  // učiteli podstrčil úplně jiný list, než jaký ukládal.
+  if (raw.activity === 'cipher-grid') {
+    const payload = parseCipherGridPayload(raw.payload)
+    return payload === null ? null : { ...base, activity: 'cipher-grid', payload }
+  }
+  if (raw.activity === 'sequence-sheet') {
+    const payload = parseSequenceSheetPayload(raw.payload)
+    return payload === null ? null : { ...base, activity: 'sequence-sheet', payload }
+  }
+  return null
+}
+
+/** Váhy operací. `null` = ani jedna povolená, což je neplatný stav. */
+function parseTaskMix(raw: unknown): Partial<Record<OperationTag, number>> | null {
+  const taskMix: Partial<Record<OperationTag, number>> = {}
+  if (isRecord(raw)) {
+    for (const operation of OPERATIONS) {
+      const weight = raw[operation]
+      if (typeof weight === 'number' && weight > 0) taskMix[operation] = weight
+    }
+  }
+  return Object.keys(taskMix).length === 0 ? null : taskMix
+}
+
+function parseOutput(raw: Record<string, unknown>, printTitleByDefault: boolean): OutputConfig {
+  return {
+    includeSolution: raw.includeSolution !== false,
+    paper: 'A4',
+    columns: raw.columns === 1 ? 1 : 2,
+    printTitleOnWorksheet:
+      raw.printTitleOnWorksheet === undefined
+        ? printTitleByDefault
+        : raw.printTitleOnWorksheet === true,
   }
 }
 
-function parsePayload(raw: unknown): ProjectConfig['payload'] | null {
+function parseSequenceSheetPayload(raw: unknown): SequenceSheetConfig | null {
+  if (!isRecord(raw)) return null
+
+  const difficulty = raw.difficulty
+  if (!isRecord(difficulty)) return null
+  const grade = difficulty.grade
+  if (typeof grade !== 'number' || !GRADES.includes(grade as Grade)) return null
+
+  const output = raw.output
+  if (!isRecord(output)) return null
+
+  const taskMix = parseTaskMix(raw.taskMix)
+  if (taskMix === null) return null
+
+  return {
+    taskCount: clampTaskCount(raw.taskCount),
+    difficulty: gradeProfile(grade as Grade),
+    taskMix,
+    // List řad nemá tajenku, takže se název tiskne, pokud soubor neříká jinak.
+    output: parseOutput(output, true),
+  }
+}
+
+function parseCipherGridPayload(raw: unknown): CipherGridConfig | null {
   if (!isRecord(raw)) return null
   if (typeof raw.message !== 'string') return null
 
@@ -121,14 +187,19 @@ function parsePayload(raw: unknown): ProjectConfig['payload'] | null {
   const output = raw.output
   if (!isRecord(output)) return null
 
-  const taskMix: Partial<Record<OperationTag, number>> = {}
-  if (isRecord(raw.taskMix)) {
-    for (const operation of OPERATIONS) {
-      const weight = raw.taskMix[operation]
-      if (typeof weight === 'number' && weight > 0) taskMix[operation] = weight
+  const taskMix = parseTaskMix(raw.taskMix)
+  if (taskMix === null) return null
+
+  // Chybí-li `generatorMix`, soubor vznikl dřív, než existovaly další
+  // generátory. Doplnit sem dnešní default by znamenalo, že se loni uložená
+  // aktivita vytiskne jinak — proto výslovně jen aritmetika.
+  const generatorMix: Record<string, number> = {}
+  if (isRecord(raw.generatorMix)) {
+    for (const id of GENERATORS) {
+      const weight = raw.generatorMix[id]
+      if (typeof weight === 'number' && weight > 0) generatorMix[id] = weight
     }
   }
-  if (Object.keys(taskMix).length === 0) return null
 
   return {
     message: raw.message,
@@ -138,18 +209,15 @@ function parsePayload(raw: unknown): ProjectConfig['payload'] | null {
     // Až 0.2 přidá ruční úpravy profilu, uloží se jako výslovný override.
     difficulty: gradeProfile(grade as Grade),
     taskMix,
+    generatorMix: Object.keys(generatorMix).length > 0 ? generatorMix : { arithmetic: 1 },
     cipher: {
       strategy: cipher.strategy as CipherStrategyId,
       grid: parseGrid(cipher.grid),
       distinctCellPerOccurrence: cipher.distinctCellPerOccurrence !== false,
       decoyDensity: clamp01(cipher.decoyDensity, 0.35),
     },
-    output: {
-      includeSolution: output.includeSolution !== false,
-      paper: 'A4',
-      columns: output.columns === 1 ? 1 : 2,
-      printTitleOnWorksheet: output.printTitleOnWorksheet === true,
-    },
+    // Šifra má co prozradit, takže se název na žákovský list defaultně netiskne.
+    output: parseOutput(output, false),
   }
 }
 

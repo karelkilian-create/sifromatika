@@ -133,6 +133,23 @@
   border-bottom: 0.3mm solid var(--sheet-rule);
 }
 
+/*
+ * Číselná řada je čtyřikrát širší než příklad („4, 10, 16, 22, ?“ proti
+ * „18 + 6“) a sloupec na dvousloupcové A4 má jen asi 85 mm. Menší stupeň
+ * a nezalomitelné zadání ji tam udrží vcelku; zalomená řada je nečitelná.
+ */
+.task-list__item--sequence .task-list__prompt {
+  font-size: 11pt;
+  white-space: nowrap;
+  /* Členy odděluje mezera (čárka je desetinný oddělovač), takže musí být
+     zřetelně širší než mezera mezi číslicemi — jinak čísla splynou. */
+  word-spacing: 0.45em;
+}
+
+.task-list__item--sequence .task-list__blank {
+  min-width: 10mm;
+}
+
 /* ── Řádek na tajenku ─────────────────────────────────────────────── */
 
 .answer-row {

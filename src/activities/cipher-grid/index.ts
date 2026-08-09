@@ -11,9 +11,9 @@
 import { hashString } from '../../core/checksum/index.js'
 import { gradeProfile } from '../../core/constraints/index.js'
 import type {
+  CipherGridProject,
   CipherTable,
   Grade,
-  ProjectConfig,
   RelaxationLog,
   Task,
   VerificationReport,
@@ -33,7 +33,7 @@ export interface CipherGridSlot {
 }
 
 export interface CipherGridSheet {
-  config: ProjectConfig
+  config: CipherGridProject
   message: NormalizedMessage
   table: CipherTable
   slots: CipherGridSlot[]
@@ -50,7 +50,7 @@ export type CipherGridOutcome =
   | { ok: false; reason: string; relaxations: RelaxationLog[] }
 
 /** Výchozí konfigurace: učitel zadá tajenku a ročník, zbytek se odvodí. */
-export function defaultConfig(message: string, grade: Grade, seed: string): ProjectConfig {
+export function defaultConfig(message: string, grade: Grade, seed: string): CipherGridProject {
   return {
     schemaVersion: 1,
     generatorVersion: GENERATOR_VERSION,
@@ -62,6 +62,9 @@ export function defaultConfig(message: string, grade: Grade, seed: string): Proj
       message,
       difficulty: gradeProfile(grade),
       taskMix: { add: 1, sub: 1, mul: 1, div: 1 },
+      // Číselné řady jsou ve výchozím stavu vypnuté. Zapnout je znamená změnit
+      // obsah listu, což je rozhodnutí učitele — ne vedlejší efekt aktualizace.
+      generatorMix: { arithmetic: 1 },
       cipher: {
         strategy: 'grid-coord',
         distinctCellPerOccurrence: true,
@@ -83,12 +86,12 @@ const MAX_ATTEMPTS = 6
  * Vygeneruje list. Při selhání verifikace to zkusí znovu s odvozeným seedem —
  * teprve po vyčerpání pokusů to vzdá. Neověřený list se ven nikdy nedostane.
  */
-export function generateCipherGrid(config: ProjectConfig): CipherGridOutcome {
+export function generateCipherGrid(config: CipherGridProject): CipherGridOutcome {
   let lastReason = 'Neznámá chyba generování.'
   let lastRelaxations: RelaxationLog[] = []
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-    const attemptConfig: ProjectConfig =
+    const attemptConfig: CipherGridProject =
       attempt === 0 ? config : { ...config, seed: `${config.seed}#${attempt}` }
     const outcome = generateOnce(attemptConfig)
 
@@ -110,7 +113,7 @@ export function generateCipherGrid(config: ProjectConfig): CipherGridOutcome {
   return { ok: false, reason: lastReason, relaxations: lastRelaxations }
 }
 
-function generateOnce(config: ProjectConfig): CipherGridOutcome {
+function generateOnce(config: CipherGridProject): CipherGridOutcome {
   const rng = createRng(`${config.generatorVersion}|${config.seed}`)
   const payload = config.payload
   const message = normalizeMessage(payload.message)
@@ -124,7 +127,12 @@ function generateOnce(config: ProjectConfig): CipherGridOutcome {
     })
   }
 
-  const generators = taskGenerators.filter((generator) => generator.supports(payload.difficulty))
+  // Chybějící `generatorMix` = jen aritmetika. Bez tohohle defaultu by každý
+  // nový generátor v registru přepsal výstup všech dřív uložených `.sifra`.
+  const generatorMix = payload.generatorMix ?? { arithmetic: 1 }
+  const generators = taskGenerators.filter(
+    (generator) => generator.supports(payload.difficulty) && (generatorMix[generator.id] ?? 0) > 0,
+  )
   if (generators.length === 0) {
     return { ok: false, reason: 'Pro tuto obtížnost není k dispozici žádný generátor úloh.', relaxations }
   }
@@ -157,7 +165,7 @@ function generateOnce(config: ProjectConfig): CipherGridOutcome {
 
   for (const code of cipher.artifact.requiredValues) {
     const context = { profile: payload.difficulty, mix: payload.taskMix, usedExpressions }
-    let task = pickGenerator(generators, rng).generateForValue(code, context, rng)
+    let task = pickGenerator(generators, generatorMix, rng).generateForValue(code, context, rng)
 
     // Nepovedlo se kvůli kolizi s už použitým výrazem? Zkusíme ostatní
     // generátory, a teprve pak povolíme opakování — opakovaný příklad je
@@ -169,8 +177,15 @@ function generateOnce(config: ProjectConfig): CipherGridOutcome {
       }
     }
     if (task === null) {
+      // Poslední pokus se musí zeptat VŠECH generátorů, ne jednoho vylosovaného.
+      // Každý umí jiný obor hodnot — 14 vyrobí aritmetika jako 2 · 7, ale
+      // pětičlenná řada se s ním do malého oboru nevejde. Zeptat se jen řad
+      // a pak to vzdát by zahodilo hotový list kvůli jediné úloze.
       const relaxed = { profile: payload.difficulty, mix: payload.taskMix, usedExpressions: new Set<string>() }
-      task = pickGenerator(generators, rng).generateForValue(code, relaxed, rng)
+      for (const generator of generators) {
+        task = generator.generateForValue(code, relaxed, rng)
+        if (task !== null) break
+      }
       if (task !== null) {
         relaxations.push({
           level: 'silent',
@@ -193,6 +208,7 @@ function generateOnce(config: ProjectConfig): CipherGridOutcome {
     slots: slots.map((slot) => ({
       taskText: slot.task.prompt.text,
       declaredValue: slot.task.value,
+      kind: slot.task.prompt.kind,
     })),
     expectedMessage: plainLetters(message),
   })
@@ -212,8 +228,21 @@ function generateOnce(config: ProjectConfig): CipherGridOutcome {
   }
 }
 
-function pickGenerator(generators: readonly (typeof taskGenerators)[number][], rng: ReturnType<typeof createRng>) {
-  return generators.length === 1 ? generators[0]! : rng.pick(generators)
+/**
+ * Který generátor dostane tuhle hodnotu.
+ *
+ * ⚠ Jediný generátor se vrací BEZ dotazu na `rng`. Není to optimalizace:
+ *   kdyby se i v tom případě losovalo, posunula by se celá sekvence
+ *   náhodných čísel a listy uložené před přidáním dalších generátorů by se
+ *   vytiskly jinak.
+ */
+function pickGenerator(
+  generators: readonly (typeof taskGenerators)[number][],
+  weights: Readonly<Record<string, number>>,
+  rng: ReturnType<typeof createRng>,
+) {
+  if (generators.length === 1) return generators[0]!
+  return rng.weighted(generators.map((generator) => [generator, weights[generator.id] ?? 1] as const))
 }
 
 /** Název odvozený z tajenky. Slouží jen ke správě souborů, na list se netiskne. */

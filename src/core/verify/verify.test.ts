@@ -6,6 +6,7 @@ import {
   buildCodeIndex,
   decode,
   evaluateExpression,
+  hasAdjacentOperators,
   verifySheet,
   type VerifiableSheet,
 } from './index.js'
@@ -29,7 +30,8 @@ describe('evaluateExpression — český zápis', () => {
     ['18 + 6', 24],
     ['30 − 6', 24], // U+2212
     ['30 - 6', 24],
-    ['6 × 4', 24],
+    ['6 · 4', 24],
+    ['6 × 4', 24], // křížek se na vstupu tolerujeme, i když ho negenerujeme
     ['6 * 4', 24],
     ['48 ÷ 2', 24],
     ['48 : 2', 24], // školní zápis dělení
@@ -159,6 +161,40 @@ describe('verifySheet', () => {
     expect(report.failures.map((f) => f.code)).toContain('value-not-in-table')
   })
 
+  it('přijme číselnou řadu se správným chybějícím členem', () => {
+    const sheet = correctSheet()
+    sheet.slots = [{ taskText: '1 2 3 4 ?', declaredValue: 5, kind: 'sequence' }, ...sheet.slots.slice(1)]
+    expect(verifySheet(sheet)).toEqual({ ok: true })
+  })
+
+  it('odhalí řadu, jejíž chybějící člen nesouhlasí', () => {
+    const sheet = correctSheet()
+    sheet.slots = [{ taskText: '1 2 3 4 ?', declaredValue: 4, kind: 'sequence' }, ...sheet.slots.slice(1)]
+    const report = verifySheet(sheet)
+    expect(report.ok).toBe(false)
+    if (report.ok) return
+    expect(report.failures.map((f) => f.code)).toContain('task-value-mismatch')
+  })
+
+  it('odhalí řadu, na kterou sedí dvě pravidla — dítě by mělo křížek za správnou odpověď', () => {
+    const sheet = correctSheet()
+    sheet.slots = [{ taskText: '2 5 ? 17 26', declaredValue: 5, kind: 'sequence' }, ...sheet.slots.slice(1)]
+    const report = verifySheet(sheet)
+    expect(report.ok).toBe(false)
+    if (report.ok) return
+    expect(report.failures.map((f) => f.code)).toContain('ambiguous-sequence')
+  })
+
+  it('řadu nečte jako aritmetický výraz a naopak', () => {
+    const sheet = correctSheet()
+    // Bez `kind` se text čte jako výraz — a řada jako výraz nedává smysl.
+    sheet.slots = [{ taskText: '1 2 3 4 ?', declaredValue: 5 }, ...sheet.slots.slice(1)]
+    const report = verifySheet(sheet)
+    expect(report.ok).toBe(false)
+    if (report.ok) return
+    expect(report.failures[0]!.code).toBe('task-value-mismatch')
+  })
+
   it('odhalí, že rozluštění nedá zadanou tajenku', () => {
     const sheet = correctSheet()
     sheet.expectedMessage = 'AHOJTE'
@@ -176,5 +212,40 @@ describe('verifySheet', () => {
     expect(report.ok).toBe(false)
     if (report.ok) return
     expect(report.failures.map((f) => f.code)).toEqual(['decoded-message-mismatch'])
+  })
+})
+
+describe('zápis matematiky', () => {
+  it.each([
+    ['−7 × −2', true],
+    ['−7 × (−2)', false],
+    ['5 − (−3)', false],
+    ['−8 + 41', false], // vedoucí znaménko závorku nepotřebuje
+    ['(−4) × 6', false],
+    ['12 + −5', true],
+    ['20 : −4', true],
+    ['(2 + 3) × 4', false],
+    ['18 + 6', false],
+  ])('%s → dva operátory vedle sebe: %s', (text, expected) => {
+    expect(hasAdjacentOperators(text)).toBe(expected)
+  })
+
+  it('list s chybným zápisem se nevytiskne', () => {
+    const sheet: VerifiableSheet = {
+      table: makeTable(['A', 'H', 'O', 'J', 'A'], ['Q', 'X']),
+      slots: [
+        // Spočítá se správně na 5, ale zapsané je to špatně.
+        { taskText: '−1 × −5', declaredValue: 5 },
+        { taskText: '8 : 4', declaredValue: 2 },
+        { taskText: '1 × 3', declaredValue: 3 },
+        { taskText: '10 - 6', declaredValue: 4 },
+      ],
+      expectedMessage: 'AHOJ',
+    }
+
+    const report = verifySheet(sheet)
+    expect(report.ok).toBe(false)
+    if (report.ok) return
+    expect(report.failures.map((f) => f.code)).toContain('malformed-notation')
   })
 })

@@ -25,6 +25,14 @@ export type SkillTag =
   | 'arit.mala-nasobilka'
   | 'arit.deleni-beze-zbytku'
   | 'arit.deleni-se-zbytkem'
+  | 'arit.poradi-operaci'
+  | 'arit.zavorky'
+  | 'cela.scitani-odcitani'
+  | 'cela.nasobeni-deleni'
+  | 'rady.konstantni-krok'
+  | 'rady.stridavy-krok'
+  | 'rady.rostouci-krok'
+  | 'rady.nasobeni-delenim'
 
 export type OperationTag = 'add' | 'sub' | 'mul' | 'div'
 
@@ -46,11 +54,22 @@ export interface DidacticMeta {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Zadání úlohy. Ve verzi 0.1 má unie jediného člena — a to je v pořádku.
- * Tři řádky s nulovou režií znamenají, že přidání slovních úloh v 0.5 bude
- * přidáním členu, ne úpravou každého místa pracujícího s `prompt`.
+ * Zadání úlohy.
+ *
+ * Každý člen unie nese `text` — přesně to, co se vytiskne na list. Díky tomu
+ * se render, kontrolní součet i verifikace dostanou k vytištěné podobě bez
+ * rozlišování druhu úlohy; `kind` potřebuje jen ten, kdo text vyhodnocuje.
  */
-export type PromptNode = { kind: 'expr'; text: string }
+export type PromptNode =
+  | { kind: 'expr'; text: string }
+  /**
+   * Číselná řada s jednou mezerou: „4, 10, 16, ?, 28“.
+   *
+   * `terms` a `hiddenIndex` jsou tu pro render a diagnostiku, NIKOLI pro
+   * verifikaci — ta si čísla přečte znovu z `text`, jinak by ověřovala
+   * generátor místo papíru.
+   */
+  | { kind: 'sequence'; text: string; terms: readonly (number | null)[]; hiddenIndex: number }
 
 export interface Task {
   id: string
@@ -129,6 +148,19 @@ export interface CipherGridConfig {
   difficulty: DifficultyProfile
   /** Váhy jednotlivých typů úloh, nikoli booleany. */
   taskMix: Partial<Record<OperationTag, number>>
+  /**
+   * Váhy generátorů úloh — druhá, nezávislá osa vedle `taskMix`.
+   *
+   * `taskMix` říká, které *operace* se smí objevit; tohle říká, které
+   * *druhy zadání* (příklad, číselná řada, později slovní úloha). Obě osy
+   * platí zároveň: řada s podílem vyžaduje povolené násobení.
+   *
+   * ⚠ Volitelné schválně. Chybějící hodnota znamená „jen aritmetika“, takže
+   *   `.sifra` uložená před přidáním dalších generátorů vytiskne po letech
+   *   pořád tentýž list. Kdyby se místo toho doplňoval aktuální default,
+   *   losování generátoru by se posunulo a s ním celý obsah listu.
+   */
+  generatorMix?: Readonly<Record<string, number>>
   cipher: {
     strategy: CipherStrategyId
     /** Volitelný override. Když chybí, odvodí se z tajenky a obtížnosti. */
@@ -137,34 +169,77 @@ export interface CipherGridConfig {
     /** Podíl klamných písmen v tabulce, 0–1. */
     decoyDensity: number
   }
-  output: {
-    includeSolution: boolean
-    paper: 'A4'
-    columns: 1 | 2
-    /**
-     * Tisknout název aktivity na ŽÁKOVSKÝ list?
-     *
-     * Defaultně `false` a při automaticky odvozeném `title` se ignoruje úplně —
-     * nadpis odvozený z tajenky by ji prozradil dřív, než dítě spočítá první
-     * příklad. Viz docs/rozsah-0.1.md §3.6.
-     */
-    printTitleOnWorksheet: boolean
-  }
+  output: OutputConfig
 }
 
-export interface ProjectConfig {
+export interface OutputConfig {
+  includeSolution: boolean
+  paper: 'A4'
+  columns: 1 | 2
+  /**
+   * Tisknout název aktivity na ŽÁKOVSKÝ list?
+   *
+   * U šifry defaultně `false` a při automaticky odvozeném `title` se ignoruje
+   * úplně — nadpis odvozený z tajenky by ji prozradil dřív, než dítě spočítá
+   * první příklad. Viz docs/rozsah-0.1.md §3.6.
+   *
+   * Aktivity bez tajenky nemají co prozradit a název si tisknou vždy.
+   */
+  printTitleOnWorksheet: boolean
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Aktivita „list číselných řad"
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * List samotných číselných řad, bez šifry.
+ *
+ * Nemá tajenku, a tím pádem ani mřížku, klamná písmena a rámečky na odpovědi.
+ * Zůstane po nich jedno: seznam úloh a k němu řešení pro učitele.
+ */
+export interface SequenceSheetConfig {
+  /** Kolik řad bude na listu. */
+  taskCount: number
+  difficulty: DifficultyProfile
+  /** Které operace se v řadách smí objevit (podíl vyžaduje násobení). */
+  taskMix: Partial<Record<OperationTag, number>>
+  output: OutputConfig
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Projekt
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type ActivityId = 'cipher-grid' | 'sequence-sheet'
+
+interface ProjectBase {
   schemaVersion: 1
   /** Mění deterministický výstup. Změna = staré seedy generují jiný list. */
   generatorVersion: number
   /** Odlišuje chybu v generátoru od chyby v UI, renderu nebo importu. */
   appVersion: string
-  activity: 'cipher-grid'
   seed: string
   locale: 'cs'
-  /** Prázdné = odvodí se z tajenky; odvozený název se na žákovský list nikdy netiskne. */
+  /** Prázdné = odvodí se z obsahu; odvozený název se na žákovský list netiskne. */
   title?: string
+}
+
+export interface CipherGridProject extends ProjectBase {
+  activity: 'cipher-grid'
   payload: CipherGridConfig
 }
+
+export interface SequenceSheetProject extends ProjectBase {
+  activity: 'sequence-sheet'
+  payload: SequenceSheetConfig
+}
+
+/**
+ * Uložitelná aktivita. Rozlišená unie podle `activity` — přidání další hry
+ * je nový člen, ne další volitelná pole v jednom společném objektu.
+ */
+export type ProjectConfig = CipherGridProject | SequenceSheetProject
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Výstup generování
@@ -235,5 +310,9 @@ export interface VerificationFailure {
     | 'ambiguous-code'
     | 'decoded-message-mismatch'
     | 'value-not-in-table'
+    /** Na čísla řady sedí víc pravidel s různým výsledkem — vadné zadání. */
+    | 'ambiguous-sequence'
+    /** Chybný matematický zápis, například dva operátory vedle sebe. */
+    | 'malformed-notation'
   message: string
 }

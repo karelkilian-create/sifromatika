@@ -151,7 +151,7 @@ describe('generateCipherGrid — ústupky a meze', () => {
     expect(outcome.ok).toBe(true)
     if (!outcome.ok) return
     for (const slot of outcome.sheet.slots) {
-      expect(slot.task.prompt.text).toContain('×')
+      expect(slot.task.prompt.text).toContain('·')
     }
     expect(outcome.sheet.verification).toEqual({ ok: true })
   })

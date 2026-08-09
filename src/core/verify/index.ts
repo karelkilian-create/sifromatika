@@ -12,9 +12,11 @@
 
 import type {
   CipherTable,
+  PromptNode,
   VerificationFailure,
   VerificationReport,
 } from '../model/index.js'
+import { inferMissing, parseSequence, SequenceError } from '../sequence/index.js'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Vyhodnocení výrazu
@@ -29,7 +31,9 @@ type Token =
 
 /**
  * Zápisy, které se na českém pracovním listu reálně objeví.
- * Dělení se ve škole píše dvojtečkou (`36 : 4`), násobení křížkem (`6 × 4`).
+ * Dělení se píše dvojtečkou (`36 : 4`), násobení tečkou (`6 · 4`). Křížek se
+ * jako vstup přijímá taky — může přijít z ručně upraveného `.sifra` nebo
+ * ze starší verze — ale generátor ho nevyrábí.
  */
 const OPERATOR_ALIASES: Readonly<Record<string, '+' | '-' | '*' | '/'>> = {
   '+': '+',
@@ -84,6 +88,32 @@ function tokenize(input: string): Token[] {
     throw new ExpressionError(`Prázdný výraz: ${JSON.stringify(input)}`)
   }
   return tokens
+}
+
+/**
+ * Stojí ve výrazu dva operátory vedle sebe?
+ *
+ * `−7 · −2` je špatně zapsaná matematika, i když se to dá spočítat. Správně
+ * je `−7 · (−2)`. Znaménko na začátku výrazu nebo hned za otevírací závorkou
+ * je v pořádku — tam žádný operátor nepředchází.
+ *
+ * Je to kontrola zápisu, ne výsledku, a přesto patří sem: na listu pro děti
+ * je chybný zápis vada úplně stejně jako chybný výsledek. Rozdíl je jen
+ * v tom, že tuhle vadu nechytí přepočet.
+ */
+export function hasAdjacentOperators(input: string): boolean {
+  let tokens: Token[]
+  try {
+    tokens = tokenize(input)
+  } catch {
+    return false // nečitelný výraz řeší přepočet, ne tahle kontrola
+  }
+
+  for (let i = 1; i < tokens.length; i++) {
+    const previous = tokens[i - 1]!
+    if (tokens[i]!.kind === 'op' && previous.kind === 'op') return true
+  }
+  return false
 }
 
 /**
@@ -210,6 +240,99 @@ export interface SheetSlot {
   taskText: string
   /** Hodnota, kterou o téhle úloze tvrdí generátor. */
   declaredValue: number
+  /**
+   * Jak se text čte. Chybí-li, čte se jako aritmetický výraz.
+   *
+   * Rozlišuje se výslovně, ne podle tvaru textu. Heuristika typu „obsahuje
+   * mezeru“ by u výrazů `18 + 6` selhala okamžitě a jakákoli jiná by selhala
+   * později — u prvního typu úlohy, který se do žádného vzorku netrefí.
+   */
+  kind?: PromptNode['kind']
+}
+
+/** Přepočet jedné úlohy. Vrací prázdné pole, když je všechno v pořádku. */
+function verifySlot(slot: SheetSlot, index: number): VerificationFailure[] {
+  const label = `Úloha č. ${index + 1} (${slot.taskText})`
+
+  if (slot.kind === 'sequence') {
+    let inference
+    try {
+      inference = inferMissing(parseSequence(slot.taskText))
+    } catch (error) {
+      if (!(error instanceof SequenceError)) throw error
+      return [{ code: 'task-value-mismatch', message: `${label} nejde přečíst: ${error.message}` }]
+    }
+
+    switch (inference.kind) {
+      case 'unreadable':
+        return [{ code: 'task-value-mismatch', message: `${label}: ${inference.reason}` }]
+      case 'ambiguous': {
+        const readings = inference.readings
+          .map((reading) => `${reading.rule.description} → ${reading.value}`)
+          .join('; ')
+        return [
+          {
+            code: 'ambiguous-sequence',
+            message: `${label} má víc správných řešení (${readings}). Dítě může odpovědět správně a mít křížek.`,
+          },
+        ]
+      }
+      case 'unique':
+        return inference.value === slot.declaredValue
+          ? []
+          : [
+              {
+                code: 'task-value-mismatch',
+                message: `${label} dává ${inference.value}, generátor tvrdí ${slot.declaredValue}.`,
+              },
+            ]
+    }
+  }
+
+  let computed: number
+  try {
+    computed = evaluateExpression(slot.taskText)
+  } catch (error) {
+    return [
+      {
+        code: 'task-value-mismatch',
+        message: `${label} nejde vyhodnotit: ${error instanceof Error ? error.message : String(error)}`,
+      },
+    ]
+  }
+
+  if (hasAdjacentOperators(slot.taskText)) {
+    return [
+      {
+        code: 'malformed-notation',
+        message: `${label} má dva operátory vedle sebe. Záporné číslo za operátorem patří do závorky: −7 · (−2), nikoli −7 · −2.`,
+      },
+    ]
+  }
+
+  return computed === slot.declaredValue
+    ? []
+    : [
+        {
+          code: 'task-value-mismatch',
+          message: `${label} dává ${computed}, generátor tvrdí ${slot.declaredValue}.`,
+        },
+      ]
+}
+
+/**
+ * Přepočet samotných úloh, bez šifrovací tabulky.
+ *
+ * Aktivity bez tajenky (list řad, později bingo) nemají co dekódovat, ale
+ * kontrola „úloha dává, co generátor tvrdí" pro ně platí úplně stejně —
+ * a u řad k ní patří i to, že řešení existuje právě jedno.
+ */
+export function verifyTasks(slots: readonly SheetSlot[]): VerificationReport {
+  const failures: VerificationFailure[] = []
+  slots.forEach((slot, index) => {
+    failures.push(...verifySlot(slot, index))
+  })
+  return failures.length === 0 ? { ok: true } : { ok: false, failures }
 }
 
 export interface VerifiableSheet {
@@ -235,26 +358,10 @@ export function verifySheet(sheet: VerifiableSheet): VerificationReport {
     })
   }
 
-  // 2. Každý příklad se přepočítá nezávisle na generátoru.
+  // 2. Každá úloha se přepočítá nezávisle na generátoru. U řad je součástí
+  //    přepočtu i to, že řešení smí být jen jedno.
   sheet.slots.forEach((slot, index) => {
-    let computed: number
-    try {
-      computed = evaluateExpression(slot.taskText)
-    } catch (error) {
-      failures.push({
-        code: 'task-value-mismatch',
-        message: `Úloha č. ${index + 1} (${slot.taskText}) nejde vyhodnotit: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-      })
-      return
-    }
-    if (computed !== slot.declaredValue) {
-      failures.push({
-        code: 'task-value-mismatch',
-        message: `Úloha č. ${index + 1} (${slot.taskText}) dává ${computed}, generátor tvrdí ${slot.declaredValue}.`,
-      })
-    }
+    failures.push(...verifySlot(slot, index))
   })
 
   // 3. Každá potřebná hodnota musí být v tabulce dohledatelná.
