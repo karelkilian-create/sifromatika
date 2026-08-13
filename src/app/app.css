@@ -4,13 +4,29 @@
  * Všechno tady má třídu `no-print` nebo je pod ní — na papír patří jen list.
  */
 
+/*
+ * Barvy značky.
+ *
+ * Oranžová je ve značce dominantní, v rozhraní ale schválně NENÍ. Celý web
+ * v oranžové by přebil to jediné, co na něm má být vidět — náhled listu.
+ * Nese ji proto jen hlavní tlačítko a pár akcentů; nosnou barvou rozhraní
+ * zůstává tmavá modrá ze značky.
+ *
+ * ⚠ `--brand-orange` je na bílý text moc světlá (kontrast 3,1 : 1). Kde pod
+ *   textem leží plocha, patří tam `--brand-orange-ink` (4,6 : 1). Světlá
+ *   varianta je jen na tahy a plochy bez textu.
+ */
 :root {
+  --brand-orange: #ef6c1a;
+  --brand-orange-ink: #c1560d;
+  --brand-navy: #17233f;
+
   --ui-bg: #f4f5f7;
   --ui-surface: #fff;
   --ui-border: #d3d6db;
   --ui-text: #1c1f23;
   --ui-muted: #5b6169;
-  --ui-accent: #1f5f8b;
+  --ui-accent: var(--brand-navy);
 }
 
 body {
@@ -90,13 +106,75 @@ body {
   opacity: 0.85;
 }
 
+/* ── Značka v hlavičce ────────────────────────────────────────────── */
+
+.app__header-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.app__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+/* ── Přepínač částí aplikace ──────────────────────────────────────── */
+
+.view-nav {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.2rem;
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: 999px;
+}
+
+.view-nav__item {
+  padding: 0.4rem 0.9rem;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ui-muted);
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.view-nav__item--selected {
+  color: #fff;
+  background: var(--ui-accent);
+}
+
 .app__title {
   margin: 0;
   font-size: 1.6rem;
+  line-height: 1.1;
+  color: var(--brand-navy);
+  letter-spacing: -0.01em;
+}
+
+/* Oranžové „Š" je jediná stopa značky ve slovní podobě. Víc už by z nadpisu
+   udělalo logo, a to vedle skutečného loga působí jako dvě loga. */
+.app__title-accent {
+  color: var(--brand-orange);
+}
+
+.app__claim {
+  margin: 0.1rem 0 0;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ui-muted);
 }
 
 .app__subtitle {
-  margin: 0.15rem 0 0;
+  margin: 0.6rem 0 0;
   color: var(--ui-muted);
 }
 
@@ -239,6 +317,12 @@ body {
   border-color: var(--ui-accent);
 }
 
+/* Odkaz, který vypadá jako tlačítko — stahování je odkaz, ne akce v aplikaci. */
+a.button {
+  display: inline-block;
+  text-decoration: none;
+}
+
 .button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -246,8 +330,76 @@ body {
 
 .button--primary {
   color: #fff;
-  background: var(--ui-accent);
-  border-color: var(--ui-accent);
+  background: var(--brand-orange-ink);
+  border-color: var(--brand-orange-ink);
+}
+
+.button--primary:hover:not(:disabled) {
+  background: var(--brand-orange);
+  border-color: var(--brand-orange);
+}
+
+/* ── Diplom ───────────────────────────────────────────────────────── */
+
+.diploma-screen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  align-items: flex-start;
+  padding: 1.25rem;
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+}
+
+.diploma-screen__text {
+  flex: 1 1 20rem;
+}
+
+.diploma-screen__title {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--brand-navy);
+}
+
+.diploma-screen__lead {
+  margin: 0.4rem 0 1.1rem;
+  max-width: 42ch;
+}
+
+.diploma-screen__downloads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
+}
+
+.diploma-screen__steps {
+  margin: 1.2rem 0 0;
+  padding-left: 1.2rem;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: var(--ui-muted);
+}
+
+.diploma-screen__steps code {
+  font-size: 0.85em;
+  /* Zástupný text je dlouhý; na telefonu se musí smět zalomit. */
+  overflow-wrap: anywhere;
+}
+
+/*
+ * Náhled je obrázek listu papíru, takže vlastní rámeček nedostane — stín
+ * stačí. Zároveň se nesmí roztáhnout přes celý sloupec, jinak by na širokém
+ * monitoru přebil text vedle sebe.
+ */
+.diploma-screen__preview {
+  flex: 0 1 18rem;
+  width: 100%;
+  max-width: 18rem;
+  height: auto;
+  border-radius: 3px;
+  box-shadow: 0 1px 6px rgb(0 0 0 / 15%);
 }
 
 /* ── Hlášky ───────────────────────────────────────────────────────── */
