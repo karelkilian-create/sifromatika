@@ -8,6 +8,8 @@
 
 import type { TaskGenerator } from '../core/model/index.js'
 import { arithmeticGenerator } from './arithmetic/index.js'
+import { decimalGenerator } from './decimal/index.js'
+import { percentGenerator } from './percent/index.js'
 import { sequenceGenerator } from './sequence/index.js'
 
 /**
@@ -16,7 +18,12 @@ import { sequenceGenerator } from './sequence/index.js'
  *   rozhoduje `generatorMix` v konfiguraci — a jeho absence znamená pouze
  *   aritmetiku. Viz `CipherGridConfig.generatorMix`.
  */
-export const taskGenerators: readonly TaskGenerator[] = [arithmeticGenerator, sequenceGenerator]
+export const taskGenerators: readonly TaskGenerator[] = [
+  arithmeticGenerator,
+  sequenceGenerator,
+  decimalGenerator,
+  percentGenerator,
+]
 
 export function findTaskGenerator(id: string): TaskGenerator | undefined {
   return taskGenerators.find((generator) => generator.id === id)

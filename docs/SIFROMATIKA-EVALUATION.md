@@ -475,7 +475,7 @@ potenciálem**, které si zaslouží zmínku, i když jsou dražší:
 |---|---|---|---|
 | 1 | **Grafika + favicon** ✅ | malá | nezávisí na ničem, opravuje viditelnou chybu, okamžitě vidět |
 | 2 | **Diplom** ✅ | malá | nezávisí na matematické vrstvě; nejlepší poměr přínos/cena |
-| 3 | **Procenta a desetinná čísla** jako generátory úloh | střední | šířka matematiky před šířkou her; naplní 2. stupeň obsahem; **žádný nový tisk** |
+| 3 | **Procenta a desetinná čísla** jako generátory úloh ✅ | střední | šířka matematiky před šířkou her; naplní 2. stupeň obsahem; **žádný nový tisk** |
 | 4 | **Registr aktivit** (C.1) ✅ | střední | poslední chvíle, kdy je to levné |
 | 5 | **`DocumentModel`** bez PDF (C.2) | střední | předpoklad pro bingo, pexeso i domino |
 | 6 | **Kartičková sazba** (C.3) + **pexeso** | střední | primitivum se ověří na nejjednodušším uživateli |
@@ -555,12 +555,15 @@ chyba, ale je dobré o tom vědět, aby se druhý krok neudělal nevědomky.
 
 ## Stav
 
-Z tohoto seznamu je hotová **grafika + favikona**, **diplom** a **registr aktivit**
-(C.1 a CHANGE 1 + 3 z oddílu D). Registr se udělal mimo pořadí, před procenty
-a desetinnými čísly: je to jediná položka, kterou je nutné stihnout dřív než třetí
-aktivitu. Podrobnosti k němu jsou v `docs/navrh-registru-aktivit.md`.
+Z tohoto seznamu jsou hotové kroky 1–4: **grafika + favikona**, **diplom**,
+**registr aktivit** (C.1 a CHANGE 1 + 3 z oddílu D) a **procenta s desetinnými
+čísly**. Registr se udělal mimo pořadí, před procenty: je to jediná položka,
+kterou je nutné stihnout dřív než třetí aktivitu.
 
-Zbytek seznamu čeká na rozhodnutí.
+Podrobnosti jsou v `docs/navrh-registru-aktivit.md`
+a `docs/navrh-procenta-desetinna.md`.
+
+Na řadě je **`DocumentModel` bez PDF** (C.2), předpoklad pro bingo i pexeso.
 
 Ověřeno spuštěním, ne z dokumentace: `npm run check` — typecheck, oxlint,
-39 modulů bez porušení hranic vrstev, 222 testů ve 12 souborech, vše prochází.
+41 modulů bez porušení hranic vrstev, 272 testů ve 14 souborech, vše prochází.

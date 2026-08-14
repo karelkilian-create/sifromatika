@@ -32,6 +32,10 @@ export type SkillTag =
   | 'moc.druha-mocnina'
   | 'moc.treti-mocnina'
   | 'moc.druha-odmocnina'
+  | 'des.scitani-odcitani'
+  | 'des.nasobeni-delenim'
+  | 'proc.cast-z-celku'
+  | 'proc.sleva-navyseni'
   | 'rady.konstantni-krok'
   | 'rady.stridavy-krok'
   | 'rady.rostouci-krok'
@@ -146,6 +150,16 @@ export interface DifficultyProfile {
   maxOperands: number
   /** Smí se objevit druhá a třetí mocnina a druhá odmocnina? Od 8. ročníku. */
   powers: boolean
+  /**
+   * Nejvyšší počet desetinných míst v OPERANDU. `0` = jen celá čísla.
+   *
+   * Výsledku se to netýká — ten musí zůstat kladné celé číslo, protože slouží
+   * jako kód políčka v mřížce. Tisíciny se nenabízejí schválně: na listu pro ZŠ
+   * znamenají počítání na papíře, ne z hlavy.
+   */
+  decimals: 0 | 1 | 2
+  /** Smí se objevit počítání s procenty (`25 % z 80`)? Od 7. ročníku. */
+  percents: boolean
 }
 
 export interface CipherGridConfig {
@@ -331,5 +345,10 @@ export interface VerificationFailure {
     | 'ambiguous-sequence'
     /** Chybný matematický zápis, například dva operátory vedle sebe. */
     | 'malformed-notation'
+    /**
+     * Výsledek není celé číslo, takže nemůže sloužit jako kód políčka.
+     * Týká se úloh s desetinnými operandy: `0,3 · 7` dává 2,1.
+     */
+    | 'non-integer-result'
   message: string
 }

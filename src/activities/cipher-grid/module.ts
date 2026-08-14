@@ -23,6 +23,10 @@ export interface CipherGridEditorState {
   message: string
   /** Míchat mezi příklady i číselné řady („co bude následovat?"). */
   sequences: boolean
+  /** Míchat mezi příklady i desetinná čísla (`3,5 · 4`). Od 5. ročníku. */
+  decimals: boolean
+  /** Míchat mezi příklady i procenta (`25 % z 80`). Od 7. ročníku. */
+  percents: boolean
   /** Podíl klamných písmen v tabulce, 0–1. */
   decoyDensity: number
   distinctCellPerOccurrence: boolean
@@ -36,6 +40,8 @@ export interface CipherGridEditorState {
 const initialState: CipherGridEditorState = {
   message: 'POKLAD JE U BAZÉNU',
   sequences: false,
+  decimals: false,
+  percents: false,
   decoyDensity: 0.35,
   distinctCellPerOccurrence: true,
   printTitleOnWorksheet: false,
@@ -55,9 +61,17 @@ export const cipherGridModule = {
 
   toConfig(state, shared, seed): CipherGridProject {
     const config = applyShared(defaultConfig(state.message, shared.grade, seed), shared)
-    // Poměr 3 : 1. Řada zabere dítěti víc času než příklad, takže „každá čtvrtá"
-    // je zhruba to, co udrží délku listu na jedné hodině.
-    config.payload.generatorMix = state.sequences ? { arithmetic: 3, sequence: 1 } : { arithmetic: 1 }
+    // Poměr 3 : 1 ke každému zapnutému zpestření. Řada i procento zaberou
+    // dítěti víc času než příklad, takže „každá čtvrtá" je zhruba to, co udrží
+    // délku listu na jedné hodině.
+    const generatorMix: Record<string, number> = { arithmetic: 3 }
+    if (state.sequences) generatorMix.sequence = 1
+    if (state.decimals) generatorMix.decimal = 1
+    if (state.percents) generatorMix.percent = 1
+    // Sama aritmetika se zapisuje vahou 1, aby uložené soubory bez zpestření
+    // vypadaly přesně jako dřív — jinak by se listu změnil obsah.
+    config.payload.generatorMix =
+      Object.keys(generatorMix).length === 1 ? { arithmetic: 1 } : generatorMix
     config.payload.cipher.decoyDensity = state.decoyDensity
     config.payload.cipher.distinctCellPerOccurrence = state.distinctCellPerOccurrence
     config.payload.output.printTitleOnWorksheet = state.printTitleOnWorksheet
@@ -69,6 +83,8 @@ export const cipherGridModule = {
     return {
       message: payload.message,
       sequences: (payload.generatorMix?.sequence ?? 0) > 0,
+      decimals: (payload.generatorMix?.decimal ?? 0) > 0,
+      percents: (payload.generatorMix?.percent ?? 0) > 0,
       decoyDensity: payload.cipher.decoyDensity,
       distinctCellPerOccurrence: payload.cipher.distinctCellPerOccurrence,
       printTitleOnWorksheet: payload.output.printTitleOnWorksheet,

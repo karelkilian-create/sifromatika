@@ -28,6 +28,8 @@ export function gradeProfile(grade: Grade): DifficultyProfile {
         divisionExactOnly: true,
         maxOperands: 2,
         powers: false,
+        decimals: 0,
+        percents: false,
       }
     case 4:
       return {
@@ -39,6 +41,8 @@ export function gradeProfile(grade: Grade): DifficultyProfile {
         divisionExactOnly: true,
         maxOperands: 2,
         powers: false,
+        decimals: 0,
+        percents: false,
       }
     case 5:
       return {
@@ -50,6 +54,9 @@ export function gradeProfile(grade: Grade): DifficultyProfile {
         divisionExactOnly: true,
         maxOperands: 2,
         powers: false,
+        // Desetinná čísla se v páté třídě zavádějí — zatím jen desetiny.
+        decimals: 1,
+        percents: false,
       }
     case 6:
       // Šestá třída: obor se rozšiřuje a přichází pořadí operací se závorkami.
@@ -63,6 +70,8 @@ export function gradeProfile(grade: Grade): DifficultyProfile {
         divisionExactOnly: true,
         maxOperands: 3,
         powers: false,
+        decimals: 2,
+        percents: false,
       }
     case 7:
       // Sedmá třída: celá čísla, tedy poprvé i záporné operandy.
@@ -75,6 +84,9 @@ export function gradeProfile(grade: Grade): DifficultyProfile {
         divisionExactOnly: true,
         maxOperands: 3,
         powers: false,
+        decimals: 2,
+        // Procenta jsou látka sedmého ročníku.
+        percents: true,
       }
     case 8:
       // Osmá třída: druhá a třetí mocnina, druhá odmocnina. Obor se rozšiřuje,
@@ -88,6 +100,8 @@ export function gradeProfile(grade: Grade): DifficultyProfile {
         divisionExactOnly: true,
         maxOperands: 3,
         powers: true,
+        decimals: 2,
+        percents: true,
       }
     default:
       // ⚠ 9. ročník zatím vlastní profil NEMÁ, a proto se v UI nenabízí.

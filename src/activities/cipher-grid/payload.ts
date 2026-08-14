@@ -23,7 +23,7 @@ const STRATEGIES: CipherStrategyId[] = ['grid-coord', 'grid-linear']
  * nemá sahat do registru generátorů. Neznámé id ze souboru z novější verze
  * se tiše zahodí; horší je spadnout na souboru, který kolegyně poslala e-mailem.
  */
-const GENERATORS = ['arithmetic', 'sequence']
+const GENERATORS = ['arithmetic', 'sequence', 'decimal', 'percent']
 
 export function parseCipherGridPayload(raw: unknown): CipherGridConfig | null {
   if (!isRecord(raw)) return null

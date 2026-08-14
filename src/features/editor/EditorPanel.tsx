@@ -12,7 +12,7 @@
 
 import type { Grade, OperationTag } from '../../core/model/index.js'
 import type { SharedEditorState } from '../../activities/contract.js'
-import { TASK_COUNT_LIMITS } from '../../core/constraints/index.js'
+import { TASK_COUNT_LIMITS, gradeProfile } from '../../core/constraints/index.js'
 import type { EditorState } from './state.js'
 
 const OPERATION_LABELS: Record<OperationTag, string> = {
@@ -44,6 +44,10 @@ export function EditorPanel({
   const isCipher = state.activity === 'cipher-grid'
   const cipher = state.byActivity['cipher-grid']
   const sequence = state.byActivity['sequence-sheet']
+
+  // Volby, které ročník neumí, se neschovávají do neaktivního stavu, ale
+  // úplně mizí — zašedlá „Procenta" u čtvrťáka je jen šum.
+  const profile = gradeProfile(state.shared.grade)
 
   const patchShared = (changes: Partial<SharedEditorState>) =>
     onChange({ ...state, shared: { ...state.shared, ...changes } })
@@ -161,10 +165,31 @@ export function EditorPanel({
                   />
                   Číselné řady
                 </label>
+                {profile.decimals > 0 && (
+                  <label className="checkbox">
+                    <input
+                      type="checkbox"
+                      checked={cipher.decimals}
+                      onChange={() => patchCipher({ decimals: !cipher.decimals })}
+                    />
+                    Desetinná čísla
+                  </label>
+                )}
+                {profile.percents && (
+                  <label className="checkbox">
+                    <input
+                      type="checkbox"
+                      checked={cipher.percents}
+                      onChange={() => patchCipher({ percents: !cipher.percents })}
+                    />
+                    Procenta
+                  </label>
+                )}
                 <p className="hint">
-                  Řada („4, 10, 16, 22, ?“) je samostatná volba a s operacemi platí zároveň — řada
-                  s podílem se objeví jen při zapnutém násobení. Na list se dostane zhruba každá
-                  čtvrtá.
+                  Řada („4 10 16 22 ?“), desetinná čísla („3,5 · 4“) i procenta („25 % z 80“) jsou
+                  samostatné volby a s operacemi platí zároveň — řada s podílem i procento se
+                  objeví jen při zapnutém násobení. Výsledek zůstává vždy celé číslo, protože je
+                  to kód políčka v tabulce.
                 </p>
               </>
             ) : (

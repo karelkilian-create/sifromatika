@@ -61,7 +61,10 @@ describe('.sifra — uložení a načtení', () => {
     // Odvozený výstup se neukládá — dva zdroje pravdy by se rozešly.
     expect(text).not.toContain('isDecoy')
     expect(text).not.toContain('prompt')
-    expect(text.length).toBeLessThan(1200)
+    // Řádová mez, ne přesná: hlídá, že do souboru nezačal padat vygenerovaný
+    // list. Roste s profilem obtížnosti (přibyla `decimals` a `percents`),
+    // takže se posouvá — tabulka nebo příklady by ji přestřelily násobně.
+    expect(text.length).toBeLessThan(1500)
   })
 
   it('projde celým kolečkem formulář → soubor → formulář', () => {
@@ -77,6 +80,8 @@ describe('.sifra — uložení a načtení', () => {
           'cipher-grid': {
             message: 'ZLATÝ KLÍČ',
             sequences: true,
+            decimals: true,
+            percents: false,
             decoyDensity: 0.5,
             distinctCellPerOccurrence: false,
             printTitleOnWorksheet: true,
@@ -99,6 +104,8 @@ describe('.sifra — uložení a načtení', () => {
     expect(round.state.shared.title).toBe('Lov pirátského pokladu')
     expect(round.state.shared.operations).toEqual({ add: true, sub: false, mul: true, div: false })
     expect(cipher.sequences).toBe(true)
+    expect(cipher.decimals).toBe(true)
+    expect(cipher.percents).toBe(false)
     expect(cipher.decoyDensity).toBe(0.5)
     expect(cipher.distinctCellPerOccurrence).toBe(false)
     expect(cipher.printTitleOnWorksheet).toBe(true)

@@ -280,3 +280,98 @@ describe('mocniny a odmocniny', () => {
     expect(hasAdjacentOperators('√9 · −2')).toBe(true)
   })
 })
+
+describe('desetinná čísla', () => {
+  it.each([
+    ['3,5 · 4', 14],
+    ['2,5 + 3,5', 6],
+    ['12,6 : 0,3', 42],
+    ['10 − 2,5 · 2', 5],
+    ['0,25 · 80', 20],
+    ['1,5 + 1,5 + 1', 4],
+    ['3.5 · 4', 14], // tečka se přijímá z ručně upravených souborů
+  ])('%s = %i', (input, expected) => {
+    expect(evaluateExpression(input)).toBeCloseTo(expected, 9)
+  })
+
+  it('tečka na konci věty není desetinné číslo', () => {
+    // Oddělovač se počítá jen tehdy, když za ním stojí číslice.
+    expect(() => evaluateExpression('5 + 3.')).toThrow(ExpressionError)
+  })
+
+  it('desetinné číslo neplete kontrolu zápisu', () => {
+    expect(hasAdjacentOperators('3,5 · 4')).toBe(false)
+    expect(hasAdjacentOperators('2,5 − (−1,5)')).toBe(false)
+    expect(hasAdjacentOperators('2,5 · −1,5')).toBe(true)
+  })
+})
+
+describe('procenta', () => {
+  it.each([
+    ['25 % z 80', 20],
+    ['50 % z 40', 20],
+    ['10 % z 300', 30],
+    ['7 % z 300', 21], // v plovoucí čárce 21.000000000000004 — viz EPSILON
+    ['200 − 25 % z 200', 150], // „z" váže těsněji než odčítání
+    ['25 % ze 80', 20], // „ze" se přijímá, generátor ho nevyrábí
+    ['5 % z 60 + 7', 10],
+  ])('%s = %i', (input, expected) => {
+    expect(evaluateExpression(input)).toBeCloseTo(expected, 9)
+  })
+
+  it('předložka není operátor, takže zápis projde kontrolou', () => {
+    expect(hasAdjacentOperators('25 % z 80')).toBe(false)
+    expect(hasAdjacentOperators('200 − 25 % z 200')).toBe(false)
+  })
+
+  it('slovo začínající na „ze" není předložka', () => {
+    expect(() => evaluateExpression('25 % zebra 80')).toThrow(ExpressionError)
+  })
+})
+
+describe('výsledek musí zůstat celé číslo', () => {
+  const sheetWith = (taskText: string, declaredValue: number): VerifiableSheet => ({
+    table: makeTable(['A'], ['Q', 'X']),
+    slots: [{ taskText, declaredValue }],
+    expectedMessage: 'A',
+  })
+
+  it('0,07 · 300 projde jako 21, přestože v plovoucí čárce vyjde jinak', () => {
+    // Přesně tenhle případ by bez tolerance zamítl správný list — vzácně,
+    // takže by se na to přišlo až u učitele ve třídě.
+    expect(evaluateExpression('0,07 · 300')).not.toBe(21)
+    const table: CipherTable = {
+      rows: 1,
+      cols: 1,
+      cells: [{ code: { kind: 'linear', n: 21 }, letter: 'A', isDecoy: false }],
+    }
+    expect(
+      verifySheet({
+        table,
+        slots: [{ taskText: '0,07 · 300', declaredValue: 21 }],
+        expectedMessage: 'A',
+      }),
+    ).toEqual({ ok: true })
+  })
+
+  it('0,3 · 7 se odmítne — 2,1 nemůže být kód políčka', () => {
+    const report = verifySheet(sheetWith('0,3 · 7', 2.1))
+    expect(report.ok).toBe(false)
+    if (report.ok) return
+    expect(report.failures[0]?.code).toBe('non-integer-result')
+  })
+
+  it('necelý výsledek se odmítne i tehdy, když ho generátor deklaruje správně', () => {
+    const report = verifySheet(sheetWith('7 : 2', 3.5))
+    expect(report.ok).toBe(false)
+    if (report.ok) return
+    expect(report.failures[0]?.code).toBe('non-integer-result')
+  })
+
+  it('tolerance nepřehlédne skutečnou chybu generátoru', () => {
+    const report = verifySheet(sheetWith('25 % z 80', 21))
+    expect(report.ok).toBe(false)
+    if (report.ok) return
+    expect(report.failures[0]?.code).toBe('task-value-mismatch')
+  })
+})

@@ -230,3 +230,51 @@ describe('generateCipherGrid — souřadnicová šifra (výchozí)', () => {
     expect(outcome.sheet.verification).toEqual({ ok: true })
   })
 })
+
+describe('generateCipherGrid — desetinná čísla a procenta', () => {
+  /** Šifra pro sedmý ročník se zapnutým zpestřením. */
+  function sheetWith(mix: Record<string, number>, seed: string) {
+    const config = defaultConfig('PROCENTA', 7, seed)
+    config.payload.generatorMix = mix
+    const outcome = generateCipherGrid(config)
+    expect(outcome.ok, outcome.ok ? '' : outcome.reason).toBe(true)
+    return outcome.ok ? outcome.sheet : null
+  }
+
+  it('list s procenty projde verifikací a procenta na něm opravdu jsou', () => {
+    const sheet = sheetWith({ arithmetic: 1, percent: 3 }, 'procenta')
+    if (sheet === null) return
+    expect(sheet.verification).toEqual({ ok: true })
+    expect(sheet.slots.some((slot) => slot.task.generatorId === 'percent')).toBe(true)
+    expect(sheet.slots.some((slot) => slot.task.prompt.text.includes(' % z '))).toBe(true)
+  })
+
+  it('list s desetinnými čísly projde verifikací', () => {
+    const sheet = sheetWith({ arithmetic: 1, decimal: 3 }, 'desetinna')
+    if (sheet === null) return
+    expect(sheet.verification).toEqual({ ok: true })
+    expect(sheet.slots.some((slot) => slot.task.generatorId === 'decimal')).toBe(true)
+  })
+
+  it('výsledek zůstává celé kladné číslo, i když je zadání desetinné', () => {
+    const sheet = sheetWith({ arithmetic: 1, decimal: 2, percent: 2 }, 'oboji')
+    if (sheet === null) return
+    for (const slot of sheet.slots) {
+      expect(Number.isInteger(slot.task.value), slot.task.prompt.text).toBe(true)
+      expect(slot.task.value).toBeGreaterThan(0)
+      // A hlavně: přepočet z vytištěného textu dá totéž.
+      expect(evaluateExpression(slot.task.prompt.text)).toBeCloseTo(slot.task.value, 9)
+    }
+  })
+
+  it('čtvrťák procenta ani desetinná čísla nedostane, i kdyby si je soubor vyžádal', () => {
+    const config = defaultConfig('POKLAD', 4, 'ctvrtak')
+    config.payload.generatorMix = { arithmetic: 1, decimal: 3, percent: 3 }
+    const outcome = generateCipherGrid(config)
+    expect(outcome.ok).toBe(true)
+    if (!outcome.ok) return
+    for (const slot of outcome.sheet.slots) {
+      expect(slot.task.generatorId).toBe('arithmetic')
+    }
+  })
+})

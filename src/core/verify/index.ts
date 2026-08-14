@@ -39,6 +39,16 @@ type Token =
   | { kind: 'power'; exponent: number }
   /** Znak `√` — předpona toho, co následuje. */
   | { kind: 'root' }
+  /** Znak `%` — připojuje se zprava k číslu: `25 %` je 0,25. */
+  | { kind: 'percent' }
+  /**
+   * Předložka `z` v zápisu `25 % z 80`.
+   *
+   * Vlastní druh tokenu, ne alias pro násobení. Kdyby to bylo `op`, hlásila
+   * by kontrola zápisu u `25 % z 80` dva operátory vedle sebe — a hláška
+   * o závorkách kolem záporného čísla by u procent nedávala smysl.
+   */
+  | { kind: 'of' }
 
 /**
  * Zápisy, které se na českém pracovním listu reálně objeví.
@@ -68,6 +78,21 @@ const SUPERSCRIPTS: Readonly<Record<string, number>> = {
 /** U+221A SQUARE ROOT */
 const ROOT_SIGN = '√'
 
+/**
+ * Desetinné oddělovače, které tokenizer přijme.
+ *
+ * Generátor vyrábí VÝHRADNĚ čárku (český úzus). Tečka se přijímá proto, že
+ * `.sifra` může přijít ručně upravená nebo z ciziny — odmítnout kvůli tečce
+ * jinak správný list by bylo přísnější, než je zdrávo.
+ *
+ * Čárka může být desetinná právě proto, že členy číselné řady odděluje mezera.
+ * Viz `core/sequence`.
+ */
+const DECIMAL_SEPARATORS = [',', '.']
+
+/** Předložka v zápisu `25 % z 80`. `ze` kvůli ručně upraveným souborům. */
+const OF_WORDS = ['ze', 'z']
+
 function tokenize(input: string): Token[] {
   // Koncové „=" nebo „= ?" na listu je součást sazby, ne výrazu.
   const source = input.replace(/[=?\s]+$/u, '').trim()
@@ -87,7 +112,34 @@ function tokenize(input: string): Token[] {
         digits += source[i]!
         i++
       }
+
+      // Desetinná část jen tehdy, když za oddělovačem opravdu stojí číslice.
+      // Bez téhle podmínky by se z věty ukončené tečkou stalo číslo.
+      const separator = source[i]
+      const afterSeparator = source[i + 1]
+      if (
+        separator !== undefined &&
+        DECIMAL_SEPARATORS.includes(separator) &&
+        afterSeparator !== undefined &&
+        afterSeparator >= '0' &&
+        afterSeparator <= '9'
+      ) {
+        i++
+        let decimals = ''
+        while (i < source.length && source[i]! >= '0' && source[i]! <= '9') {
+          decimals += source[i]!
+          i++
+        }
+        tokens.push({ kind: 'num', value: Number(`${digits}.${decimals}`) })
+        continue
+      }
+
       tokens.push({ kind: 'num', value: Number(digits) })
+      continue
+    }
+    if (char === '%') {
+      tokens.push({ kind: 'percent' })
+      i++
       continue
     }
     if (char === '(' || char === ')') {
@@ -112,6 +164,20 @@ function tokenize(input: string): Token[] {
       i++
       continue
     }
+
+    // Předložka `z` / `ze`. Musí stát samostatně — jinak by se první dvě
+    // písmena jakéhokoli slova začínajícího na „ze" tvářila jako operátor
+    // a zbytek by spadl až na neznámém znaku, s matoucí hláškou.
+    const rest = source.slice(i).toLowerCase()
+    const word = OF_WORDS.find(
+      (candidate) => rest.startsWith(candidate) && !isWordChar(rest[candidate.length]),
+    )
+    if (word !== undefined) {
+      tokens.push({ kind: 'of' })
+      i += word.length
+      continue
+    }
+
     throw new ExpressionError(`Neznámý znak ${JSON.stringify(char)} ve výrazu ${JSON.stringify(input)}`)
   }
 
@@ -119,6 +185,11 @@ function tokenize(input: string): Token[] {
     throw new ExpressionError(`Prázdný výraz: ${JSON.stringify(input)}`)
   }
   return tokens
+}
+
+/** Je to písmeno, tedy pokračování slova? `undefined` = konec vstupu. */
+function isWordChar(char: string | undefined): boolean {
+  return char !== undefined && /\p{L}/u.test(char)
 }
 
 /**
@@ -148,10 +219,34 @@ export function hasAdjacentOperators(input: string): boolean {
 }
 
 /**
+ * Tolerance při porovnání výsledku.
+ *
+ * Do 0.1 verze by tu nemusela být — celá čísla se porovnávají přesně. Jenže
+ * `0,07 · 300` vyjde v plovoucí čárce jako 21.000000000000004, a takových
+ * kombinací je mezi desetinnými operandy pár promile. Bez tolerance by se
+ * jinak správný list zamítl a učitel by dostal „zkus jinou variantu" bez
+ * vysvětlení — vzácně, nepředvídatelně, a proto o to hůř.
+ *
+ * Verifikaci to neoslabuje: chyba generátoru je vždy řádová (spletená operace,
+ * jiný operand), ne v deváté desetině.
+ */
+const EPSILON = 1e-9
+
+function nearlyEqual(a: number, b: number): boolean {
+  return Math.abs(a - b) < EPSILON
+}
+
+/** Je to celé číslo, nebo aspoň nerozeznatelně blízko? */
+function isWholeNumber(value: number): boolean {
+  return nearlyEqual(value, Math.round(value))
+}
+
+/**
  * Spočítá hodnotu aritmetického výrazu.
  *
- * Podporuje `+ − · :`, závorky, unární mínus, mocniny `²` a `³` a odmocninu
- * `√`, se standardní prioritou.
+ * Podporuje `+ − · :`, závorky, unární mínus, mocniny `²` a `³`, odmocninu
+ * `√`, desetinná čísla (`3,5`) a procenta (`25 % z 80`), se standardní
+ * prioritou.
  * Záměrně NEpoužívá `eval` ani `new Function` — kdyby se sem někdy dostal
  * text z importovaného `.sifra` souboru, byla by to díra.
  */
@@ -177,6 +272,15 @@ export function evaluateExpression(input: string): number {
     let value = parseUnary()
     for (;;) {
       const token = peek()
+
+      // `25 % z 80` je násobení: 0,25 · 80. Váže stejně těsně jako tečka,
+      // takže `200 − 25 % z 200` je 200 − 50, ne (200 − 25 %) · 200.
+      if (token?.kind === 'of') {
+        position++
+        value = value * parseUnary()
+        continue
+      }
+
       if (token?.kind !== 'op' || (token.value !== '*' && token.value !== '/')) break
       position++
       const right = parseUnary()
@@ -215,6 +319,11 @@ export function evaluateExpression(input: string): number {
     let value = parsePrimary()
     for (;;) {
       const token = peek()
+      if (token?.kind === 'percent') {
+        position++
+        value = value / 100
+        continue
+      }
       if (token?.kind !== 'power') break
       position++
       value = value ** token.exponent
@@ -365,7 +474,20 @@ function verifySlot(slot: SheetSlot, index: number): VerificationFailure[] {
     ]
   }
 
-  return computed === slot.declaredValue
+  // Výsledek musí být celé číslo — je to kód políčka v mřížce. Do 0.1 to
+  // platilo samo, protože celé bylo všechno. S desetinnými operandy je tohle
+  // to jediné místo, kde se pravidlo vynutí: `0,3 · 7` je matematicky správně
+  // a jako kód políčka nepoužitelné.
+  if (!isWholeNumber(computed)) {
+    return [
+      {
+        code: 'non-integer-result',
+        message: `${label} dává ${computed}, což není celé číslo. Desetinná čísla smí být jen v zadání, ne ve výsledku.`,
+      },
+    ]
+  }
+
+  return nearlyEqual(computed, slot.declaredValue)
     ? []
     : [
         {
