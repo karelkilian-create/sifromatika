@@ -281,5 +281,6 @@ a teď se poprvé doopravdy vyzkoušela. K tomu 49 nových testů.
 V prohlížeči ověřeno na sedmé třídě: `65 % z 40 = 26`, `15,2 + 30,8 = 46`,
 `8,6 · 5 = 43`, list řešení sedí, konzole bez chyb.
 
-**Zbývá zkušební tisk na papír** — desetinná čárka a `%` se v tiskovém CSS
-můžou chovat jinak než na obrazovce. To je na tobě.
+**Zkušební tisk na papír proběhl 14. 8. 2026 a sedí** — desetinná čárka i značka
+`%` se vytiskly tak, jak vypadají na obrazovce, včetně listu s řešením. Tím je
+splněná i podmínka z §9; krok je hotový celý, ne jen v kódu.

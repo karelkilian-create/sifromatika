@@ -41,8 +41,14 @@ Ta otázka má dvě poloviny a obě platí zároveň:
 
 ## Pro koho
 
-Učitel 3.–5. ročníku základní školy. Připravuje se na notebooku nebo tabletu, tiskne na
-školní tiskárně, internet ve třídě mu občas nejede.
+Učitel matematiky na základní škole, prvního i druhého stupně. Připravuje se na notebooku
+nebo tabletu, tiskne na školní tiskárně, internet ve třídě mu občas nejede.
+
+Původně se mířilo jen na 3.–5. ročník. Rozsah se rozšířil na **3.–8.** a platí u toho
+pravidlo, které z omezení dělá závazek: **ročník se nesmí objevit v nabídce dřív, než pro
+něj existuje skutečný profil obtížnosti.** Osmák pod nadpisem „8. třída" musí dostat
+osmáckou matematiku, ne pátou třídu s přelepeným číslem. Proto se devátý ročník zatím
+nenabízí — chybí mu rovnice a lomené výrazy.
 
 Z toho plyne trojice trvalých závazků, které nejsou technická volba, ale součást vize:
 **běží celé v prohlížeči, bez účtu, a výstup je papír.**

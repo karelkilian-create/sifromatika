@@ -95,7 +95,7 @@ matematiky — a přidat slovní úlohy bez sáhnutí do šifer.
 ```
 src/
 ├── core/         čisté TS: rng · text · model · constraints · verify · checksum
-├── tasks/        generátory úloh (zatím aritmetika)
+├── tasks/        generátory úloh (aritmetika, řady, desetinná čísla, procenta)
 ├── ciphers/      šifrovací strategie (grid-coord, grid-linear)
 ├── activities/   moduly = kompozice úloh a šifer
 ├── render/       vykreslení na obrazovku a na tisk
@@ -118,15 +118,24 @@ Podrobněji:
 
 **Verze 0.1.** Použitelná: vytvoří list, ověří ho a vytiskne.
 
-Umí souřadnicovou i lineární tabulku, sčítání, odčítání, násobení a dělení pro 3.–5. ročník,
-klamná písmena, tisk a soubory `.sifra`.
+Umí dvě aktivity — šifru se souřadnicovou i lineární tabulkou a list číselných řad —
+pro **3. až 8. ročník**. Vedle čtyř základních operací zvládne pořadí operací a závorky,
+celá čísla, mocniny a odmocniny, desetinná čísla (`3,5 · 4`) a procenta (`25 % z 80`).
+K tomu klamná písmena, tisk, soubory `.sifra` a diplom ke stažení.
 
-Zatím neumí slovní úlohy, geometrii, převody jednotek, PDF export bez tiskového dialogu,
+Devátý ročník se schválně nenabízí: chybí mu rovnice a lomené výrazy, a dát deváťákovi
+osmáckou matematiku pod nadpisem „9. třída" je horší než ročník nenabídnout.
+
+Výsledek každé úlohy je vždy kladné celé číslo — je to kód políčka v tabulce. Desetinná
+čísla a procenta proto patří do zadání, ne do výsledku.
+
+Zatím neumí bingo ani pexeso (jsou v katalogu poctivě označené jako připravované),
+slovní úlohy, geometrii, převody jednotek, zlomky, PDF export bez tiskového dialogu,
 offline režim ani sdílení odkazem. Plán je v [roadmapě](docs/sifromatika-navrh-architektury.md#7-roadmapa-01--10).
 
 ## Testování
 
-107 testů. Kromě obvyklých jednotkových testů dva druhy, na kterých projekt stojí:
+272 testů. Kromě obvyklých jednotkových testů dva druhy, na kterých projekt stojí:
 
 - **Property testy** — 10 000 náhodných konfigurací musí dát nula nepoužitelných listů.
   Ruční testy tenhle prostor kombinací nepokryjí.
@@ -139,8 +148,9 @@ offline režim ani sdílení odkazem. Plán je v [roadmapě](docs/sifromatika-na
 
 Nejužitečnější je zpětná vazba od učitelů: co na listu chybí, co děti mate, co bys tiskl jinak.
 
-Když chceš přidat typ úloh, stačí jeden soubor v `src/tasks/` a řádek v registru — nic jiného
-se měnit nemá. Před odesláním prosím spusť `npm run check`.
+Když chceš přidat typ úloh, stačí jeden adresář v `src/tasks/` a řádek v registru.
+Nová aktivita je adresář v `src/activities/` a řádek v `activities/registry.ts` — chybějící
+modul k `ActivityId` neprojde překladem. Nic jiného se měnit nemá. Před odesláním prosím spusť `npm run check`.
 
 ## Licence
 
