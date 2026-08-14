@@ -1,0 +1,122 @@
+/**
+ * Kontrakt aktivity.
+ *
+ * Odpověď na otázku „která aktivita" byla dřív napsaná ručně na šesti místech:
+ * v generování, v kontrolním součtu, ve dvou blocích náhledu, v překladu stavu
+ * formuláře a v parseru `.sifra`. Se dvěma aktivitami to nikoho netrápilo,
+ * s pátou by to bylo šest souběžných větvení — a zapomenutá větev v parseru
+ * znamená soubor, který jde uložit a nejde otevřít.
+ *
+ * Odsud dál platí: **přidání aktivity je nový adresář a jeden řádek
+ * v registru.** Žádný soubor mimo `activities/` se kvůli ní neotevírá.
+ *
+ * Modul je záměrně jen popis — data a funkce, žádná dědičnost. Stejný princip
+ * už v projektu funguje pro `tasks/registry.ts` a `ciphers/registry.ts`.
+ */
+
+import type { ReactNode } from 'react'
+import type {
+  ActivityId,
+  Grade,
+  OperationTag,
+  Project,
+  RelaxationLog,
+  VerificationReport,
+} from '../core/model/index.js'
+
+/** Aktivity v katalogu — hotové i připravované. */
+export type CatalogId = ActivityId | 'bingo' | 'pexeso'
+
+export interface ActivityInfo {
+  id: CatalogId
+  label: string
+  /** Jedna věta, co učitel dostane. Zobrazuje se pod názvem. */
+  tagline: string
+  /** `false` = v katalogu je vidět, ale vybrat ji nejde. */
+  available: boolean
+}
+
+/**
+ * Pole formuláře, která má každá aktivita.
+ *
+ * Ročník, název a operace nejsou vlastnictvím žádné z nich — přepnutí
+ * aktivity je nesmí přepsat. Proto se předávají modulu zvlášť, ne jako
+ * součást jeho vlastního stavu.
+ */
+export interface SharedEditorState {
+  grade: Grade
+  title: string
+  operations: Record<OperationTag, boolean>
+}
+
+/**
+ * Co musí umět list každé aktivity.
+ *
+ * Krátký seznam schválně — je to jediné, co o listu ví shell. Verifikace je
+ * v něm proto, že **neověřený list se nikdy nesmí dostat k tisku**; kdyby ji
+ * kontrakt nevyžadoval, šlo by přidat aktivitu, která se tiskne bez kontroly.
+ */
+export interface ActivitySheet {
+  /** Název pro správu souborů. Co se tiskne na papír, si řeší náhled sám. */
+  title: string
+  relaxations: RelaxationLog[]
+  verification: VerificationReport
+}
+
+/**
+ * Výsledek generování.
+ *
+ * Neúspěch nese `relaxations` stejně jako úspěch — často právě ústupky
+ * vysvětlují, proč to nešlo.
+ */
+export type GenerateOutcome<Sheet> =
+  | { ok: true; sheet: Sheet }
+  | { ok: false; reason: string; relaxations: RelaxationLog[] }
+
+/**
+ * Jedna aktivita, celá.
+ *
+ * `State` je slice formuláře jen pro tuhle aktivitu, `Cfg` její payload
+ * v `.sifra`, `Sheet` výsledek generování. `Id` váže všechno dohromady:
+ * modul zapsaný v registru pod `cipher-grid` nemůže vracet projekt řad.
+ */
+export interface ActivityModule<Id extends ActivityId, State, Cfg, Sheet extends ActivitySheet> {
+  id: Id
+  info: ActivityInfo
+  /** Výchozí hodnoty slice formuláře. */
+  initialState: State
+  /** Formulář → konfigurace. Společná pole přicházejí zvlášť. */
+  toConfig(state: State, shared: SharedEditorState, seed: string): Project<Id, Cfg>
+  /** Konfigurace → slice formuláře. Společná pole si přečte shell sám. */
+  fromConfig(config: Project<Id, Cfg>): State
+  /**
+   * Validace payloadu z `.sifra`. `null` = poškozený nebo cizí.
+   *
+   * ⚠ Vstup je NEDŮVĚRYHODNÝ — soubor může přijít e-mailem od kolegyně nebo
+   *   projít cizí verzí aplikace. Implementace nesmí použít `as` bez ověření.
+   */
+  parsePayload(raw: unknown): Cfg | null
+  generate(config: Project<Id, Cfg>): GenerateOutcome<Sheet>
+  checksum(sheet: Sheet): string
+  /**
+   * Náhled: pracovní list a k němu list řešení.
+   *
+   * Je to pole v datech, ne import v `App.tsx` — právě proto půjde v 0.3
+   * nahradit za `toDocument(sheet): DocumentModel`, aniž by se shell dotkl.
+   * Bere jen `sheet`, protože ten svou konfiguraci nese s sebou; druhá cesta
+   * k témuž by se při opakovaném pokusu o generování rozešla v seedu.
+   *
+   * Zapsáno jako metoda, ne jako pole s funkčním typem — jen tak zůstane
+   * modul přiřaditelný na `AnyActivityModule` uvnitř registru.
+   */
+  View(props: { sheet: Sheet }): ReactNode
+}
+
+/**
+ * Modul s odloženými typovými parametry.
+ *
+ * Existuje jen pro vnitřek registru: `activityModules[id]` je unie modulů
+ * a metoda unie s různými parametry není volatelná. Nikdo mimo `registry.ts`
+ * tenhle typ nepotřebuje — a taky ho nemá používat.
+ */
+export type AnyActivityModule = ActivityModule<ActivityId, unknown, unknown, ActivitySheet>

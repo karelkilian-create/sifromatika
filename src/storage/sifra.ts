@@ -14,16 +14,8 @@
  *   a nikde se nepoužije `as` bez ověření.
  */
 
-import { clampTaskCount, gradeProfile } from '../core/constraints/index.js'
-import type {
-  CipherGridConfig,
-  CipherStrategyId,
-  Grade,
-  OperationTag,
-  OutputConfig,
-  ProjectConfig,
-  SequenceSheetConfig,
-} from '../core/model/index.js'
+import { parseActivityProject } from '../activities/registry.js'
+import type { ProjectConfig } from '../core/model/index.js'
 
 export const SIFRA_FORMAT = 'sifromatika'
 export const SIFRA_SCHEMA_VERSION = 1
@@ -49,20 +41,6 @@ export function serializeSifra(config: ProjectConfig, checksum: string): string 
 export type SifraParseResult =
   | { ok: true; file: SifraFile }
   | { ok: false; error: string }
-
-const GRADES: Grade[] = [3, 4, 5, 6, 7, 8, 9]
-const STRATEGIES: CipherStrategyId[] = ['grid-coord', 'grid-linear']
-const OPERATIONS: OperationTag[] = ['add', 'sub', 'mul', 'div']
-
-/**
- * Známá id generátorů úloh.
- *
- * Vypsané ručně, stejně jako `STRATEGIES` a `OPERATIONS` — parser
- * nedůvěryhodného vstupu nemá sahat do registru generátorů. Neznámé id ze
- * souboru z novější verze se tiše zahodí; horší je spadnout na souboru,
- * který kolegyně poslala e-mailem.
- */
-const GENERATORS = ['arithmetic', 'sequence']
 
 export function parseSifra(text: string): SifraParseResult {
   let raw: unknown
@@ -109,130 +87,11 @@ function parseConfig(raw: unknown): ProjectConfig | null {
     title: raw.title,
   }
 
-  // Neznámá aktivita = soubor z novější Šifromatiky. Tichý převod na šifru by
-  // učiteli podstrčil úplně jiný list, než jaký ukládal.
-  if (raw.activity === 'cipher-grid') {
-    const payload = parseCipherGridPayload(raw.payload)
-    return payload === null ? null : { ...base, activity: 'cipher-grid', payload }
-  }
-  if (raw.activity === 'sequence-sheet') {
-    const payload = parseSequenceSheetPayload(raw.payload)
-    return payload === null ? null : { ...base, activity: 'sequence-sheet', payload }
-  }
-  return null
-}
-
-/** Váhy operací. `null` = ani jedna povolená, což je neplatný stav. */
-function parseTaskMix(raw: unknown): Partial<Record<OperationTag, number>> | null {
-  const taskMix: Partial<Record<OperationTag, number>> = {}
-  if (isRecord(raw)) {
-    for (const operation of OPERATIONS) {
-      const weight = raw[operation]
-      if (typeof weight === 'number' && weight > 0) taskMix[operation] = weight
-    }
-  }
-  return Object.keys(taskMix).length === 0 ? null : taskMix
-}
-
-function parseOutput(raw: Record<string, unknown>, printTitleByDefault: boolean): OutputConfig {
-  return {
-    includeSolution: raw.includeSolution !== false,
-    paper: 'A4',
-    columns: raw.columns === 1 ? 1 : 2,
-    printTitleOnWorksheet:
-      raw.printTitleOnWorksheet === undefined
-        ? printTitleByDefault
-        : raw.printTitleOnWorksheet === true,
-  }
-}
-
-function parseSequenceSheetPayload(raw: unknown): SequenceSheetConfig | null {
-  if (!isRecord(raw)) return null
-
-  const difficulty = raw.difficulty
-  if (!isRecord(difficulty)) return null
-  const grade = difficulty.grade
-  if (typeof grade !== 'number' || !GRADES.includes(grade as Grade)) return null
-
-  const output = raw.output
-  if (!isRecord(output)) return null
-
-  const taskMix = parseTaskMix(raw.taskMix)
-  if (taskMix === null) return null
-
-  return {
-    taskCount: clampTaskCount(raw.taskCount),
-    difficulty: gradeProfile(grade as Grade),
-    taskMix,
-    // List řad nemá tajenku, takže se název tiskne, pokud soubor neříká jinak.
-    output: parseOutput(output, true),
-  }
-}
-
-function parseCipherGridPayload(raw: unknown): CipherGridConfig | null {
-  if (!isRecord(raw)) return null
-  if (typeof raw.message !== 'string') return null
-
-  const difficulty = raw.difficulty
-  if (!isRecord(difficulty)) return null
-  const grade = difficulty.grade
-  if (typeof grade !== 'number' || !GRADES.includes(grade as Grade)) return null
-
-  const cipher = raw.cipher
-  if (!isRecord(cipher)) return null
-  if (typeof cipher.strategy !== 'string' || !STRATEGIES.includes(cipher.strategy as CipherStrategyId)) {
-    return null
-  }
-
-  const output = raw.output
-  if (!isRecord(output)) return null
-
-  const taskMix = parseTaskMix(raw.taskMix)
-  if (taskMix === null) return null
-
-  // Chybí-li `generatorMix`, soubor vznikl dřív, než existovaly další
-  // generátory. Doplnit sem dnešní default by znamenalo, že se loni uložená
-  // aktivita vytiskne jinak — proto výslovně jen aritmetika.
-  const generatorMix: Record<string, number> = {}
-  if (isRecord(raw.generatorMix)) {
-    for (const id of GENERATORS) {
-      const weight = raw.generatorMix[id]
-      if (typeof weight === 'number' && weight > 0) generatorMix[id] = weight
-    }
-  }
-
-  return {
-    message: raw.message,
-    // Profil obtížnosti se z ročníku odvodí ZNOVU, uložený se ignoruje. Kdyby
-    // se přebíral ze souboru, oprava defaultů pro 4. třídu by se do dřív
-    // uložených aktivit nikdy nepromítla — a učitel by nechápal proč.
-    // Až 0.2 přidá ruční úpravy profilu, uloží se jako výslovný override.
-    difficulty: gradeProfile(grade as Grade),
-    taskMix,
-    generatorMix: Object.keys(generatorMix).length > 0 ? generatorMix : { arithmetic: 1 },
-    cipher: {
-      strategy: cipher.strategy as CipherStrategyId,
-      grid: parseGrid(cipher.grid),
-      distinctCellPerOccurrence: cipher.distinctCellPerOccurrence !== false,
-      decoyDensity: clamp01(cipher.decoyDensity, 0.35),
-    },
-    // Šifra má co prozradit, takže se název na žákovský list defaultně netiskne.
-    output: parseOutput(output, false),
-  }
-}
-
-function parseGrid(raw: unknown): { rows: number; cols: number } | undefined {
-  if (!isRecord(raw)) return undefined
-  const { rows, cols } = raw
-  if (typeof rows !== 'number' || typeof cols !== 'number') return undefined
-  if (!Number.isInteger(rows) || !Number.isInteger(cols)) return undefined
-  if (rows < 1 || cols < 1 || rows > 20 || cols > 20) return undefined
-  return { rows, cols }
-}
-
-function clamp01(value: unknown, fallback: number): number {
-  if (typeof value !== 'number' || Number.isNaN(value)) return fallback
-  return Math.min(Math.max(value, 0), 1)
+  // Payload si validuje aktivita sama; tenhle modul zná jen hlavičku.
+  // Neznámá aktivita = soubor z novější Šifromatiky, a registr na ni vrátí
+  // `null` — tichý převod na šifru by učiteli podstrčil úplně jiný list,
+  // než jaký ukládal.
+  return parseActivityProject(base, raw.activity, raw.payload)
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

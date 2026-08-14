@@ -1,42 +1,52 @@
 /**
- * Katalog aktivit — to, co Šifromatika nabízí.
+ * Registr aktivit — jediné místo, které o všech aktivitách ví najednou.
  *
- * Existuje kvůli učiteli, ne kvůli kódu. Nástroj, u kterého není na první
- * pohled vidět, co všechno umí, se použije jednou a pak už ne. Proto jsou
- * v katalogu i aktivity, které ještě nejsou hotové — ale poctivě označené.
+ * Dvojí role, obojí schválně na jedné hromadě:
  *
- * ⚠ `available: false` znamená „ještě to neexistuje“, ne „je to skryté“.
+ *  1. **Katalog pro učitele.** Nástroj, u kterého není na první pohled vidět,
+ *     co všechno umí, se použije jednou a pak už ne. Proto jsou v katalogu
+ *     i aktivity, které ještě nejsou hotové — ale poctivě označené.
+ *  2. **Registr modulů pro kód.** Generování, kontrolní součet, náhled,
+ *     překlad formuláře i validace souboru — všechno na jednom řádku.
+ *
+ * ⚠ `available: false` znamená „ještě to neexistuje", ne „je to skryté".
  *   Zapnout aktivitu, která nejde vygenerovat, je horší než ji neukázat:
  *   učitel by klikl, nic by nedostal a podruhé už nepřijde.
+ *
+ * Přidání aktivity = nový adresář v `activities/` a jeden řádek v mapě níž.
+ * Když k `ActivityId` v `core/model` chybí modul, spadne překlad — ne až
+ * aplikace v ruce učitele.
  */
 
-import type { ActivityId } from '../core/model/index.js'
+import type { ReactNode } from 'react'
+import type { ActivityId, ProjectBase, ProjectConfig } from '../core/model/index.js'
+import { cipherGridModule } from './cipher-grid/module.js'
+import { sequenceSheetModule } from './sequence-sheet/module.js'
+import type {
+  ActivityInfo,
+  ActivitySheet,
+  AnyActivityModule,
+  CatalogId,
+  GenerateOutcome,
+  SharedEditorState,
+} from './contract.js'
 
-/** Aktivity v katalogu — hotové i připravované. */
-export type CatalogId = ActivityId | 'bingo' | 'pexeso'
+export type { ActivityInfo, CatalogId } from './contract.js'
 
-export interface ActivityInfo {
-  id: CatalogId
-  label: string
-  /** Jedna věta, co učitel dostane. Zobrazuje se pod názvem. */
-  tagline: string
-  /** `false` = v katalogu je vidět, ale vybrat ji nejde. */
-  available: boolean
+export const activityModules = {
+  'cipher-grid': cipherGridModule,
+  'sequence-sheet': sequenceSheetModule,
+} satisfies Record<ActivityId, AnyActivityModule>
+
+type ActivityModules = typeof activityModules
+
+/** Stav formuláře pro každou aktivitu zvlášť, odvozený z modulů. */
+export type ActivityStates = {
+  [K in ActivityId]: ActivityModules[K]['initialState']
 }
 
-export const activityCatalog: readonly ActivityInfo[] = [
-  {
-    id: 'cipher-grid',
-    label: 'Šifra',
-    tagline: 'Tajenka schovaná v tabulce',
-    available: true,
-  },
-  {
-    id: 'sequence-sheet',
-    label: 'Číselné řady',
-    tagline: 'Co bude následovat?',
-    available: true,
-  },
+/** Aktivity, které v katalogu jsou vidět, ale ještě nejdou vybrat. */
+const plannedActivities: readonly ActivityInfo[] = [
   {
     id: 'bingo',
     label: 'Bingo',
@@ -51,6 +61,109 @@ export const activityCatalog: readonly ActivityInfo[] = [
   },
 ]
 
+/** Katalog v pořadí, v jakém ho uvidí učitel: hotové napřed, pak chystané. */
+export const activityCatalog: readonly ActivityInfo[] = [
+  ...Object.values(activityModules).map((module) => module.info),
+  ...plannedActivities,
+]
+
 export function isAvailableActivity(id: CatalogId): id is ActivityId {
   return activityCatalog.some((activity) => activity.id === id && activity.available)
+}
+
+/** Je to id aktivity, kterou tahle verze zná? Pro vstup ze souboru. */
+export function isActivityId(value: unknown): value is ActivityId {
+  return typeof value === 'string' && value in activityModules
+}
+
+export function initialActivityStates(): ActivityStates {
+  const states = Object.fromEntries(
+    Object.entries(activityModules).map(([id, module]) => [id, module.initialState]),
+  )
+  // Klíče i hodnoty pocházejí z `activityModules`, takže tvar sedí; typ
+  // `Object.fromEntries` je jen širší, než co dokáže překladač odvodit.
+  return states as ActivityStates
+}
+
+export interface ActivityRun {
+  config: ProjectConfig
+  outcome: GenerateOutcome<ActivitySheet>
+  /** Náhled listu, nebo `null`, když se nepovedl nebo neprošel kontrolou. */
+  view: ReactNode | null
+}
+
+/**
+ * Stav formuláře → konfigurace.
+ *
+ * Bere celý `ActivityStates`, ne jeden slice: kdyby si volající vybíral sám,
+ * překladač by mu nedokázal ohlídat, že podal stav té aktivity, kterou žádá.
+ */
+export function configFor(
+  activity: ActivityId,
+  states: ActivityStates,
+  shared: SharedEditorState,
+  seed: string,
+): ProjectConfig {
+  const module = activityModules[activity] as AnyActivityModule
+  // Mapa modulů garantuje, že modul pod `activity` vrací projekt téže
+  // aktivity — `satisfies Record<ActivityId, …>` výš to hlídá při překladu.
+  return module.toConfig(states[activity], shared, seed) as ProjectConfig
+}
+
+/** Vygeneruje aktivitu podle stavu formuláře a připraví její náhled. */
+export function runActivity(
+  activity: ActivityId,
+  states: ActivityStates,
+  shared: SharedEditorState,
+  seed: string,
+): ActivityRun {
+  const module = activityModules[activity] as AnyActivityModule
+  const config = configFor(activity, states, shared, seed)
+  const outcome = module.generate(config)
+  const verified = outcome.ok && outcome.sheet.verification.ok
+
+  return {
+    config,
+    outcome,
+    view: outcome.ok && verified ? module.View({ sheet: outcome.sheet }) : null,
+  }
+}
+
+/**
+ * Kontrolní součet listu pro danou konfiguraci.
+ *
+ * Počítá se z nově vygenerovaného listu, ne z toho na obrazovce — právě to
+ * z něj dělá test determinismu při otevírání souboru. `null` = z konfigurace
+ * žádný list nevznikne.
+ */
+export function checksumForConfig(config: ProjectConfig): string | null {
+  const module = activityModules[config.activity] as AnyActivityModule
+  const outcome = module.generate(config)
+  return outcome.ok ? module.checksum(outcome.sheet) : null
+}
+
+/** Stav formuláře pro tu aktivitu, které konfigurace patří. */
+export function activityStateFromConfig(config: ProjectConfig): Partial<ActivityStates> {
+  const module = activityModules[config.activity] as AnyActivityModule
+  return { [config.activity]: module.fromConfig(config) }
+}
+
+/**
+ * Složí projekt z hlavičky a nedůvěryhodného payloadu.
+ *
+ * `null` u neznámé aktivity je záměr: soubor z novější Šifromatiky se odmítne,
+ * protože tichý převod na šifru by učiteli podstrčil úplně jiný list, než jaký
+ * ukládal.
+ */
+export function parseActivityProject(
+  base: ProjectBase,
+  activity: unknown,
+  rawPayload: unknown,
+): ProjectConfig | null {
+  if (!isActivityId(activity)) return null
+  const module = activityModules[activity] as AnyActivityModule
+  const payload = module.parsePayload(rawPayload)
+  if (payload === null) return null
+  // Tentýž klíč vybral modul i cílovou variantu unie, takže k sobě patří.
+  return { ...base, activity, payload } as ProjectConfig
 }

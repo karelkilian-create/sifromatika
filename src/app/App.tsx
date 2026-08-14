@@ -5,41 +5,22 @@
  * Generování je čistá funkce konfigurace, takže se dá počítat v `useMemo` —
  * žádné efekty, žádná synchronizace stavu.
  *
- * Aktivit je víc, a shell je jediné místo, které o nich ví všech najednou.
- * Samotné aktivity o sobě navzájem nevědí.
+ * O tom, které aktivity existují a co která umí, ví `activities/registry`.
+ * Shell zná jen jeho kontrakt — proto v něm není jediné `if` na aktivitu
+ * a přidání další hry se ho nedotkne.
  */
 
 import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
-import {
-  generateCipherGrid,
-  sheetChecksum as cipherChecksum,
-  solutionTitle as cipherSolutionTitle,
-  worksheetTitle as cipherWorksheetTitle,
-} from '../activities/cipher-grid/index.js'
-import {
-  generateSequenceSheet,
-  sheetChecksum as sequenceChecksum,
-  worksheetTitle as sequenceWorksheetTitle,
-} from '../activities/sequence-sheet/index.js'
-import type { ProjectConfig } from '../core/model/index.js'
+import { checksumForConfig, runActivity } from '../activities/registry.js'
 import { randomSeed } from '../core/rng/index.js'
 import { SifromatikaMark } from '../render/brand/index.js'
 import { DiplomaScreen } from '../features/diploma/DiplomaScreen.js'
 import { ActivityNav } from '../features/editor/ActivityNav.js'
-import { EditorPanel, type EditorState } from '../features/editor/EditorPanel.js'
-import { INITIAL_EDITOR_STATE, fromConfig, toConfig } from '../features/editor/state.js'
-import {
-  SolutionView,
-  TaskSheetView,
-  TaskSolutionView,
-  WorksheetView,
-} from '../render/screen/index.js'
+import { EditorPanel } from '../features/editor/EditorPanel.js'
+import { INITIAL_EDITOR_STATE, fromConfig, type EditorState } from '../features/editor/state.js'
 import { parseSifra, serializeSifra, suggestFileName } from '../storage/sifra.js'
 import '../render/print/print.css'
 import './app.css'
-
-const SEQUENCE_INSTRUCTIONS =
-  'U každé řady nejdřív zjisti, podle jakého pravidla čísla postupují. Potom doplň číslo, které patří místo otazníku.'
 
 interface FileNotice {
   level: 'info' | 'error'
@@ -103,21 +84,6 @@ function Preview({ children }: { children: ReactNode }) {
   )
 }
 
-/**
- * Kontrolní součet listu pro danou konfiguraci.
- *
- * Počítá se z nově vygenerovaného listu, ne z toho na obrazovce — právě to
- * z něj dělá test determinismu při otevírání souboru.
- */
-function checksumFor(config: ProjectConfig): string | null {
-  if (config.activity === 'cipher-grid') {
-    const outcome = generateCipherGrid(config)
-    return outcome.ok ? cipherChecksum(outcome.sheet) : null
-  }
-  const outcome = generateSequenceSheet(config)
-  return outcome.ok ? sequenceChecksum(outcome.sheet) : null
-}
-
 export function App() {
   const [view, setView] = useState<AppView>('worksheets')
   const [state, setState] = useState<EditorState>(INITIAL_EDITOR_STATE)
@@ -125,12 +91,10 @@ export function App() {
   const [fileNotice, setFileNotice] = useState<FileNotice | null>(null)
   const fileInput = useRef<HTMLInputElement>(null)
 
-  const generated = useMemo(() => {
-    const config = toConfig(state, seed)
-    return config.activity === 'cipher-grid'
-      ? { kind: 'cipher-grid' as const, config, outcome: generateCipherGrid(config) }
-      : { kind: 'sequence-sheet' as const, config, outcome: generateSequenceSheet(config) }
-  }, [state, seed])
+  const generated = useMemo(
+    () => runActivity(state.activity, state.byActivity, state.shared, seed),
+    [state, seed],
+  )
 
   const { outcome } = generated
   // Ústupky se hlásí i při neúspěchu — často právě ony vysvětlují, proč to nešlo.
@@ -139,7 +103,7 @@ export function App() {
 
   const handleSave = () => {
     if (!outcome.ok) return
-    const checksum = checksumFor(generated.config)
+    const checksum = checksumForConfig(generated.config)
     if (checksum === null) return
 
     const text = serializeSifra(generated.config, checksum)
@@ -165,7 +129,7 @@ export function App() {
 
     // Soubor nese jen konfiguraci — list se dopočítá. Kontrolní součet je
     // jediné, co odhalí, že ho jiná verze generátoru dopočítala jinak.
-    const checksum = checksumFor(parsed.file.config)
+    const checksum = checksumForConfig(parsed.file.config)
     if (checksum !== null && checksum !== parsed.file.checksum) {
       setFileNotice({
         level: 'error',
@@ -277,47 +241,8 @@ export function App() {
             </p>
           )}
 
-          {generated.kind === 'cipher-grid' && generated.outcome.ok && verified && (
-            <Preview>
-              <WorksheetView
-                title={cipherWorksheetTitle(generated.outcome.sheet)}
-                table={generated.outcome.sheet.table}
-                slots={generated.outcome.sheet.slots}
-                wordLengths={generated.outcome.sheet.message.wordLengths}
-                columns={generated.config.payload.output.columns}
-              />
-              <div className="print-page-break">
-                <SolutionView
-                  title={
-                    generated.outcome.sheet.titleDerived
-                      ? null
-                      : cipherSolutionTitle(generated.outcome.sheet)
-                  }
-                  message={generated.outcome.sheet.message.original}
-                  table={generated.outcome.sheet.table}
-                  slots={generated.outcome.sheet.slots}
-                  wordLengths={generated.outcome.sheet.message.wordLengths}
-                />
-              </div>
-            </Preview>
-          )}
-
-          {generated.kind === 'sequence-sheet' && generated.outcome.ok && verified && (
-            <Preview>
-              <TaskSheetView
-                title={sequenceWorksheetTitle(generated.outcome.sheet)}
-                instructions={SEQUENCE_INSTRUCTIONS}
-                tasks={generated.outcome.sheet.tasks}
-                columns={generated.config.payload.output.columns}
-              />
-              <div className="print-page-break">
-                <TaskSolutionView
-                  title={sequenceWorksheetTitle(generated.outcome.sheet)}
-                  tasks={generated.outcome.sheet.tasks}
-                />
-              </div>
-            </Preview>
-          )}
+          {/* Z čeho se list skládá, ví aktivita sama — shell jen dá rám. */}
+          {generated.view !== null && <Preview>{generated.view}</Preview>}
         </>
       )}
     </div>

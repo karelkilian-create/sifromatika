@@ -218,7 +218,13 @@ export interface SequenceSheetConfig {
 
 export type ActivityId = 'cipher-grid' | 'sequence-sheet'
 
-interface ProjectBase {
+/**
+ * Společná hlavička každé uložené aktivity — vše kromě `activity` a `payload`.
+ *
+ * Exportovaná kvůli parseru `.sifra`, který ji sestaví jednou pro všechny
+ * aktivity a teprve pak k ní nechá registr doplnit payload.
+ */
+export interface ProjectBase {
   schemaVersion: 1
   /** Mění deterministický výstup. Změna = staré seedy generují jiný list. */
   generatorVersion: number
@@ -230,15 +236,21 @@ interface ProjectBase {
   title?: string
 }
 
-export interface CipherGridProject extends ProjectBase {
-  activity: 'cipher-grid'
-  payload: CipherGridConfig
+/**
+ * Uložená aktivita daného druhu.
+ *
+ * Generická schválně: díky tomu jde v kontraktu `ActivityModule` napsat
+ * „konfigurace právě té aktivity, které modul patří", a překladač ohlídá,
+ * že modul pod klíčem `cipher-grid` nevrací payload číselných řad.
+ */
+export interface Project<A extends ActivityId, P> extends ProjectBase {
+  activity: A
+  payload: P
 }
 
-export interface SequenceSheetProject extends ProjectBase {
-  activity: 'sequence-sheet'
-  payload: SequenceSheetConfig
-}
+export type CipherGridProject = Project<'cipher-grid', CipherGridConfig>
+
+export type SequenceSheetProject = Project<'sequence-sheet', SequenceSheetConfig>
 
 /**
  * Uložitelná aktivita. Rozlišená unie podle `activity` — přidání další hry

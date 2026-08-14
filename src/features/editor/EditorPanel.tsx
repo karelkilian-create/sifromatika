@@ -10,23 +10,10 @@
  * „Klamná písmena" na listu bez tajenky je jen šum.
  */
 
-import type { ActivityId, Grade, OperationTag } from '../../core/model/index.js'
+import type { Grade, OperationTag } from '../../core/model/index.js'
+import type { SharedEditorState } from '../../activities/contract.js'
 import { TASK_COUNT_LIMITS } from '../../core/constraints/index.js'
-
-export interface EditorState {
-  activity: ActivityId
-  message: string
-  grade: Grade
-  title: string
-  operations: Record<OperationTag, boolean>
-  /** Míchat mezi příklady i číselné řady („co bude následovat?“). Jen u šifry. */
-  sequences: boolean
-  /** Kolik úloh má být na listu. Jen u aktivit bez tajenky. */
-  taskCount: number
-  decoyDensity: number
-  distinctCellPerOccurrence: boolean
-  printTitleOnWorksheet: boolean
-}
+import type { EditorState } from './state.js'
 
 const OPERATION_LABELS: Record<OperationTag, string> = {
   add: 'Sčítání',
@@ -54,14 +41,29 @@ export function EditorPanel({
   onOpen,
   canPrint,
 }: EditorPanelProps) {
-  const patch = (changes: Partial<EditorState>) => onChange({ ...state, ...changes })
   const isCipher = state.activity === 'cipher-grid'
+  const cipher = state.byActivity['cipher-grid']
+  const sequence = state.byActivity['sequence-sheet']
+
+  const patchShared = (changes: Partial<SharedEditorState>) =>
+    onChange({ ...state, shared: { ...state.shared, ...changes } })
+
+  // Zápis vždy jen do slice vybrané aktivity. Pole ostatních aktivit se tím
+  // nemají jak přepsat — proto se učiteli po přepnutí a návratu vrátí tajenka.
+  const patchCipher = (changes: Partial<typeof cipher>) =>
+    onChange({ ...state, byActivity: { ...state.byActivity, 'cipher-grid': { ...cipher, ...changes } } })
+
+  const patchSequence = (changes: Partial<typeof sequence>) =>
+    onChange({
+      ...state,
+      byActivity: { ...state.byActivity, 'sequence-sheet': { ...sequence, ...changes } },
+    })
 
   const toggleOperation = (operation: OperationTag) => {
-    const next = { ...state.operations, [operation]: !state.operations[operation] }
+    const next = { ...state.shared.operations, [operation]: !state.shared.operations[operation] }
     // Aspoň jedna operace musí zůstat, jinak nelze vyrobit vůbec nic.
     if (Object.values(next).every((enabled) => !enabled)) return
-    patch({ operations: next })
+    patchShared({ operations: next })
   }
 
   return (
@@ -73,8 +75,8 @@ export function EditorPanel({
             <input
               className="field__input"
               type="text"
-              value={state.message}
-              onChange={(event) => patch({ message: event.target.value })}
+              value={cipher.message}
+              onChange={(event) => patchCipher({ message: event.target.value })}
               placeholder="POKLAD JE U BAZÉNU"
               autoComplete="off"
               spellCheck={false}
@@ -88,8 +90,8 @@ export function EditorPanel({
               type="number"
               min={TASK_COUNT_LIMITS.min}
               max={TASK_COUNT_LIMITS.max}
-              value={state.taskCount}
-              onChange={(event) => patch({ taskCount: Number(event.target.value) })}
+              value={sequence.taskCount}
+              onChange={(event) => patchSequence({ taskCount: Number(event.target.value) })}
             />
           </label>
         )}
@@ -98,8 +100,8 @@ export function EditorPanel({
           <span className="field__label">Ročník</span>
           <select
             className="field__input"
-            value={state.grade}
-            onChange={(event) => patch({ grade: Number(event.target.value) as Grade })}
+            value={state.shared.grade}
+            onChange={(event) => patchShared({ grade: Number(event.target.value) as Grade })}
           >
             <option value={3}>3. třída</option>
             <option value={4}>4. třída</option>
@@ -142,7 +144,7 @@ export function EditorPanel({
               <label className="checkbox" key={operation}>
                 <input
                   type="checkbox"
-                  checked={state.operations[operation]}
+                  checked={state.shared.operations[operation]}
                   onChange={() => toggleOperation(operation)}
                 />
                 {OPERATION_LABELS[operation]}
@@ -154,8 +156,8 @@ export function EditorPanel({
                 <label className="checkbox">
                   <input
                     type="checkbox"
-                    checked={state.sequences}
-                    onChange={() => patch({ sequences: !state.sequences })}
+                    checked={cipher.sequences}
+                    onChange={() => patchCipher({ sequences: !cipher.sequences })}
                   />
                   Číselné řady
                 </label>
@@ -179,8 +181,8 @@ export function EditorPanel({
               <input
                 className="field__input"
                 type="text"
-                value={state.title}
-                onChange={(event) => patch({ title: event.target.value })}
+                value={state.shared.title}
+                onChange={(event) => patchShared({ title: event.target.value })}
                 placeholder={isCipher ? 'např. Lov pirátského pokladu' : 'např. Rozcvička na řady'}
                 autoComplete="off"
               />
@@ -190,8 +192,10 @@ export function EditorPanel({
                 <label className="checkbox">
                   <input
                     type="checkbox"
-                    checked={state.printTitleOnWorksheet}
-                    onChange={() => patch({ printTitleOnWorksheet: !state.printTitleOnWorksheet })}
+                    checked={cipher.printTitleOnWorksheet}
+                    onChange={() =>
+                      patchCipher({ printTitleOnWorksheet: !cipher.printTitleOnWorksheet })
+                    }
                   />
                   Tisknout název i na list pro žáky
                 </label>
@@ -212,23 +216,25 @@ export function EditorPanel({
             <div className="fieldset">
               <label className="field">
                 <span className="field__label">
-                  Klamná písmena v tabulce: {Math.round(state.decoyDensity * 100)} %
+                  Klamná písmena v tabulce: {Math.round(cipher.decoyDensity * 100)} %
                 </span>
                 <input
                   type="range"
                   min={0}
                   max={60}
                   step={5}
-                  value={Math.round(state.decoyDensity * 100)}
-                  onChange={(event) => patch({ decoyDensity: Number(event.target.value) / 100 })}
+                  value={Math.round(cipher.decoyDensity * 100)}
+                  onChange={(event) =>
+                    patchCipher({ decoyDensity: Number(event.target.value) / 100 })
+                  }
                 />
               </label>
               <label className="checkbox">
                 <input
                   type="checkbox"
-                  checked={state.distinctCellPerOccurrence}
+                  checked={cipher.distinctCellPerOccurrence}
                   onChange={() =>
-                    patch({ distinctCellPerOccurrence: !state.distinctCellPerOccurrence })
+                    patchCipher({ distinctCellPerOccurrence: !cipher.distinctCellPerOccurrence })
                   }
                 />
                 Každý výskyt písmene na jiném políčku

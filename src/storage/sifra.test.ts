@@ -13,7 +13,12 @@ import {
   generateSequenceSheet,
   sheetChecksum as sequenceChecksum,
 } from '../activities/sequence-sheet/index.js'
-import { INITIAL_EDITOR_STATE, fromConfig, toConfig } from '../features/editor/state.js'
+import {
+  INITIAL_EDITOR_STATE,
+  fromConfig,
+  toConfig,
+  type EditorState,
+} from '../features/editor/state.js'
 import { parseSifra, serializeSifra, suggestFileName } from './sifra.js'
 
 function sheetOf(config: ReturnType<typeof defaultConfig>) {
@@ -60,33 +65,43 @@ describe('.sifra — uložení a načtení', () => {
   })
 
   it('projde celým kolečkem formulář → soubor → formulář', () => {
-    const before = { ...toConfig({
-      activity: 'cipher-grid',
-      message: 'ZLATÝ KLÍČ',
-      grade: 5,
-      title: 'Lov pirátského pokladu',
-      operations: { add: true, sub: false, mul: true, div: false },
-      sequences: true,
-      taskCount: 12,
-      decoyDensity: 0.5,
-      distinctCellPerOccurrence: false,
-      printTitleOnWorksheet: true,
-    }, 'kolecko') }
+    const before = toConfig(
+      {
+        activity: 'cipher-grid',
+        shared: {
+          grade: 5,
+          title: 'Lov pirátského pokladu',
+          operations: { add: true, sub: false, mul: true, div: false },
+        },
+        byActivity: {
+          'cipher-grid': {
+            message: 'ZLATÝ KLÍČ',
+            sequences: true,
+            decoyDensity: 0.5,
+            distinctCellPerOccurrence: false,
+            printTitleOnWorksheet: true,
+          },
+          'sequence-sheet': { taskCount: 12 },
+        },
+      },
+      'kolecko',
+    )
 
     const parsed = parseSifra(serializeSifra(before, 'abc'))
     expect(parsed.ok).toBe(true)
     if (!parsed.ok) return
 
     const round = fromConfig(parsed.file.config)
+    const cipher = round.state.byActivity['cipher-grid']
     expect(round.seed).toBe('kolecko')
-    expect(round.state.message).toBe('ZLATÝ KLÍČ')
-    expect(round.state.grade).toBe(5)
-    expect(round.state.title).toBe('Lov pirátského pokladu')
-    expect(round.state.operations).toEqual({ add: true, sub: false, mul: true, div: false })
-    expect(round.state.sequences).toBe(true)
-    expect(round.state.decoyDensity).toBe(0.5)
-    expect(round.state.distinctCellPerOccurrence).toBe(false)
-    expect(round.state.printTitleOnWorksheet).toBe(true)
+    expect(cipher.message).toBe('ZLATÝ KLÍČ')
+    expect(round.state.shared.grade).toBe(5)
+    expect(round.state.shared.title).toBe('Lov pirátského pokladu')
+    expect(round.state.shared.operations).toEqual({ add: true, sub: false, mul: true, div: false })
+    expect(cipher.sequences).toBe(true)
+    expect(cipher.decoyDensity).toBe(0.5)
+    expect(cipher.distinctCellPerOccurrence).toBe(false)
+    expect(cipher.printTitleOnWorksheet).toBe(true)
   })
 
   it('projde kolečkem i list číselných řad', () => {
@@ -94,10 +109,16 @@ describe('.sifra — uložení a načtení', () => {
       {
         ...INITIAL_EDITOR_STATE,
         activity: 'sequence-sheet',
-        grade: 5,
-        taskCount: 9,
-        title: 'Rozcvička na řady',
-        operations: { add: true, sub: true, mul: false, div: false },
+        shared: {
+          ...INITIAL_EDITOR_STATE.shared,
+          grade: 5,
+          title: 'Rozcvička na řady',
+          operations: { add: true, sub: true, mul: false, div: false },
+        },
+        byActivity: {
+          ...INITIAL_EDITOR_STATE.byActivity,
+          'sequence-sheet': { taskCount: 9 },
+        },
       },
       'kolecko-rady',
     )
@@ -110,10 +131,10 @@ describe('.sifra — uložení a načtení', () => {
     const round = fromConfig(parsed.file.config)
     expect(round.seed).toBe('kolecko-rady')
     expect(round.state.activity).toBe('sequence-sheet')
-    expect(round.state.grade).toBe(5)
-    expect(round.state.taskCount).toBe(9)
-    expect(round.state.title).toBe('Rozcvička na řady')
-    expect(round.state.operations).toEqual({ add: true, sub: true, mul: false, div: false })
+    expect(round.state.shared.grade).toBe(5)
+    expect(round.state.byActivity['sequence-sheet'].taskCount).toBe(9)
+    expect(round.state.shared.title).toBe('Rozcvička na řady')
+    expect(round.state.shared.operations).toEqual({ add: true, sub: true, mul: false, div: false })
 
     // A list z načtené konfigurace musí být bit shodný s původním.
     const original = generateSequenceSheet(before as SequenceSheetProject)
@@ -126,7 +147,13 @@ describe('.sifra — uložení a načtení', () => {
   it('přepnutí aktivity nesmaže rozdělanou tajenku', () => {
     // Učitelka si napíše tajenku, zvědavě klikne na Číselné řady a vrátí se.
     // Kdyby tam tajenka nebyla, podruhé už nikam neklikne.
-    const withMessage = { ...INITIAL_EDITOR_STATE, message: 'ZLATÝ KLÍČ' }
+    const withMessage: EditorState = {
+      ...INITIAL_EDITOR_STATE,
+      byActivity: {
+        ...INITIAL_EDITOR_STATE.byActivity,
+        'cipher-grid': { ...INITIAL_EDITOR_STATE.byActivity['cipher-grid'], message: 'ZLATÝ KLÍČ' },
+      },
+    }
     const switched = { ...withMessage, activity: 'sequence-sheet' as const }
     const back = { ...switched, activity: 'cipher-grid' as const }
 
