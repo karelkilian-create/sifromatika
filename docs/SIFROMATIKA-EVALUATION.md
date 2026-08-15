@@ -477,7 +477,7 @@ potenciálem**, které si zaslouží zmínku, i když jsou dražší:
 | 2 | **Diplom** ✅ | malá | nezávisí na matematické vrstvě; nejlepší poměr přínos/cena |
 | 3 | **Procenta a desetinná čísla** jako generátory úloh ✅ | střední | šířka matematiky před šířkou her; naplní 2. stupeň obsahem; **žádný nový tisk** |
 | 4 | **Registr aktivit** (C.1) ✅ | střední | poslední chvíle, kdy je to levné |
-| 5 | **`DocumentModel`** bez PDF (C.2) | střední | předpoklad pro bingo, pexeso i domino |
+| 5 | **`DocumentModel`** bez PDF (C.2) ✅ | střední | předpoklad pro bingo, pexeso i domino |
 | 6 | **Kartičková sazba** (C.3) + **pexeso** | střední | primitivum se ověří na nejjednodušším uživateli |
 | 7 | **Domino** | malá–střední | po pexesu zbývá jen kontrola řetězce |
 | 8 | **Bingo** | střední | je v katalogu, učitelé ho čekají; potřebuje kroky 5 a C.4 |
@@ -555,15 +555,16 @@ chyba, ale je dobré o tom vědět, aby se druhý krok neudělal nevědomky.
 
 ## Stav
 
-Z tohoto seznamu jsou hotové kroky 1–4: **grafika + favikona**, **diplom**,
-**registr aktivit** (C.1 a CHANGE 1 + 3 z oddílu D) a **procenta s desetinnými
-čísly**. Registr se udělal mimo pořadí, před procenty: je to jediná položka,
-kterou je nutné stihnout dřív než třetí aktivitu.
+Z tohoto seznamu jsou hotové kroky 1–5: **grafika + favikona**, **diplom**,
+**registr aktivit** (C.1 a CHANGE 1 + 3 z oddílu D), **procenta s desetinnými
+čísly** a **`DocumentModel` bez PDF** (C.2). Registr se udělal mimo pořadí, před
+procenty: je to jediná položka, kterou je nutné stihnout dřív než třetí aktivitu.
 
 Podrobnosti jsou v `docs/navrh-registru-aktivit.md`
 a `docs/navrh-procenta-desetinna.md`.
 
-Na řadě je **`DocumentModel` bez PDF** (C.2), předpoklad pro bingo i pexeso.
+Na řadě je **kartičková sazba** (C.3) a nad ní **pexeso** — primitivum se má ověřit
+na nejjednodušším uživateli, ne na nejsložitějším.
 
 Ověřeno spuštěním, ne z dokumentace: `npm run check` — typecheck, oxlint,
 41 modulů bez porušení hranic vrstev, 272 testů ve 14 souborech, vše prochází.

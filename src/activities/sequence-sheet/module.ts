@@ -17,7 +17,7 @@ import {
   type SequenceSheet,
 } from './index.js'
 import { parseSequenceSheetPayload } from './payload.js'
-import { SequenceSheetView } from './view.js'
+import { sequenceSheetDocument } from './document.js'
 
 /** Pole formuláře, která patří jen listu řad. */
 export interface SequenceSheetEditorState {
@@ -59,7 +59,7 @@ export const sequenceSheetModule = {
   parsePayload: parseSequenceSheetPayload,
   generate: generateSequenceSheet,
   checksum: sheetChecksum,
-  View: SequenceSheetView,
+  toDocument: sequenceSheetDocument,
 } satisfies ActivityModule<
   'sequence-sheet',
   SequenceSheetEditorState,

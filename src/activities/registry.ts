@@ -18,7 +18,7 @@
  * aplikace v ruce učitele.
  */
 
-import type { ReactNode } from 'react'
+import type { DocumentModel } from '../core/document/index.js'
 import type { ActivityId, ProjectBase, ProjectConfig } from '../core/model/index.js'
 import { cipherGridModule } from './cipher-grid/module.js'
 import { sequenceSheetModule } from './sequence-sheet/module.js'
@@ -88,8 +88,12 @@ export function initialActivityStates(): ActivityStates {
 export interface ActivityRun {
   config: ProjectConfig
   outcome: GenerateOutcome<ActivitySheet>
-  /** Náhled listu, nebo `null`, když se nepovedl nebo neprošel kontrolou. */
-  view: ReactNode | null
+  /**
+   * Stránky k vytištění, nebo `null`, když se list nepovedl nebo neprošel
+   * kontrolou. Neověřený list se do dokumentu nedostane vůbec — nemá tedy
+   * jak proklouznout do náhledu ani do tisku.
+   */
+  document: DocumentModel | null
 }
 
 /**
@@ -110,7 +114,7 @@ export function configFor(
   return module.toConfig(states[activity], shared, seed) as ProjectConfig
 }
 
-/** Vygeneruje aktivitu podle stavu formuláře a připraví její náhled. */
+/** Vygeneruje aktivitu podle stavu formuláře a připraví její stránky. */
 export function runActivity(
   activity: ActivityId,
   states: ActivityStates,
@@ -125,7 +129,7 @@ export function runActivity(
   return {
     config,
     outcome,
-    view: outcome.ok && verified ? module.View({ sheet: outcome.sheet }) : null,
+    document: outcome.ok && verified ? module.toDocument(outcome.sheet) : null,
   }
 }
 

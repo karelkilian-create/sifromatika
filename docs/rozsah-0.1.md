@@ -51,7 +51,7 @@ core → nic
 | Slovní úlohy | 0.5 |
 | Geometrie, `SvgSpec` | 0.6 |
 | Převody jednotek, rovnice | 0.5 / 0.6 |
-| `DocumentModel` jako formální vrstva | 0.3 (s PDF) |
+| `DocumentModel` jako formální vrstva | ~~0.3~~ — model hotový, PDF zůstává v 0.3 |
 | PDF knihovna, embedované fonty | 0.3 |
 | PWA, offline | 0.4 |
 | Sdílení odkazem (URL hash) | 0.4 |
@@ -84,8 +84,12 @@ Teprve po vyčerpání všech ústupků: „Tuhle tajenku nelze vytvořit."
 
 ### 3.2 Abstrakce — rozděleno, nikoli plošně odloženo
 - `SvgSpec` — **zrušeno** v 0.1. Spekulace.
-- `DocumentModel` — **odloženo** do 0.3. Abstrakce s jedním rendererem je práce navíc.
-  Drží se jen levná hranice: **generátor vrací data, ne JSX.**
+- `DocumentModel` — v 0.1 **odloženo** do 0.3 s odůvodněním, že abstrakce s jedním
+  rendererem je práce navíc. **Předsunuto**, jakmile se ukázalo, že je předpokladem
+  pro bingo, pexeso i domino — každé z nich by bez něj bylo o třetinu dražší.
+  Samotný model je levný (`core/document/`); drahá je PDF knihovna a ta v 0.3 zůstává.
+  Levná hranice **generátor vrací data, ne JSX** tím přestala být slib a stala se
+  vlastností typu: `DocumentModel` žádný uzel Reactu pojmout neumí.
 - `PromptNode` — **zůstává**, degenerovaný na jeden člen:
   ```ts
   type PromptNode = { kind: 'expr'; text: string }

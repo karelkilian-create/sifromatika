@@ -14,6 +14,7 @@ import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useStat
 import { checksumForConfig, runActivity } from '../activities/registry.js'
 import { randomSeed } from '../core/rng/index.js'
 import { SifromatikaMark } from '../render/brand/index.js'
+import { DocumentView } from '../render/screen/index.js'
 import { DiplomaScreen } from '../features/diploma/DiplomaScreen.js'
 import { ActivityNav } from '../features/editor/ActivityNav.js'
 import { EditorPanel } from '../features/editor/EditorPanel.js'
@@ -241,8 +242,14 @@ export function App() {
             </p>
           )}
 
-          {/* Z čeho se list skládá, ví aktivita sama — shell jen dá rám. */}
-          {generated.view !== null && <Preview>{generated.view}</Preview>}
+          {/* Z čeho se list skládá, ví aktivita sama — shell jen dá rám.
+              Kolik je stránek, řeší `DocumentView`; sem se to nepromítne
+              ani u binga, které jich bude mít víc než dvě. */}
+          {generated.document !== null && (
+            <Preview>
+              <DocumentView document={generated.document} />
+            </Preview>
+          )}
         </>
       )}
     </div>

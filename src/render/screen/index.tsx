@@ -1,240 +1,175 @@
 /**
- * Vykreslení pracovního listu a řešení.
+ * Vykreslení `DocumentModel` do HTML.
  *
- * Renderer záměrně nezná aktivitu `cipher-grid` — bere jen datové typy
- * z `core/model`. Díky tomu ho půjde v 0.3 postavit nad `DocumentModel`
- * a v 0.8 znovupoužít pro domino, aniž by se sem sáhlo.
+ * Renderer nezná žádnou aktivitu — bere jen bloky z `core/document`. Díky tomu
+ * ho bingo, pexeso ani domino nebudou muset měnit, a v 0.3 vedle něj může
+ * vzniknout renderer do PDF nad tímtéž modelem.
+ *
+ * ⚠ Renderer NEROZHODUJE o obsahu. Žádné `if` typu „u souřadnicové tabulky
+ *   napiš jinou instrukci" — to všechno patří do `toDocument` té které
+ *   aktivity. Sem patří výhradně převod bloku na značky.
  *
  * ⚠ Na pracovním listu se NIKDY nesmí objevit výsledek příkladu ani písmeno
- *   z tajenky. Kdyby ano, dítě nemusí počítat. Proto se sem předávají úlohy
- *   bez svých hodnot a rozluštění se vykresluje jen v `SolutionView`.
+ *   z tajenky. Model to hlídá tvarem: `task-list` nese jen text zadání a
+ *   `answer-row` bez `letters` je prázdná mřížka rámečků.
  */
 
-import type { CipherTable, Task } from '../../core/model/index.js'
+import type {
+  DocumentBlock,
+  DocumentModel,
+  DocumentPage,
+  InlineRun,
+} from '../../core/document/index.js'
+import type { CipherTable } from '../../core/model/index.js'
 import './sheet.css'
 
-export interface SheetSlotView {
-  /** Číslo buňky, kam výsledek ukazuje. Na žákovský list se nevykresluje. */
-  code: number
-  task: Task
-}
-
-export interface WorksheetViewProps {
-  /** `null` = nadpis se tisknout nesmí (viz pravidlo o prozrazení tajenky). */
-  title: string | null
-  table: CipherTable
-  slots: readonly SheetSlotView[]
-  /** Délky slov v písmenech — určují mezery mezi rámečky na tajenku. */
-  wordLengths: readonly number[]
-  columns?: 1 | 2
-}
-
-export function WorksheetView({
-  title,
-  table,
-  slots,
-  wordLengths,
-  columns = 2,
-}: WorksheetViewProps) {
+export function DocumentView({ document }: { document: DocumentModel }) {
   return (
-    <article className="sheet">
-      {title !== null && <h1 className="sheet__title">{title}</h1>}
-      <p className="sheet__instructions">
-        {isCoordTable(table) ? (
-          <>
-            Vypočítej příklady. Výsledek je souřadnice políčka: <strong>první číslice je řádek</strong>{' '}
-            a <strong>druhá číslice sloupec</strong>. Například 34 znamená 3. řádek a 4. sloupec.
-            Písmeno z políčka zapiš do rámečku se stejným číslem, jaké má příklad.
-          </>
-        ) : (
-          <>
-            Vypočítej příklady. Každý výsledek je číslo políčka v tabulce. Písmeno z políčka zapiš do
-            rámečku se stejným číslem, jaké má příklad.
-          </>
-        )}
-        {slots.some((slot) => slot.task.prompt.kind === 'sequence') && (
-          <> U číselné řady doplň číslo, které patří místo otazníku.</>
-        )}
-      </p>
+    <>
+      {document.pages.map((page, index) => (
+        // Zalomení nese obal, ne stránka sama: první list žádné nemá a
+        // `break-before` na něm by v některých prohlížečích vyrobil prázdný
+        // papír navíc.
+        <div className={index === 0 ? undefined : 'print-page-break'} key={index}>
+          <PageView page={page} />
+        </div>
+      ))}
+    </>
+  )
+}
 
-      <CipherTableView table={table} />
-
-      <h2 className="sheet__section-heading">Příklady</h2>
-      <TaskList tasks={slots.map((slot) => slot.task)} columns={columns} />
-
-      <h2 className="sheet__section-heading">Tajenka</h2>
-      <AnswerRow wordLengths={wordLengths} />
+function PageView({ page }: { page: DocumentPage }) {
+  return (
+    <article className="sheet" aria-label={page.label}>
+      {page.blocks.map((block, index) => (
+        <BlockView block={block} key={index} />
+      ))}
     </article>
   )
+}
+
+function BlockView({ block }: { block: DocumentBlock }) {
+  switch (block.kind) {
+    case 'heading':
+      return block.level === 1 ? (
+        <h1 className="sheet__title">{block.text}</h1>
+      ) : (
+        <h2 className="sheet__section-heading">{block.text}</h2>
+      )
+
+    case 'paragraph':
+      return (
+        <p className="sheet__instructions">
+          {block.runs.map((run, index) => (
+            <RunView run={run} key={index} />
+          ))}
+        </p>
+      )
+
+    case 'callout':
+      return <p className="solution-message">{block.text}</p>
+
+    case 'task-list':
+      return <TaskListView columns={block.columns} items={block.items} />
+
+    case 'cipher-table':
+      return (
+        <CipherTableView
+          caption={block.caption}
+          table={block.table}
+          coordinates={block.coordinates}
+        />
+      )
+
+    case 'answer-row':
+      return <AnswerRow wordLengths={block.wordLengths} letters={block.letters} />
+
+    case 'table':
+      return <TableView columns={block.columns} rows={block.rows} />
+  }
+}
+
+function RunView({ run }: { run: InlineRun }) {
+  return run.strong === true ? <strong>{run.text}</strong> : <>{run.text}</>
 }
 
 /**
  * Očíslovaný seznam úloh s linkou na odpověď.
  *
- * Sdílený mezi aktivitami schválně: dítě má na obou listech vidět totéž,
- * a kdyby se sazba lišila, poznalo by to dřív než my.
+ * Číslo je pozice v seznamu, ne údaj z modelu — rámečky na tajenku se číslují
+ * stejně a kdyby si obojí neslo vlastní číslování, mohlo by se rozejít.
  */
-export function TaskList({
-  tasks,
-  columns = 2,
+function TaskListView({
+  columns,
+  items,
 }: {
-  tasks: readonly Task[]
-  columns?: 1 | 2
+  columns: 1 | 2
+  items: readonly { text: string; showEquals: boolean }[]
 }) {
   return (
     <ol className={`task-list${columns === 2 ? ' task-list--two-columns' : ''}`}>
-      {tasks.map((task, index) => {
-        const isSequence = task.prompt.kind === 'sequence'
-        return (
-          <li
-            className={`task-list__item${isSequence ? ' task-list__item--sequence' : ''}`}
-            key={`${task.id}-${index}`}
-          >
-            <span className="task-list__number">{index + 1}.</span>
-            {/* Řada už otazník obsahuje — rovnítko za ní by bylo navíc. */}
-            <span className="task-list__prompt">
-              {isSequence ? task.prompt.text : `${task.prompt.text} =`}
-            </span>
-            <span className="task-list__blank" />
-          </li>
-        )
-      })}
+      {items.map((item, index) => (
+        <li
+          className={`task-list__item${item.showEquals ? '' : ' task-list__item--sequence'}`}
+          key={index}
+        >
+          <span className="task-list__number">{index + 1}.</span>
+          <span className="task-list__prompt">{item.showEquals ? `${item.text} =` : item.text}</span>
+          <span className="task-list__blank" />
+        </li>
+      ))}
     </ol>
   )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// List samotných úloh (bez šifry)
-// ─────────────────────────────────────────────────────────────────────────────
-
-export interface TaskSheetViewProps {
-  title: string
-  /** Zadání pro děti. Liší se podle toho, co je na listu. */
-  instructions: string
-  tasks: readonly Task[]
-  columns?: 1 | 2
-}
-
-export function TaskSheetView({ title, instructions, tasks, columns = 2 }: TaskSheetViewProps) {
+function TableView({
+  columns,
+  rows,
+}: {
+  columns: readonly string[]
+  rows: readonly (readonly string[])[]
+}) {
   return (
-    <article className="sheet">
-      <h1 className="sheet__title">{title}</h1>
-      <p className="sheet__instructions">{instructions}</p>
-      <TaskList tasks={tasks} columns={columns} />
-    </article>
-  )
-}
-
-export function TaskSolutionView({ title, tasks }: { title: string; tasks: readonly Task[] }) {
-  return (
-    <article className="sheet">
-      <h1 className="sheet__title">{title} — řešení</h1>
-      <table className="solution-table">
-        <thead>
-          <tr>
-            <th scope="col">Č.</th>
-            <th scope="col">Zadání</th>
-            <th scope="col">Výsledek</th>
-            {/* Pravidlo je tu kvůli opravování: u řady se z výsledku samotného
-                nepozná, jestli dítě uvažovalo správně, nebo mělo štěstí. */}
-            <th scope="col">Pravidlo</th>
-          </tr>
-        </thead>
-        <tbody>
-          {tasks.map((task, index) => (
-            <tr key={`${task.id}-${index}`}>
-              <td>{index + 1}.</td>
-              <td>{task.prompt.text}</td>
-              <td>{task.value}</td>
-              <td>{task.solutionSteps[0]?.text ?? '—'}</td>
-            </tr>
+    <table className="solution-table">
+      <thead>
+        <tr>
+          {columns.map((column, index) => (
+            <th scope="col" key={index}>
+              {column}
+            </th>
           ))}
-        </tbody>
-      </table>
-    </article>
-  )
-}
-
-export interface SolutionViewProps {
-  /**
-   * Vlastní název aktivity, nebo `null`, když žádný není.
-   *
-   * `null` se předává i pro název odvozený z tajenky — jinak by nadpis zněl
-   * „POKLAD JE U BAZÉNU — řešení" a hned pod ním by stálo totéž ještě jednou.
-   */
-  title: string | null
-  /** Rozluštěná tajenka i s mezerami mezi slovy. */
-  message: string
-  table: CipherTable
-  slots: readonly SheetSlotView[]
-  wordLengths: readonly number[]
-}
-
-export function SolutionView({ title, message, table, slots, wordLengths }: SolutionViewProps) {
-  const letterByCode = new Map(table.cells.map((cell) => [cell.code.n, cell.letter]))
-  const tokenByCode = new Map(table.cells.map((cell) => [cell.code.n, cell.code]))
-  const coord = isCoordTable(table)
-
-  return (
-    <article className="sheet">
-      <h1 className="sheet__title">{title === null ? 'Řešení' : `${title} — řešení`}</h1>
-      <p className="solution-message">{message}</p>
-
-      <h2 className="sheet__section-heading">Tajenka po písmenech</h2>
-      <AnswerRow
-        wordLengths={wordLengths}
-        letters={slots.map((slot) => letterByCode.get(slot.code) ?? '?')}
-      />
-
-      <h2 className="sheet__section-heading">Výsledky příkladů</h2>
-      <table className="solution-table">
-        <thead>
-          <tr>
-            <th scope="col">Č.</th>
-            <th scope="col">Příklad</th>
-            <th scope="col">Výsledek</th>
-            {coord && <th scope="col">Řádek / sloupec</th>}
-            <th scope="col">Písmeno</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row, rowIndex) => (
+          <tr key={rowIndex}>
+            {row.map((cell, cellIndex) => (
+              <td key={cellIndex}>{cell}</td>
+            ))}
           </tr>
-        </thead>
-        <tbody>
-          {slots.map((slot, index) => {
-            const token = tokenByCode.get(slot.code)
-            return (
-              <tr key={`${slot.task.id}-${index}`}>
-                <td>{index + 1}.</td>
-                <td>{slot.task.prompt.text}</td>
-                <td>{slot.task.value}</td>
-                {coord && (
-                  <td>
-                    {token?.kind === 'coord' ? `${token.row}. řádek, ${token.col}. sloupec` : '—'}
-                  </td>
-                )}
-                <td>{letterByCode.get(slot.code) ?? '?'}</td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
-    </article>
+        ))}
+      </tbody>
+    </table>
   )
 }
 
-/** Souřadnicová tabulka? Poznáme z kódu první buňky. */
-function isCoordTable(table: CipherTable): boolean {
-  return table.cells[0]?.code.kind === 'coord'
-}
-
-export function CipherTableView({ table }: { table: CipherTable }) {
+function CipherTableView({
+  caption,
+  table,
+  coordinates,
+}: {
+  caption: string
+  table: CipherTable
+  coordinates: boolean
+}) {
   const rows = Array.from({ length: table.rows }, (_, row) =>
     table.cells.slice(row * table.cols, (row + 1) * table.cols),
   )
-  const coord = isCoordTable(table)
 
   return (
-    <table className={`cipher-table${coord ? ' cipher-table--coord' : ''}`}>
-      <caption className="sheet__section-heading">Šifrovací tabulka</caption>
-      {coord && (
+    <table className={`cipher-table${coordinates ? ' cipher-table--coord' : ''}`}>
+      <caption className="sheet__section-heading">{caption}</caption>
+      {coordinates && (
         <thead>
           <tr>
             <th className="cipher-table__corner" scope="col" />
@@ -249,16 +184,14 @@ export function CipherTableView({ table }: { table: CipherTable }) {
       <tbody>
         {rows.map((cells, rowIndex) => (
           <tr key={rowIndex}>
-            {coord && (
+            {coordinates && (
               <th className="cipher-table__header" scope="row">
                 {rowIndex + 1}
               </th>
             )}
             {cells.map((cell) => (
               <td key={cell.code.n}>
-                {/* U souřadnic se číslo do buňky netiskne — dítě ho čte
-                    ze záhlaví, a právě to je ta procvičovaná dovednost. */}
-                {!coord && <span className="cipher-table__code">{cell.code.n}</span>}
+                {!coordinates && <span className="cipher-table__code">{cell.code.n}</span>}
                 <span className="cipher-table__letter">{cell.letter}</span>
               </td>
             ))}
@@ -295,9 +228,7 @@ function AnswerRow({
               const index = start + offset
               return (
                 <div className="answer-box" key={index}>
-                  <div
-                    className={`answer-box__cell${letters ? ' answer-box__cell--filled' : ''}`}
-                  >
+                  <div className={`answer-box__cell${letters ? ' answer-box__cell--filled' : ''}`}>
                     {letters?.[index] ?? ''}
                   </div>
                   <div className="answer-box__index">{index + 1}</div>

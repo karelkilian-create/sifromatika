@@ -141,6 +141,12 @@ Až přijde C.2, `view.tsx` se nahradí za `toDocument(sheet): DocumentModel`
 a `App.tsx` se přitom nedotkne. To je ten důvod, proč `View` je v kontraktu
 jako pole, a ne zadrátovaný import.
 
+> **Doděláno v C.2.** `view.tsx` obou aktivit nahradil `document.ts` a kontrakt
+> místo `View` nese `toDocument`. Předpověď vyšla jen zčásti: shell se skutečně
+> nedotkl rozhodování o aktivitě, ale jeden řádek se změnit musel — `runActivity`
+> teď vrací `DocumentModel` místo `ReactNode`, takže `App.tsx` vykresluje
+> `<DocumentView>`. Odměnou je, že `activities/` už neobsahuje ani řádek JSX.
+
 `payload.ts` odděleně proto, aby `storage/sifra.ts` nemusel kvůli validaci
 souboru vtáhnout celý generátor. Duch poznámky v `sifra.ts:57` zůstává:
 parser nedůvěryhodného vstupu nesahá do generátorové vrstvy.

@@ -65,15 +65,22 @@ describe('katalog aktivit', () => {
 })
 
 describe('kontrakt aktivity', () => {
-  it.each(ids)('%s: vygeneruje ověřený list a k němu náhled', (id) => {
+  it.each(ids)('%s: vygeneruje ověřený list a k němu stránky', (id) => {
     const run = runActivity(id, initialActivityStates(), shared, 'registr-nahled')
 
     expect(run.outcome.ok).toBe(true)
     if (!run.outcome.ok) return
-    // Neověřený list se nesmí dostat k tisku, takže ani do náhledu.
+    // Neověřený list se nesmí dostat k tisku, takže ani do dokumentu.
     expect(run.outcome.sheet.verification.ok).toBe(true)
-    expect(run.view).not.toBeNull()
+    expect(run.document).not.toBeNull()
     expect(run.outcome.sheet.title.length).toBeGreaterThan(0)
+  })
+
+  it.each(ids)('%s: každá aktivita dá pracovní list i řešení', (id) => {
+    const run = runActivity(id, initialActivityStates(), shared, 'registr-stranky')
+    // Dva listy jsou závazek vůči učiteli, ne detail sazby: bez řešení nemá
+    // čím opravovat. Viz docs/rozsah-0.1.md a poznámka o dvou listech v UI.
+    expect(run.document?.pages.map((page) => page.label)).toEqual(['Pracovní list', 'Řešení'])
   })
 
   it.each(ids)('%s: formulář → konfigurace → formulář nic neztratí', (id) => {

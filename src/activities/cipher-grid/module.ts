@@ -2,7 +2,7 @@
  * Šifrovací mřížka jako záznam v registru.
  *
  * Adaptér, nic víc: skládá dohromady generátor (`index.ts`), validaci souboru
- * (`payload.ts`) a náhled (`view.tsx`) a přidává překlad stavu formuláře.
+ * (`payload.ts`) a sazbu (`document.ts`) a přidává překlad stavu formuláře.
  * Veškerá znalost o tom, co je šifra, zůstává v těch třech souborech.
  */
 
@@ -16,7 +16,7 @@ import {
   type CipherGridSheet,
 } from './index.js'
 import { parseCipherGridPayload } from './payload.js'
-import { CipherGridView } from './view.js'
+import { cipherGridDocument } from './document.js'
 
 /** Pole formuláře, která patří jen šifře. */
 export interface CipherGridEditorState {
@@ -94,5 +94,5 @@ export const cipherGridModule = {
   parsePayload: parseCipherGridPayload,
   generate: generateCipherGrid,
   checksum: sheetChecksum,
-  View: CipherGridView,
+  toDocument: cipherGridDocument,
 } satisfies ActivityModule<'cipher-grid', CipherGridEditorState, CipherGridConfig, CipherGridSheet>

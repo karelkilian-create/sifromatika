@@ -14,7 +14,7 @@
  * už v projektu funguje pro `tasks/registry.ts` a `ciphers/registry.ts`.
  */
 
-import type { ReactNode } from 'react'
+import type { DocumentModel } from '../core/document/index.js'
 import type {
   ActivityId,
   Grade,
@@ -99,17 +99,20 @@ export interface ActivityModule<Id extends ActivityId, State, Cfg, Sheet extends
   generate(config: Project<Id, Cfg>): GenerateOutcome<Sheet>
   checksum(sheet: Sheet): string
   /**
-   * Náhled: pracovní list a k němu list řešení.
+   * Popis vytištěných stránek — u dnešních aktivit pracovní list a řešení,
+   * u binga a pexesa jich bude víc.
    *
-   * Je to pole v datech, ne import v `App.tsx` — právě proto půjde v 0.3
-   * nahradit za `toDocument(sheet): DocumentModel`, aniž by se shell dotkl.
    * Bere jen `sheet`, protože ten svou konfiguraci nese s sebou; druhá cesta
    * k témuž by se při opakovaném pokusu o generování rozešla v seedu.
+   *
+   * ⚠ Vrací data, ne JSX. Aktivita tak nemůže obejít renderer vlastní sazbou
+   *   a všechny listy zůstanou stejné — což je jediný důvod, proč se dítěti
+   *   nestane, že mu dvě aktivity ukážou tutéž věc dvěma způsoby.
    *
    * Zapsáno jako metoda, ne jako pole s funkčním typem — jen tak zůstane
    * modul přiřaditelný na `AnyActivityModule` uvnitř registru.
    */
-  View(props: { sheet: Sheet }): ReactNode
+  toDocument(sheet: Sheet): DocumentModel
 }
 
 /**
