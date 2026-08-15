@@ -25,6 +25,10 @@
  *      že druhá číslice nikdy nepřesáhne 6, a chybný výpočet poznalo bez
  *      ověřování. Mění rozmístění písmen, a tím i příklady — tedy obsah listů
  *      pro všechny dosavadní seedy.
+ *  4 — list chudý na některou zaškrtnutou operaci se zahodí a zkusí se jiný
+ *      seed. Zhruba každý desátý list pro 3. a 4. ročník měl jediný příklad
+ *      na násobení nebo dělení, přestože si učitel obojí zaškrtl. Mění list
+ *      jen tam, kde byl vadný — ale odvozený seed posune i ty ostatní.
  */
-export const GENERATOR_VERSION = 3
+export const GENERATOR_VERSION = 4
 export const APP_VERSION = '0.1.0-dev'

@@ -9,7 +9,7 @@
  */
 
 import { hashString } from '../../core/checksum/index.js'
-import { gradeProfile } from '../../core/constraints/index.js'
+import { gradeProfile, relaxation } from '../../core/constraints/index.js'
 import { ALL_OPERATIONS } from '../../core/model/index.js'
 import type {
   CipherGridProject,
@@ -83,12 +83,56 @@ export function defaultConfig(message: string, grade: Grade, seed: string): Ciph
 const MAX_ATTEMPTS = 6
 
 /**
+ * Kolik úloh musí připadnout na každou zaškrtnutou operaci, aby list nebyl
+ * „chudý" — polovina spravedlivého podílu, nejméně však jedna.
+ *
+ * Při patnácti příkladech a čtyřech operacích vychází dvě. Zní to málo, ale
+ * je to práh pro ZAHOZENÍ, ne cíl: rozprostření písmen po skupinách trefuje
+ * podstatně víc a tenhle práh odchytává jen výstřelky. Přísnější mez by
+ * u třeťáka zahodila skoro každý list, protože malá násobilka v oboru do sta
+ * tolik různých výsledků nemá.
+ */
+function minimumPerOperation(taskCount: number, operationCount: number): number {
+  return Math.max(1, Math.round(taskCount / operationCount / 2))
+}
+
+/**
+ * O kolik úloh list nedosahuje na zvolený poměr operací. `0` = v pořádku.
+ *
+ * Počítá se z `didactic.operations`, ne z textu příkladu: `(24 − 8) · 2`
+ * procvičuje odčítání i násobení a do obou se má počítat.
+ */
+function mixShortfall(sheet: CipherGridSheet): number {
+  const mix = sheet.config.payload.taskMix
+  const requested = ALL_OPERATIONS.filter((operation) => (mix[operation] ?? 0) > 0)
+  const operations = requested.length > 0 ? requested : ALL_OPERATIONS
+  const minimum = minimumPerOperation(sheet.slots.length, operations.length)
+
+  let shortfall = 0
+  for (const operation of operations) {
+    const count = sheet.slots.filter((slot) =>
+      slot.task.didactic.operations.includes(operation),
+    ).length
+    if (count < minimum) shortfall += minimum - count
+  }
+  return shortfall
+}
+
+/**
  * Vygeneruje list. Při selhání verifikace to zkusí znovu s odvozeným seedem —
  * teprve po vyčerpání pokusů to vzdá. Neověřený list se ven nikdy nedostane.
+ *
+ * Ověřený, ale chudý na některou zaškrtnutou operaci se taky zahazuje, jen
+ * mírněji: schová se stranou a zkusí se jiný seed. Zhruba každý desátý list
+ * pro třeťáka a čtvrťáka vycházel s jediným příkladem na násobení nebo dělení,
+ * což učiteli, který si obojí zaškrtl, není co nabídnout. Po vyčerpání pokusů
+ * se vrátí ten nejvyváženější — a řekne se to nahlas, protože §3.1 zakazuje
+ * tiše měnit, co uživatel nastavil.
  */
 export function generateCipherGrid(config: CipherGridProject): CipherGridOutcome {
   let lastReason = 'Neznámá chyba generování.'
   let lastRelaxations: RelaxationLog[] = []
+  let best: { outcome: CipherGridOutcome & { ok: true }; shortfall: number } | null = null
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     const attemptConfig: CipherGridProject =
@@ -100,14 +144,29 @@ export function generateCipherGrid(config: CipherGridProject): CipherGridOutcome
       lastRelaxations = outcome.relaxations
       continue
     }
-    if (outcome.sheet.verification.ok) return outcome
+
+    if (outcome.sheet.verification.ok) {
+      const shortfall = mixShortfall(outcome.sheet)
+      if (shortfall === 0) return outcome
+      if (best === null || shortfall < best.shortfall) best = { outcome, shortfall }
+      continue
+    }
 
     // Verifikace neprošla — nejde o očekávaný stav, ale o pojistku.
     // Zkusíme jiný seed místo toho, abychom učiteli podstrčili rozbitý list.
-    lastReason = outcome.sheet.verification.ok
-      ? lastReason
-      : outcome.sheet.verification.failures.map((failure) => failure.message).join(' ')
+    lastReason = outcome.sheet.verification.failures.map((failure) => failure.message).join(' ')
     lastRelaxations = outcome.sheet.relaxations
+  }
+
+  if (best !== null) {
+    best.outcome.sheet.relaxations.push(
+      relaxation.notice(
+        'operation-mix-thin',
+        'Některá ze zvolených operací je na listu zastoupená jen málo — pro tenhle ročník' +
+          ' není dost výsledků, které by šly vyrobit. Pomůže vyšší ročník nebo méně operací.',
+      ),
+    )
+    return best.outcome
   }
 
   return { ok: false, reason: lastReason, relaxations: lastRelaxations }

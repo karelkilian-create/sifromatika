@@ -7,10 +7,21 @@
  * Skutečné PDF přijde v 0.3, až bude potřeba přesná kontrola zalomení.
  */
 
+/*
+ * ⚠ Okraje MUSÍ být tady, ne jako padding listu.
+ *
+ * Padding se použije jednou, na začátku prvku. Když obsah přeteče na druhý
+ * papír, pokračování začne na jeho samém kraji — tedy v pásmu, které tiskárna
+ * neumí potisknout, a horní řádek se ořízne. Přesně to se stalo rámečkům na
+ * tajenku u listu s dvaceti příklady.
+ *
+ * `@page` platí na KAŽDOU stránku, takže na druhé a další jsou okraje taky.
+ * Náhled na obrazovce si drží tytéž rozměry vlastním paddingem (viz sheet.css),
+ * takže shoda náhledu s papírem zůstává.
+ */
 @page {
   size: A4 portrait;
-  /* Okraje řeší .sheet vlastním paddingem, ať je náhled shodný s tiskem. */
-  margin: 0;
+  margin: 15mm 14mm;
 }
 
 @media print {
@@ -30,6 +41,8 @@
     width: auto;
     min-height: auto;
     margin: 0;
+    /* Okraje přebírá @page — jinak by se sečetly a byly dvojité. */
+    padding: 0;
     box-shadow: none;
   }
 
@@ -43,6 +56,16 @@
   .answer-row,
   .solution-table tr {
     break-inside: avoid;
+  }
+
+  /*
+   * Nadpis cestuje s tím, co uvozuje.
+   *
+   * Bez toho zůstalo „TAJENKA“ na první stránce a rámečky se přesunuly na
+   * druhou. Osamělý nadpis nad prázdnem je horší než zalomení o řádek dřív.
+   */
+  .sheet__section-heading {
+    break-after: avoid;
   }
 
   /* Prohlížeče jinak vypínají tisk barev pozadí; tady na nich nezáleží,

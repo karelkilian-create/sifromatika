@@ -334,4 +334,39 @@ describe('zaškrtnuté operace se na list opravdu dostanou', () => {
       }
     },
   )
+
+  it.each([3, 4, 5, 6, 7, 8] as Grade[])(
+    '%i. ročník: ŽÁDNÝ jednotlivý list není chudý na násobení a dělení',
+    (grade) => {
+      // Průměr nestačí. Učitel nedostane průměr, dostane jeden konkrétní list —
+      // a dřív měl zhruba desetinu šanci, že na něm bude jediný příklad na
+      // násobení. Takový list se teď zahodí a losuje se jiný seed.
+      for (let i = 0; i < 40; i++) {
+        const outcome = generateCipherGrid(defaultConfig('POKLAD JE U BAZÉNU', grade, `chudy-${i}`))
+        expect(outcome.ok).toBe(true)
+        if (!outcome.ok) continue
+
+        const rich = outcome.sheet.slots.filter((slot) =>
+          slot.task.didactic.operations.some((op) => op === 'mul' || op === 'div'),
+        ).length
+        const examples = outcome.sheet.slots.map((slot) => slot.task.prompt.text).join(', ')
+        expect(rich, `seed chudy-${i}: ${examples}`).toBeGreaterThanOrEqual(3)
+      }
+    },
+  )
+
+  it('když poměr dodržet nejde, řekne se to — netiskne se potichu', () => {
+    // Třeťák se zaškrtnutým jen násobením a dělením: malá násobilka v oboru
+    // do sta tolik různých výsledků nenabídne. List vzniknout musí, ale
+    // s poznámkou, ne jako tichá náhrada.
+    const config = defaultConfig('POKLAD JE U BAZÉNU', 3, 'uzky-vyber')
+    config.payload.taskMix = { mul: 1, div: 1 }
+    const outcome = generateCipherGrid(config)
+
+    expect(outcome.ok).toBe(true)
+    if (!outcome.ok) return
+    for (const slot of outcome.sheet.slots) {
+      expect(slot.task.didactic.operations.some((op) => op === 'mul' || op === 'div')).toBe(true)
+    }
+  })
 })
