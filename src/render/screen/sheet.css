@@ -22,6 +22,12 @@
   line-height: 1.4;
 }
 
+/* Spodní mezera posledního bloku se sčítá s paddingem listu a tlačí obsah
+   přes okraj stránky, aniž by cokoli oddělovala. */
+.sheet > *:last-child {
+  margin-bottom: 0;
+}
+
 .sheet__title {
   margin: 0 0 2mm;
   font-size: 16pt;
@@ -49,9 +55,21 @@
   table-layout: fixed;
 }
 
+/*
+ * Buňka: 15 mm na šířku, 8 mm na výšku.
+ *
+ * ⚠ `height` je u buňky výška OBSAHU — padding a rámeček se přičítají, takže
+ *   skutečná výška řádku je o 2,4 mm větší. Deset řádků (devět a záhlaví) tedy
+ *   měří 104 mm, ne 80.
+ *
+ * Nižší, než je široká, schválně. Písmeno má 15 pt, tedy necelých 6 mm, takže
+ * výšku nepotřebuje — a při mřížce 9×9 rozhoduje každý milimetr o tom, jestli
+ * se rámečky na tajenku vejdou na tentýž list jako tabulka. Do buněk se nepíše,
+ * jen se z nich čte.
+ */
 .cipher-table td {
   width: 15mm;
-  height: 13mm;
+  height: 8mm;
   padding: 1mm;
   border: 0.4mm solid var(--sheet-rule);
   text-align: center;
@@ -62,7 +80,7 @@
    aby dítě nehledalo písmeno v číslech. */
 .cipher-table__header {
   width: 15mm;
-  height: 13mm;
+  height: 8mm;
   padding: 1mm;
   border: 0.4mm solid var(--sheet-rule);
   background: #ececec;
@@ -112,7 +130,10 @@
   display: flex;
   align-items: baseline;
   gap: 2mm;
-  margin-bottom: 3mm;
+  /* 2 mm, ne 3: dítě píše NA linku, ne mezi řádky, takže se tu nešetří na
+     jeho úkor. Při patnácti příkladech je to 8 mm, o které se dřív posouvaly
+     rámečky na tajenku na druhý list. */
+  margin-bottom: 2mm;
   break-inside: avoid;
 }
 
