@@ -124,6 +124,30 @@ export function gradeProfile(grade: Grade): DifficultyProfile {
  */
 export const TASK_COUNT_LIMITS = { min: 4, max: 30, fallback: 12 } as const
 
+/**
+ * Kolik písmen smí mít tajenka. Jedno písmeno = jeden příklad.
+ *
+ * `max: 24` je mez papíru, ne vkusu. Zkušební tisk ukázal, že od 27 příkladů
+ * se rozdělí i seznam příkladů a na druhé straně zůstane osamělý zbytek.
+ * Nižší mez než těch 27 proto, že kapacita není konstanta: se zapnutými
+ * číselnými řadami přibude do zadání věta navíc, tabulka se posune níž a strop
+ * klesne. 24 platí ve všech nastaveních.
+ *
+ * Shodou okolností je to i rozumná pedagogická mez sama o sobě — čtyřiadvacet
+ * výpočtů je na jednu hodinu dost.
+ */
+export const MESSAGE_LETTER_LIMITS = { min: 2, max: 24 } as const
+
+/**
+ * Nad kolik písmen se pracovní list nevejde na jednu stranu.
+ *
+ * Není to zákaz — dvoustránková šifra není rozbitá, jen delší. Je to hodnota,
+ * u které se to má učiteli **říct**, aby si dvě strany nevyrobil omylem
+ * (docs/rozsah-0.1.md §3.1).
+ */
+export const ONE_PAGE_LETTERS = 20
+
+
 export function clampTaskCount(value: unknown): number {
   if (typeof value !== 'number' || !Number.isFinite(value)) return TASK_COUNT_LIMITS.fallback
   const rounded = Math.round(value)

@@ -5,7 +5,9 @@
  * s `core` a nemá kvůli kontrole souboru vtahovat vrstvu úloh ani šifer.
  */
 
+import { MESSAGE_LETTER_LIMITS } from '../../core/constraints/index.js'
 import type { CipherGridConfig, CipherStrategyId } from '../../core/model/index.js'
+import { truncateToLetters } from '../../core/text/index.js'
 import {
   isRecord,
   parseDifficulty,
@@ -55,7 +57,10 @@ export function parseCipherGridPayload(raw: unknown): CipherGridConfig | null {
   }
 
   return {
-    message: raw.message,
+    // Ořez i tady, ne jen ve formuláři: soubor mohl vzniknout ve starší verzi
+    // nebo projít cizí rukou, a stopadesátipísmenná tajenka je pět stran
+    // příkladů, ne pracovní list.
+    message: truncateToLetters(raw.message, MESSAGE_LETTER_LIMITS.max),
     difficulty,
     taskMix,
     generatorMix: Object.keys(generatorMix).length > 0 ? generatorMix : { arithmetic: 1 },

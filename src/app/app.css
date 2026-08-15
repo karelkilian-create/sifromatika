@@ -259,6 +259,14 @@ body {
   flex: 1 1 18rem;
 }
 
+/* Nápověda pod polem — vysvětluje důsledek zadání, ne jak pole ovládat. */
+.field__hint {
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  line-height: 1.3;
+  color: #5c5c66;
+}
+
 .field__label {
   font-size: 0.8rem;
   font-weight: 600;

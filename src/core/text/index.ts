@@ -82,6 +82,29 @@ export function plainLetters(message: NormalizedMessage): string {
 }
 
 /**
+ * Zkrátí tajenku tak, aby z ní vzniklo nejvýš `max` písmen — tedy nejvýš
+ * `max` příkladů.
+ *
+ * Počítá se podle `normalizeMessage`, ne podle délky řetězce: mezery a
+ * interpunkce se do příkladů nepromítnou, takže by ořez podle znaků usekl
+ * dřív, než je potřeba. „POKLAD JE U BAZÉNU" má osmnáct písmen, ale
+ * dvacet znaků.
+ *
+ * Vrací zkrácený vstup, ne normalizovaný tvar: v poli má učiteli zůstat
+ * to, co napsal, i s diakritikou.
+ */
+export function truncateToLetters(input: string, max: number): string {
+  if (normalizeMessage(input).letters.length <= max) return input
+
+  let cut = 0
+  for (let i = 1; i <= input.length; i++) {
+    if (normalizeMessage(input.slice(0, i)).letters.length > max) break
+    cut = i
+  }
+  return input.slice(0, cut)
+}
+
+/**
  * Relativní četnost písmen v češtině bez diakritiky.
  *
  * Používá se VÝHRADNĚ pro výběr klamných písmen. Četnost v konkrétní tajence

@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import fc from 'fast-check'
-import { CZECH_LETTER_WEIGHTS, normalizeMessage, plainLetters } from './index.js'
+import {
+  CZECH_LETTER_WEIGHTS,
+  normalizeMessage,
+  plainLetters,
+  truncateToLetters,
+} from './index.js'
 
 describe('normalizeMessage', () => {
   it('rozloží referenční tajenku ze zadání', () => {
@@ -94,5 +99,36 @@ describe('CZECH_LETTER_WEIGHTS', () => {
     for (const letter of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') {
       expect(CZECH_LETTER_WEIGHTS[letter]).toBeGreaterThan(0)
     }
+  })
+})
+
+describe('truncateToLetters', () => {
+  it('kratší tajenku nechá být, i s diakritikou a mezerami', () => {
+    expect(truncateToLetters('POKLAD JE U BAZÉNU', 24)).toBe('POKLAD JE U BAZÉNU')
+  })
+
+  it('počítá PÍSMENA, ne znaky — mezery se do příkladů nepromítnou', () => {
+    // Osmnáct písmen, ale dvacet znaků. Ořez podle délky řetězce by usekl
+    // dřív, než je potřeba, a učiteli by zmizel konec tajenky bez důvodu.
+    const message = 'POKLAD JE U BAZÉNU'
+    expect(message.length).toBe(18)
+    expect(normalizeMessage(message).letters.length).toBe(15)
+    expect(truncateToLetters(message, 15)).toBe(message)
+  })
+
+  it('delší zkrátí přesně na povolený počet písmen', () => {
+    const long = 'TAJEMSTVI STARE TRUHLY V PODKROVI STAREHO DOMU'
+    const cut = truncateToLetters(long, 24)
+    expect(normalizeMessage(cut).letters.length).toBe(24)
+    expect(long.startsWith(cut)).toBe(true)
+  })
+
+  it('nechá v poli to, co učitel napsal — nevrací normalizovaný tvar', () => {
+    // Kdyby ořez vracel `letters`, zmizela by z pole diakritika i mezery
+    // a učitel by při psaní viděl, jak se mu text pod rukama mění.
+    // „ŽLUŤOUČKÝ" má devět písmen, desáté je „K" ze slova KŮŇ.
+    const cut = truncateToLetters('ŽLUŤOUČKÝ KŮŇ ÚPĚL ĎÁBELSKÉ ÓDY', 10)
+    expect(cut).toBe('ŽLUŤOUČKÝ K')
+    expect(normalizeMessage(cut).letters.length).toBe(10)
   })
 })

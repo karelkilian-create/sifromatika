@@ -12,8 +12,21 @@
 
 import type { Grade, OperationTag } from '../../core/model/index.js'
 import type { SharedEditorState } from '../../activities/contract.js'
-import { TASK_COUNT_LIMITS, gradeProfile } from '../../core/constraints/index.js'
+import {
+  MESSAGE_LETTER_LIMITS,
+  ONE_PAGE_LETTERS,
+  TASK_COUNT_LIMITS,
+  gradeProfile,
+} from '../../core/constraints/index.js'
+import { normalizeMessage, truncateToLetters } from '../../core/text/index.js'
 import type { EditorState } from './state.js'
+
+/** „1 písmeno", „3 písmena", „7 písmen" — jinak by hláška drhla při každém psaní. */
+function czechLetterWord(count: number): string {
+  if (count === 1) return 'písmeno'
+  if (count >= 2 && count <= 4) return 'písmena'
+  return 'písmen'
+}
 
 const OPERATION_LABELS: Record<OperationTag, string> = {
   add: 'Sčítání',
@@ -49,6 +62,9 @@ export function EditorPanel({
   // úplně mizí — zašedlá „Procenta" u čtvrťáka je jen šum.
   const profile = gradeProfile(state.shared.grade)
 
+  // Počet PÍSMEN, ne znaků: mezery a interpunkce se do příkladů nepromítnou.
+  const messageLetters = normalizeMessage(cipher.message).letters.length
+
   const patchShared = (changes: Partial<SharedEditorState>) =>
     onChange({ ...state, shared: { ...state.shared, ...changes } })
 
@@ -80,11 +96,25 @@ export function EditorPanel({
               className="field__input"
               type="text"
               value={cipher.message}
-              onChange={(event) => patchCipher({ message: event.target.value })}
+              onChange={(event) =>
+                // Ořez při psaní, ne až při generování: učitel musí vidět, kde
+                // je mez, dřív než si vymyslí tajenku, která se do ní nevejde.
+                patchCipher({
+                  message: truncateToLetters(event.target.value, MESSAGE_LETTER_LIMITS.max),
+                })
+              }
               placeholder="POKLAD JE U BAZÉNU"
               autoComplete="off"
               spellCheck={false}
             />
+            {/* Vazba „jedno písmeno = jeden příklad" nebyla nikde vidět.
+                Učitel napsal hezkou dlouhou větu a teprve z tiskárny zjistil,
+                že po dětech chce třicet výpočtů na dvou stranách. */}
+            <span className="field__hint">
+              {messageLetters} {czechLetterWord(messageLetters)} = {messageLetters}{' '}
+              {messageLetters === 1 ? 'příklad' : messageLetters < 5 ? 'příklady' : 'příkladů'}
+              {messageLetters > ONE_PAGE_LETTERS && ' — vytiskne se na dvě strany'}
+            </span>
           </label>
         ) : (
           <label className="field">
