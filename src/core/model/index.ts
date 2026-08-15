@@ -240,10 +240,31 @@ export interface SequenceSheetConfig {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Aktivita „pexeso"
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Kartičky ve dvojicích: na jedné zadání, na druhé výsledek.
+ *
+ * Nemá tajenku ani mřížku — hodnoty si nikdo nediktuje, jen musí být navzájem
+ * různé. Dvě zadání se stejným výsledkem znamenají, že dítě spáruje špatně
+ * a bude mít pravdu; hlídá to `verifyDistinctValues`.
+ */
+export interface PexesoConfig {
+  /** Kolik DVOJIC. Kartiček je dvakrát tolik. */
+  pairCount: number
+  difficulty: DifficultyProfile
+  taskMix: Partial<Record<OperationTag, number>>
+  /** Viz `CipherGridConfig.generatorMix` — chybějící hodnota znamená aritmetiku. */
+  generatorMix?: Readonly<Record<string, number>>
+  output: OutputConfig
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Projekt
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type ActivityId = 'cipher-grid' | 'sequence-sheet'
+export type ActivityId = 'cipher-grid' | 'sequence-sheet' | 'pexeso'
 
 /**
  * Společná hlavička každé uložené aktivity — vše kromě `activity` a `payload`.
@@ -279,11 +300,13 @@ export type CipherGridProject = Project<'cipher-grid', CipherGridConfig>
 
 export type SequenceSheetProject = Project<'sequence-sheet', SequenceSheetConfig>
 
+export type PexesoProject = Project<'pexeso', PexesoConfig>
+
 /**
  * Uložitelná aktivita. Rozlišená unie podle `activity` — přidání další hry
  * je nový člen, ne další volitelná pole v jednom společném objektu.
  */
-export type ProjectConfig = CipherGridProject | SequenceSheetProject
+export type ProjectConfig = CipherGridProject | SequenceSheetProject | PexesoProject
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Výstup generování
@@ -363,5 +386,10 @@ export interface VerificationFailure {
      * Týká se úloh s desetinnými operandy: `0,3 · 7` dává 2,1.
      */
     | 'non-integer-result'
+    /**
+     * Dvě zadání se stejným výsledkem. U párovacích her (pexeso, domino) vada:
+     * dítě spáruje špatně a bude mít pravdu. U šifry naopak v pořádku.
+     */
+    | 'ambiguous-pairing'
   message: string
 }

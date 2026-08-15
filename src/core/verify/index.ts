@@ -13,6 +13,7 @@
 import type {
   CipherTable,
   PromptNode,
+  Task,
   VerificationFailure,
   VerificationReport,
 } from '../model/index.js'
@@ -509,6 +510,36 @@ export function verifyTasks(slots: readonly SheetSlot[]): VerificationReport {
   slots.forEach((slot, index) => {
     failures.push(...verifySlot(slot, index))
   })
+  return failures.length === 0 ? { ok: true } : { ok: false, failures }
+}
+
+/**
+ * Mají všechny úlohy navzájem různý výsledek?
+ *
+ * ⚠ Volá se JEN u párovacích aktivit (pexeso, později domino), NIKOLI u šifry.
+ *   V mřížce jsou dvě zadání s toutéž hodnotou legitimní a po ústupku
+ *   `coordinate-reuse` dokonce běžná — dvě různá písmena prostě ukazují na
+ *   totéž políčko.
+ *
+ * U pexesa je to vada. Kdyby na stole leželo `7 · 8` i `28 + 28`, dítě spáruje
+ * `56` s tím druhým, bude mít pravdu a hra mu nevyjde.
+ */
+export function verifyDistinctValues(tasks: readonly Task[]): VerificationReport {
+  const byValue = new Map<number, string[]>()
+  for (const task of tasks) {
+    const texts = byValue.get(task.value) ?? []
+    texts.push(task.prompt.text)
+    byValue.set(task.value, texts)
+  }
+
+  const failures: VerificationFailure[] = []
+  for (const [value, texts] of byValue) {
+    if (texts.length < 2) continue
+    failures.push({
+      code: 'ambiguous-pairing',
+      message: `Výsledek ${value} má víc zadání (${texts.join(', ')}) — párování by nebylo jednoznačné.`,
+    })
+  }
   return failures.length === 0 ? { ok: true } : { ok: false, failures }
 }
 

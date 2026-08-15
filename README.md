@@ -23,6 +23,11 @@ Učitel zadá tajenku, například `POKLAD JE U BAZÉNU`. Aplikace k ní vytvoř
 Žák spočítá příklad, najde políčko podle souřadnice, opíše písmeno — a po patnácti příkladech
 mu vyjde tajenka. Mimochodem si přitom osahá soustavu souřadnic, kterou se bude učit později.
 
+Vedle šifry umí Šifromatika **list číselných řad** a **pexeso**: kartičky k vystřižení,
+na jedné příklad, na druhé jeho výsledek. Kartičky se dotýkají, takže se stříhají pár
+rovnými řezy přes celý list, a na každé stránce je kontrolní úsečka 100 mm — tiskárna,
+která zmenšuje, se tím prozradí dřív, než učitel sáhne po nůžkách.
+
 ## Na čem si dává práci
 
 Šifrovačku jde vygenerovat i špatně. Tyhle věci proto řeší Šifromatika záměrně:
@@ -124,7 +129,7 @@ Podrobněji:
 
 **Verze 0.1.** Použitelná: vytvoří list, ověří ho a vytiskne.
 
-Umí dvě aktivity — šifru se souřadnicovou i lineární tabulkou a list číselných řad —
+Umí tři aktivity — šifru se souřadnicovou i lineární tabulkou, list číselných řad a pexeso —
 pro **3. až 8. ročník**. Vedle čtyř základních operací zvládne pořadí operací a závorky,
 celá čísla, mocniny a odmocniny, desetinná čísla (`3,5 · 4`) a procenta (`25 % z 80`).
 K tomu klamná písmena, tisk, soubory `.sifra` a diplom ke stažení.

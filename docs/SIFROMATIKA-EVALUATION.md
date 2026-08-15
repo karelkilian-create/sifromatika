@@ -478,7 +478,7 @@ potenciálem**, které si zaslouží zmínku, i když jsou dražší:
 | 3 | **Procenta a desetinná čísla** jako generátory úloh ✅ | střední | šířka matematiky před šířkou her; naplní 2. stupeň obsahem; **žádný nový tisk** |
 | 4 | **Registr aktivit** (C.1) ✅ | střední | poslední chvíle, kdy je to levné |
 | 5 | **`DocumentModel`** bez PDF (C.2) ✅ | střední | předpoklad pro bingo, pexeso i domino |
-| 6 | **Kartičková sazba** (C.3) + **pexeso** | střední | primitivum se ověří na nejjednodušším uživateli |
+| 6 | **Kartičková sazba** (C.3) + **pexeso** ✅ | střední | primitivum se ověří na nejjednodušším uživateli |
 | 7 | **Domino** | malá–střední | po pexesu zbývá jen kontrola řetězce |
 | 8 | **Bingo** | střední | je v katalogu, učitelé ho čekají; potřebuje kroky 5 a C.4 |
 | 9 | **Příkazová vrstva + widget** (E.1) | střední | až teď je co ovládat |
@@ -563,8 +563,9 @@ procenty: je to jediná položka, kterou je nutné stihnout dřív než třetí 
 Podrobnosti jsou v `docs/navrh-registru-aktivit.md`
 a `docs/navrh-procenta-desetinna.md`.
 
-Na řadě je **kartičková sazba** (C.3) a nad ní **pexeso** — primitivum se má ověřit
-na nejjednodušším uživateli, ne na nejsložitějším.
+Na řadě je **domino** — po pexesu zbývá jen kontrola sestavitelnosti řetězce,
+kartičková sazba i `DocumentModel` už stojí. Podrobnosti k hotovému kroku 6
+jsou v `docs/navrh-karticky-pexeso.md`.
 
 Ověřeno spuštěním, ne z dokumentace: `npm run check` — typecheck, oxlint,
 41 modulů bez porušení hranic vrstev, 272 testů ve 14 souborech, vše prochází.

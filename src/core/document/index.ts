@@ -28,6 +28,16 @@ export interface InlineRun {
   strong?: boolean
 }
 
+/**
+ * Obsah jedné kartičky.
+ *
+ * Dnes jeden řádek — u pexesa buď zadání (`7 · 8`), nebo výsledek (`56`).
+ * Domino si přidá druhý; proto je to objekt, a ne holý řetězec.
+ */
+export interface CardFace {
+  text: string
+}
+
 /** Jedna položka očíslovaného seznamu úloh. */
 export interface TaskListItem {
   /** Přesně to, co se vytiskne. */
@@ -78,6 +88,37 @@ export type DocumentBlock =
   | { kind: 'answer-row'; wordLengths: readonly number[]; letters?: readonly string[] }
   /** Tabulka s pevným záhlavím. Buňky jsou hotový text, ne čísla k formátování. */
   | { kind: 'table'; columns: readonly string[]; rows: readonly (readonly string[])[] }
+  /**
+   * Mřížka kartiček k vystřižení.
+   *
+   * ⚠ Jediné místo v modelu, kde jsou milimetry — a je to v pořádku. U kartičky
+   *   je fyzický rozměr OBSAH, ne vzhled: 60 mm není estetická volba, ale to,
+   *   co dítě dostane do ruky. Renderer do PDF bude potřebovat totéž číslo.
+   *
+   * Kartičky se dotýkají a stříhá se skrz. Rozhoduje o tom učitel u řezačky,
+   * ne estetika náhledu: pět rovných řezů přes list je práce na minutu,
+   * obstřihávání dvaceti čtyř rámečků na čtvrt hodiny.
+   *
+   * Blok nese kartičky JEDNÉ stránky. Stránkování patří aktivitě — kdyby si
+   * je renderer lámal sám, vznikl by dokument, jehož stránky nesouhlasí
+   * s papírem.
+   */
+  | {
+      kind: 'card-grid'
+      cards: readonly CardFace[]
+      columns: number
+      cardWidthMm: number
+      cardHeightMm: number
+    }
+  /**
+   * Kontrolní úsečka na ověření měřítka tisku.
+   *
+   * Chrome, Firefox a Safari sázejí `@page` různě a učitel má v dialogu
+   * přednastavené „Přizpůsobit stránce". Zabránit tomu z kódu nejde; jde
+   * udělat to, co projekt dělá u relaxačního logu i kontrolního součtu —
+   * udělat z tiché vady viditelnou. Učitel přiloží pravítko dřív, než stříhá.
+   */
+  | { kind: 'print-scale-check'; lengthMm: number }
 
 /**
  * Jedna stránka.

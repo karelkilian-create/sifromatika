@@ -15,6 +15,7 @@ import type { SharedEditorState } from '../../activities/contract.js'
 import {
   MESSAGE_LETTER_LIMITS,
   ONE_PAGE_LETTERS,
+  PAIR_COUNT_LIMITS,
   TASK_COUNT_LIMITS,
   gradeProfile,
 } from '../../core/constraints/index.js'
@@ -55,8 +56,10 @@ export function EditorPanel({
   canPrint,
 }: EditorPanelProps) {
   const isCipher = state.activity === 'cipher-grid'
+  const isPexeso = state.activity === 'pexeso'
   const cipher = state.byActivity['cipher-grid']
   const sequence = state.byActivity['sequence-sheet']
+  const pexeso = state.byActivity.pexeso
 
   // Volby, které ročník neumí, se neschovávají do neaktivního stavu, ale
   // úplně mizí — zašedlá „Procenta" u čtvrťáka je jen šum.
@@ -72,6 +75,9 @@ export function EditorPanel({
   // nemají jak přepsat — proto se učiteli po přepnutí a návratu vrátí tajenka.
   const patchCipher = (changes: Partial<typeof cipher>) =>
     onChange({ ...state, byActivity: { ...state.byActivity, 'cipher-grid': { ...cipher, ...changes } } })
+
+  const patchPexeso = (changes: Partial<typeof pexeso>) =>
+    onChange({ ...state, byActivity: { ...state.byActivity, pexeso: { ...pexeso, ...changes } } })
 
   const patchSequence = (changes: Partial<typeof sequence>) =>
     onChange({
@@ -114,6 +120,25 @@ export function EditorPanel({
               {messageLetters} {czechLetterWord(messageLetters)} = {messageLetters}{' '}
               {messageLetters === 1 ? 'příklad' : messageLetters < 5 ? 'příklady' : 'příkladů'}
               {messageLetters > ONE_PAGE_LETTERS && ' — vytiskne se na dvě strany'}
+            </span>
+          </label>
+        ) : isPexeso ? (
+          <label className="field">
+            <span className="field__label">Počet dvojic</span>
+            <input
+              className="field__input"
+              type="number"
+              min={PAIR_COUNT_LIMITS.min}
+              max={PAIR_COUNT_LIMITS.max}
+              value={pexeso.pairCount}
+              onChange={(event) => patchPexeso({ pairCount: Number(event.target.value) })}
+            />
+            {/* Kartiček je dvakrát tolik než dvojic — a to učitel u kopírky
+                potřebuje vědět dřív, než zjistí, kolik listů mu vyleze. */}
+            <span className="field__hint">
+              {pexeso.pairCount * 2} kartiček na {Math.ceil((pexeso.pairCount * 2) / 12)}{' '}
+              {Math.ceil((pexeso.pairCount * 2) / 12) === 1 ? 'listu' : 'listech'} plus seznam pro
+              učitele
             </span>
           </label>
         ) : (

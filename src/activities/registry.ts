@@ -21,6 +21,7 @@
 import type { DocumentModel } from '../core/document/index.js'
 import type { ActivityId, ProjectBase, ProjectConfig } from '../core/model/index.js'
 import { cipherGridModule } from './cipher-grid/module.js'
+import { pexesoModule } from './pexeso/module.js'
 import { sequenceSheetModule } from './sequence-sheet/module.js'
 import type {
   ActivityInfo,
@@ -36,6 +37,7 @@ export type { ActivityInfo, CatalogId } from './contract.js'
 export const activityModules = {
   'cipher-grid': cipherGridModule,
   'sequence-sheet': sequenceSheetModule,
+  pexeso: pexesoModule,
 } satisfies Record<ActivityId, AnyActivityModule>
 
 type ActivityModules = typeof activityModules
@@ -50,12 +52,6 @@ const plannedActivities: readonly ActivityInfo[] = [
   {
     id: 'bingo',
     label: 'Bingo',
-    tagline: 'Připravujeme',
-    available: false,
-  },
-  {
-    id: 'pexeso',
-    label: 'Pexeso',
     tagline: 'Připravujeme',
     available: false,
   },

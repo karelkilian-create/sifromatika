@@ -240,3 +240,56 @@
 .solution-table td:last-child {
   font-weight: 700;
 }
+
+/* ── Kartičky k vystřižení ────────────────────────────────────────── */
+
+/*
+ * Linka je vždy jen jedna, i mezi sousedy: mřížka kreslí horní a levou,
+ * kartička pravou a spodní. Dvě linky vedle sebe by znamenaly dva řezy
+ * těsně u sebe a proužek papíru navíc.
+ */
+.card-grid {
+  display: grid;
+  gap: 0;
+  width: max-content;
+  margin: 0 auto 6mm;
+  border-top: 0.25mm solid var(--sheet-ink);
+  border-left: 0.25mm solid var(--sheet-ink);
+}
+
+.card {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3mm;
+  border-right: 0.25mm solid var(--sheet-ink);
+  border-bottom: 0.25mm solid var(--sheet-ink);
+  text-align: center;
+}
+
+/*
+ * Zadání i výsledek se sázejí STEJNĚ. Kdyby šly rozeznat podle vzhledu,
+ * dítě by nikdy neotočilo dvě zadání a hra by se scvrkla na půlku — poznat,
+ * že „7 · 8“ a „56“ patří k sobě, má stát výpočet, ne pohled.
+ */
+.card__text {
+  font-size: 20pt;
+  font-weight: 700;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Kontrola měřítka tisku ───────────────────────────────────────── */
+
+.print-scale-check__ruler {
+  height: 3mm;
+  border: 0.3mm solid var(--sheet-ink);
+  border-top: none;
+}
+
+.print-scale-check__note {
+  margin: 1.5mm 0 0;
+  font-size: 8pt;
+  color: #444;
+}

@@ -41,6 +41,10 @@ function textOfBlock(block: DocumentBlock): string[] {
       // Tabulka na listu být musí — dítě z ní čte. Do porovnávání s tajenkou
       // se ale nepočítá: obsahuje všechna písmena včetně klamných.
       return []
+    case 'card-grid':
+      return block.cards.map((card) => card.text)
+    case 'print-scale-check':
+      return []
   }
 }
 

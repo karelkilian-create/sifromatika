@@ -139,6 +139,21 @@ export const TASK_COUNT_LIMITS = { min: 4, max: 30, fallback: 12 } as const
 export const MESSAGE_LETTER_LIMITS = { min: 2, max: 24 } as const
 
 /**
+ * Kolik DVOJIC smí mít pexeso. Kartiček je dvakrát tolik.
+ *
+ * Ne `TASK_COUNT_LIMITS` (4–30): čtyři dvojice jsou osm kartiček a triviální
+ * hra, třicet dvojic je šedesát kartiček, které jedna dvojice dětí do konce
+ * hodiny nesloží. Dvanáct je 24 kartiček na dvou stranách A4.
+ */
+export const PAIR_COUNT_LIMITS = { min: 6, max: 18, fallback: 12 } as const
+
+export function clampPairCount(value: unknown): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return PAIR_COUNT_LIMITS.fallback
+  const rounded = Math.round(value)
+  return Math.min(Math.max(rounded, PAIR_COUNT_LIMITS.min), PAIR_COUNT_LIMITS.max)
+}
+
+/**
  * Nad kolik písmen se pracovní list nevejde na jednu stranu.
  *
  * Není to zákaz — dvoustránková šifra není rozbitá, jen delší. Je to hodnota,

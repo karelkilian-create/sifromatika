@@ -58,7 +58,7 @@ describe('katalog aktivit', () => {
   })
 
   it('id z novější verze neprojde jako známé', () => {
-    for (const value of ['bingo', 'pexeso', '', 'cipher', null, 42]) {
+    for (const value of ['bingo', 'domino', '', 'cipher', null, 42]) {
       expect(isActivityId(value)).toBe(false)
     }
   })
@@ -76,11 +76,31 @@ describe('kontrakt aktivity', () => {
     expect(run.outcome.sheet.title.length).toBeGreaterThan(0)
   })
 
-  it.each(ids)('%s: každá aktivita dá pracovní list i řešení', (id) => {
+  it.each(ids)('%s: učitel vždycky dostane výsledky na vlastní stránce', (id) => {
     const run = runActivity(id, initialActivityStates(), shared, 'registr-stranky')
-    // Dva listy jsou závazek vůči učiteli, ne detail sazby: bez řešení nemá
-    // čím opravovat. Viz docs/rozsah-0.1.md a poznámka o dvou listech v UI.
-    expect(run.document?.pages.map((page) => page.label)).toEqual(['Pracovní list', 'Řešení'])
+    const pages = run.document?.pages ?? []
+
+    // Podklad pro učitele je závazek, ne detail sazby: bez výsledků nemá čím
+    // opravovat. KOLIK stránek jich je, se ale aktivita od aktivity liší —
+    // šifra má list a řešení, pexeso dvě stránky kartiček a k tomu seznam.
+    // Test proto hlídá ten závazek, ne konkrétní počet.
+    expect(pages.length).toBeGreaterThanOrEqual(2)
+
+    const last = pages[pages.length - 1]!
+    expect(
+      last.blocks.some((block) => block.kind === 'table'),
+      `poslední stránka „${last.label}" nemá tabulku s výsledky`,
+    ).toBe(true)
+  })
+
+  it('učitelská stránka není mezi tím, co se rozdává dětem', () => {
+    // U pexesa je to jediné, co brání tomu, aby učitel rozdal i řešení:
+    // seznam dvojic musí být až za kartičkami, ne mezi nimi.
+    const run = runActivity('pexeso', initialActivityStates(), shared, 'registr-poradi')
+    const labels = run.document?.pages.map((page) => page.label) ?? []
+
+    expect(labels[labels.length - 1]).toBe('Pro učitele')
+    expect(labels.slice(0, -1).every((label) => label.startsWith('Kartičky'))).toBe(true)
   })
 
   it.each(ids)('%s: formulář → konfigurace → formulář nic neztratí', (id) => {

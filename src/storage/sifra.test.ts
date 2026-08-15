@@ -86,6 +86,7 @@ describe('.sifra — uložení a načtení', () => {
             printTitleOnWorksheet: true,
           },
           'sequence-sheet': { taskCount: 12 },
+          pexeso: { pairCount: 12 },
         },
       },
       'kolecko',

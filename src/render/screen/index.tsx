@@ -15,6 +15,7 @@
  */
 
 import type {
+  CardFace,
   DocumentBlock,
   DocumentModel,
   DocumentPage,
@@ -86,7 +87,64 @@ function BlockView({ block }: { block: DocumentBlock }) {
 
     case 'table':
       return <TableView columns={block.columns} rows={block.rows} />
+
+    case 'card-grid':
+      return (
+        <CardGridView
+          cards={block.cards}
+          columns={block.columns}
+          widthMm={block.cardWidthMm}
+          heightMm={block.cardHeightMm}
+        />
+      )
+
+    case 'print-scale-check':
+      return <PrintScaleCheck lengthMm={block.lengthMm} />
   }
+}
+
+/**
+ * Mřížka kartiček k vystřižení.
+ *
+ * Linky jsou na kartičce vpravo a dole, na mřížce nahoře a vlevo. Díky tomu
+ * mají sousedící kartičky JEDNU společnou linku, ne dvě vedle sebe — a učitel
+ * vede řezačkou jeden rovný řez přes celý list, ne dva těsně u sebe.
+ */
+function CardGridView({
+  cards,
+  columns,
+  widthMm,
+  heightMm,
+}: {
+  cards: readonly CardFace[]
+  columns: number
+  widthMm: number
+  heightMm: number
+}) {
+  return (
+    <div
+      className="card-grid"
+      style={{ gridTemplateColumns: `repeat(${columns}, ${widthMm}mm)` }}
+    >
+      {cards.map((card, index) => (
+        <div className="card" style={{ width: `${widthMm}mm`, height: `${heightMm}mm` }} key={index}>
+          <span className="card__text">{card.text}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function PrintScaleCheck({ lengthMm }: { lengthMm: number }) {
+  return (
+    <div className="print-scale-check">
+      <div className="print-scale-check__ruler" style={{ width: `${lengthMm}mm` }} />
+      <p className="print-scale-check__note">
+        Kontrolní úsečka {lengthMm} mm. Než začneš stříhat, přilož pravítko — pokud neměří{' '}
+        {lengthMm} mm, tiskne se se zmenšením a v dialogu je potřeba nastavit měřítko 100 %.
+      </p>
+    </div>
+  )
 }
 
 function RunView({ run }: { run: InlineRun }) {
