@@ -34,8 +34,14 @@ mu vyjde tajenka. Mimochodem si přitom osahá soustavu souřadnic, kterou se bu
   různá políčka. Když se to nevejde, aplikace to řekne — nedegraduje potichu.
 - **Stejný výsledek, různé příklady.** Číslo 24 se na listu objeví jako `18 + 6`, `30 − 6`,
   `6 × 4` i `48 : 2`. Tentýž výraz se na jednom listu neopakuje.
-- **Přiměřená obtížnost.** Velikost tabulky se odvozuje z ročníku, ne naopak. Nemůže tak
-  vzniknout list, který po třeťákovi chce příklady mimo jeho obor čísel.
+- **Tabulka je vždy 9×9.** Nehledá se nejmenší, která tajenku uveze. Z mřížky 4×6 by žák
+  přečetl, že žádný výsledek nepřesáhne 46 — a chybný výpočet by poznal bez ověřování.
+  Devítka na devítku vypadá stejně pro tajenku o čtyřech písmenech i o čtyřiceti.
+- **Zaškrtnuté operace se na list opravdu dostanou.** Čtvrťák počítá do sta, takže hodnotu
+  71 vyrobí sčítáním, ale malou násobilkou nikdy. Písmena se proto po tabulce nerozhazují
+  rovnoměrně, ale tak, aby zvolený poměr operací vyšel.
+- **Přiměřená obtížnost.** Obor čísel se odvozuje z ročníku. Nemůže tak vzniknout list,
+  který po třeťákovi chce příklady mimo jeho obor.
 - **Každý list projde kontrolou.** Před zobrazením se nezávisle přepočítají všechny příklady
   a list se zpětně rozluští. Když cokoli nesedí, list se nevytiskne. Učitel ho rozdává
   pětadvaceti dětem — tichá chyba tu stojí celou hodinu.

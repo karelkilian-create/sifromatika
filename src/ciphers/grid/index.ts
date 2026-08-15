@@ -10,7 +10,7 @@
  * úloh umí vyrobit, a vrátí seznam hodnot, které potřebuje.
  */
 
-import { chooseGrid, relaxation, type CodeForCell } from '../../core/constraints/index.js'
+import { planFixedGrid, relaxation, type CodeForCell } from '../../core/constraints/index.js'
 import type {
   CipherArtifact,
   CipherCell,
@@ -23,8 +23,6 @@ import { ALPHABET, CZECH_LETTER_WEIGHTS, type NormalizedMessage } from '../../co
 
 export interface GridScheme {
   id: CipherStrategyId
-  /** Horní mez strany mřížky. */
-  maxSide: number
   codeFor: CodeForCell
   tokenFor(row: number, col: number, rows: number, cols: number): CodeToken
 }
@@ -32,12 +30,11 @@ export interface GridScheme {
 /**
  * Souřadnice: výsledek 34 znamená 3. řádek, 4. sloupec.
  *
- * Mřížka nesmí být větší než 9×9 — desátý řádek by dal kód 104 a dvouciferné
+ * Mřížka je vždy 9×9 (`GRID_SIDE`) — desátý řádek by dal kód 104 a dvouciferné
  * čtení by přestalo platit. Je to vlastnost zápisu, ne libovolný limit.
  */
 export const coordScheme: GridScheme = {
   id: 'grid-coord',
-  maxSide: 9,
   codeFor: (row, col) => row * 10 + col,
   tokenFor: (row, col) => ({ kind: 'coord', n: row * 10 + col, row, col }),
 }
@@ -45,7 +42,6 @@ export const coordScheme: GridScheme = {
 /** Buňky číslované 1..N v pořadí čtení. Jednodušší, ale souřadnice neučí. */
 export const linearScheme: GridScheme = {
   id: 'grid-linear',
-  maxSide: 12,
   codeFor: (row, col, _rows, cols) => (row - 1) * cols + col,
   tokenFor: (row, col, _rows, cols) => ({ kind: 'linear', n: (row - 1) * cols + col }),
 }
@@ -54,12 +50,23 @@ export interface GridRequest {
   message: NormalizedMessage
   /** Hodnoty dosažitelné vrstvou úloh. Určuje, kam smí přijít písmeno tajenky. */
   reachable: ReadonlySet<number>
-  /** Podíl klamných písmen, 0–1. */
-  decoyDensity: number
+  /**
+   * Tytéž hodnoty rozdělené do skupin — jedna za každou volbu, kterou učitel
+   * zaškrtl. Šifra o nich neví nic víc, než že má písmena mezi ně **rozprostřít**,
+   * ne je nasypat do té největší.
+   *
+   * Bez toho vzniká tichý rozpor se zadáním. Čtvrťák počítá do sta, takže
+   * hodnotu 71 vyrobí sčítáním, ale malou násobilkou ani dělením v ní nikdy.
+   * Kdyby se písmena losovala rovnoměrně přes všech 81 políček, většina by
+   * spadla mimo dosah násobení a učiteli by se vrátil list samých součtů —
+   * přestože násobení zaškrtl. Viz docs/rozsah-0.1.md §3.1: co uživatel
+   * nastavil, se nepřepisuje potichu.
+   *
+   * Prázdné pole = žádná preference, losuje se rovnoměrně.
+   */
+  reachablePools: readonly ReadonlySet<number>[]
   /** Ideál: každý výskyt písmene má vlastní buňku. Měkké omezení. */
   distinctCellPerOccurrence: boolean
-  /** Ruční volba rozměrů. Respektuje se, i když si vyžádá ústupky jinde. */
-  gridOverride?: { rows: number; cols: number }
 }
 
 export type GridResult =
@@ -111,7 +118,7 @@ export function buildGrid(request: GridRequest, rng: Rng, scheme: GridScheme): G
     }
   }
 
-  const usable = rng.shuffle(grid.usableCodes)
+  const usable = spreadAcrossPools(grid.usableCodes, request.reachablePools, rng)
   if (usable.length < countCells(wanted)) {
     return {
       ok: false,
@@ -161,12 +168,6 @@ export function buildGrid(request: GridRequest, rng: Rng, scheme: GridScheme): G
     return tokenByCode.get(codes[index % codes.length]!)!
   })
 
-  if (request.gridOverride) {
-    relaxations.push(
-      relaxation.silent('grid-override', `Použity ručně zadané rozměry ${grid.rows}×${grid.cols}.`),
-    )
-  }
-
   return {
     ok: true,
     relaxations,
@@ -178,27 +179,71 @@ export function buildGrid(request: GridRequest, rng: Rng, scheme: GridScheme): G
   }
 }
 
+/**
+ * Seřadí použitelné kódy tak, aby se na začátku střídaly skupiny.
+ *
+ * Volající si pak vezme prvních N a má jistotu, že v nich je z každé skupiny
+ * zhruba stejný podíl — tedy že vzácná skupina (u čtvrťáka násobení) nezmizí
+ * jen proto, že je menší. Kdo skupinu vyčerpá, přestane se do střídání počítat;
+ * na konec se připojí zbytek, aby se pořadí nezkrátilo.
+ *
+ * Losování zůstává v každé skupině náhodné, takže dva seedy dají jiné rozmístění.
+ */
+function spreadAcrossPools(
+  codes: readonly number[],
+  pools: readonly ReadonlySet<number>[],
+  rng: Rng,
+): number[] {
+  if (pools.length === 0) return rng.shuffle([...codes])
+
+  const queues = pools.map((pool) => rng.shuffle(codes.filter((code) => pool.has(code))))
+  const ordered: number[] = []
+  const taken = new Set<number>()
+
+  let progress = true
+  while (progress) {
+    progress = false
+    for (const queue of queues) {
+      let code = queue.pop()
+      while (code !== undefined && taken.has(code)) code = queue.pop()
+      if (code === undefined) continue
+      taken.add(code)
+      ordered.push(code)
+      progress = true
+    }
+  }
+
+  // Kódy, na které nesáhla žádná skupina. Nastane u hodnot, které umí jen
+  // generátor mimo zaškrtnuté operace — na písmena se použijí až v nouzi.
+  for (const code of rng.shuffle(codes.filter((code) => !taken.has(code)))) {
+    ordered.push(code)
+  }
+  return ordered
+}
+
 function countCells(wanted: ReadonlyMap<string, number>): number {
   let total = 0
   for (const count of wanted.values()) total += count
   return total
 }
 
+/**
+ * Mřížka je pevná, takže tahle funkce nic nevybírá — jen zjistí, jestli na
+ * písmena tajenky vyjde dost dosažitelných kódů.
+ *
+ * Klamná písmena se nedávkují: vyplní všechny buňky, které nedostaly písmeno
+ * tajenky. Při 81 buňkách je jich vždycky většina, takže tabulka nikdy
+ * neprozradí délku tajenky svou velikostí.
+ */
 function planGrid(
   wanted: ReadonlyMap<string, number>,
   request: GridRequest,
   scheme: GridScheme,
 ) {
-  const letterCells = countCells(wanted)
-  const density = Math.min(Math.max(request.decoyDensity, 0), 0.9)
-  const totalCells = Math.ceil(letterCells / (1 - density))
-  return chooseGrid({
-    letterCells,
-    totalCells,
+  return planFixedGrid({
+    letterCells: countCells(wanted),
     reachable: request.reachable,
     codeFor: scheme.codeFor,
-    maxSide: scheme.maxSide,
-    override: request.gridOverride,
   })
 }
 

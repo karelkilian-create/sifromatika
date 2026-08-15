@@ -27,8 +27,6 @@ export interface CipherGridEditorState {
   decimals: boolean
   /** Míchat mezi příklady i procenta (`25 % z 80`). Od 7. ročníku. */
   percents: boolean
-  /** Podíl klamných písmen v tabulce, 0–1. */
-  decoyDensity: number
   distinctCellPerOccurrence: boolean
   printTitleOnWorksheet: boolean
 }
@@ -42,7 +40,6 @@ const initialState: CipherGridEditorState = {
   sequences: false,
   decimals: false,
   percents: false,
-  decoyDensity: 0.35,
   distinctCellPerOccurrence: true,
   printTitleOnWorksheet: false,
 }
@@ -72,7 +69,6 @@ export const cipherGridModule = {
     // vypadaly přesně jako dřív — jinak by se listu změnil obsah.
     config.payload.generatorMix =
       Object.keys(generatorMix).length === 1 ? { arithmetic: 1 } : generatorMix
-    config.payload.cipher.decoyDensity = state.decoyDensity
     config.payload.cipher.distinctCellPerOccurrence = state.distinctCellPerOccurrence
     config.payload.output.printTitleOnWorksheet = state.printTitleOnWorksheet
     return config
@@ -85,7 +81,6 @@ export const cipherGridModule = {
       sequences: (payload.generatorMix?.sequence ?? 0) > 0,
       decimals: (payload.generatorMix?.decimal ?? 0) > 0,
       percents: (payload.generatorMix?.percent ?? 0) > 0,
-      decoyDensity: payload.cipher.decoyDensity,
       distinctCellPerOccurrence: payload.cipher.distinctCellPerOccurrence,
       printTitleOnWorksheet: payload.output.printTitleOnWorksheet,
     }

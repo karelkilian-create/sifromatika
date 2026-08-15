@@ -82,7 +82,6 @@ describe('.sifra — uložení a načtení', () => {
             sequences: true,
             decimals: true,
             percents: false,
-            decoyDensity: 0.5,
             distinctCellPerOccurrence: false,
             printTitleOnWorksheet: true,
           },
@@ -106,7 +105,6 @@ describe('.sifra — uložení a načtení', () => {
     expect(cipher.sequences).toBe(true)
     expect(cipher.decimals).toBe(true)
     expect(cipher.percents).toBe(false)
-    expect(cipher.decoyDensity).toBe(0.5)
     expect(cipher.distinctCellPerOccurrence).toBe(false)
     expect(cipher.printTitleOnWorksheet).toBe(true)
   })
@@ -216,7 +214,7 @@ describe('.sifra — nedůvěryhodný vstup', () => {
     )
     expect(parsed.ok).toBe(true)
     if (!parsed.ok) return
-    expect(asCipher(parsed.file.config).payload.cipher.decoyDensity).toBe(0.35)
+    expect(asCipher(parsed.file.config).payload.cipher.distinctCellPerOccurrence).toBe(true)
     expect(asCipher(parsed.file.config).payload.output.printTitleOnWorksheet).toBe(false)
     // Profil obtížnosti se odvodí z ročníku, ne ze souboru.
     expect(asCipher(parsed.file.config).payload.difficulty.multiplicationTables.length).toBeGreaterThan(0)

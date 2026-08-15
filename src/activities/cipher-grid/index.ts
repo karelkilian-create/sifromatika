@@ -10,6 +10,7 @@
 
 import { hashString } from '../../core/checksum/index.js'
 import { gradeProfile } from '../../core/constraints/index.js'
+import { ALL_OPERATIONS } from '../../core/model/index.js'
 import type {
   CipherGridProject,
   CipherTable,
@@ -68,7 +69,6 @@ export function defaultConfig(message: string, grade: Grade, seed: string): Ciph
       cipher: {
         strategy: 'grid-coord',
         distinctCellPerOccurrence: true,
-        decoyDensity: 0.35,
       },
       output: {
         includeSolution: true,
@@ -138,7 +138,7 @@ function generateOnce(config: CipherGridProject): CipherGridOutcome {
   }
 
   // Obor hodnot, které vrstva úloh umí vyrobit. Tohle je celé, co se šifra
-  // o matematice dozví — a co určí velikost mřížky.
+  // o matematice dozví.
   const reachable = new Set<number>()
   for (const generator of generators) {
     for (const value of generator.reachableValues(payload.difficulty, payload.taskMix)) {
@@ -146,13 +146,28 @@ function generateOnce(config: CipherGridProject): CipherGridOutcome {
     }
   }
 
+  // Totéž rozdělené po jednotlivých operacích. Šifra podle toho rozprostře
+  // písmena, aby se na list dostalo i to, co jde vyrobit jen vzácně — viz
+  // `GridRequest.reachablePools`.
+  const chosenOperations = ALL_OPERATIONS.filter((operation) => (payload.taskMix[operation] ?? 0) > 0)
+  const reachablePools = (chosenOperations.length > 0 ? chosenOperations : ALL_OPERATIONS).map(
+    (operation) => {
+      const pool = new Set<number>()
+      for (const generator of generators) {
+        for (const value of generator.reachableValues(payload.difficulty, { [operation]: 1 })) {
+          pool.add(value)
+        }
+      }
+      return pool
+    },
+  )
+
   const cipher = buildGrid(
     {
       message,
       reachable,
-      decoyDensity: payload.cipher.decoyDensity,
+      reachablePools,
       distinctCellPerOccurrence: payload.cipher.distinctCellPerOccurrence,
-      gridOverride: payload.cipher.grid,
     },
     rng,
     cipherScheme(payload.cipher.strategy),

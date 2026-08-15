@@ -43,6 +43,15 @@ export type SkillTag =
 
 export type OperationTag = 'add' | 'sub' | 'mul' | 'div'
 
+/**
+ * Výčet k `OperationTag` — pořadí je závazné, protože podle něj se losuje.
+ *
+ * Je tady, a ne u toho, kdo ho zrovna potřebuje: přehození pořadí nebo přidání
+ * operace by jinak změnilo výstup jen některým volajícím a listy z jednoho
+ * seedu by se rozešly.
+ */
+export const ALL_OPERATIONS: readonly OperationTag[] = ['add', 'sub', 'mul', 'div']
+
 export interface DidacticMeta {
   grade: number
   difficulty: 1 | 2 | 3 | 4 | 5
@@ -180,13 +189,17 @@ export interface CipherGridConfig {
    *   losování generátoru by se posunulo a s ním celý obsah listu.
    */
   generatorMix?: Readonly<Record<string, number>>
+  /**
+   * Rozměry mřížky tu schválně NEJSOU. Je vždy 9×9 (`GRID_SIDE`), protože
+   * menší tabulka prozrazuje rozsah výsledků — viz komentář v `core/constraints`.
+   * Se zmizelými rozměry ztratila smysl i hustota klamných písmen: buňky, které
+   * nedostaly písmeno tajenky, jsou klamné všechny.
+   *
+   * Starší `.sifra` obě pole nese; parser je mlčky ignoruje.
+   */
   cipher: {
     strategy: CipherStrategyId
-    /** Volitelný override. Když chybí, odvodí se z tajenky a obtížnosti. */
-    grid?: { rows: number; cols: number }
     distinctCellPerOccurrence: boolean
-    /** Podíl klamných písmen v tabulce, 0–1. */
-    decoyDensity: number
   }
   output: OutputConfig
 }

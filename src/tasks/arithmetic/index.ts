@@ -12,6 +12,7 @@
  * zápis, který budou muset později přeučovat, nemá důvod.
  */
 
+import { ALL_OPERATIONS } from '../../core/model/index.js'
 import type {
   DifficultyProfile,
   DidacticMeta,
@@ -24,7 +25,6 @@ import type {
 import type { Rng } from '../../core/rng/index.js'
 import { evaluateExpression } from '../../core/verify/index.js'
 
-const ALL_OPERATIONS: OperationTag[] = ['add', 'sub', 'mul', 'div']
 
 const SYMBOL: Record<OperationTag, string> = {
   add: '+',
@@ -39,7 +39,7 @@ interface Operands {
 }
 
 /** Které operace jsou povolené. Prázdný mix = všechny. */
-function enabledOperations(mix: Partial<Record<OperationTag, number>>): OperationTag[] {
+function enabledOperations(mix: Partial<Record<OperationTag, number>>): readonly OperationTag[] {
   const chosen = ALL_OPERATIONS.filter((op) => (mix[op] ?? 0) > 0)
   return chosen.length > 0 ? chosen : ALL_OPERATIONS
 }

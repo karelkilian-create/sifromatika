@@ -75,7 +75,7 @@ UI se zjednodušuje, jádro nikoli.
 
 | Úroveň | Co | Chování |
 |---|---|---|
-| Tichá | velikost mřížky, hustota klamných písmen, schéma kódování | oprav bez hlášky |
+| Tichá | schéma kódování, rozmístění klamných písmen | oprav bez hlášky |
 | Poznámka | recyklace souřadnic u častého písmene | ikonka „upraveno", detail na klik |
 | **Nikdy tiše** | **překročení obtížnosti zvoleného ročníku**; přepsání hodnoty explicitně nastavené uživatelem | zeptej se, nebo odmítni |
 

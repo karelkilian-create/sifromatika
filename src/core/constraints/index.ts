@@ -148,75 +148,53 @@ export type CodeForCell = (row: number, col: number, rows: number, cols: number)
 export interface GridRequest {
   /** Kolik buněk musí být k dispozici pro písmena tajenky. */
   letterCells: number
-  /** Kolik buněk celkem (písmena + klamná). */
-  totalCells: number
   /** Hodnoty dosažitelné vrstvou úloh. */
   reachable: ReadonlySet<number>
   codeFor: CodeForCell
-  /** Horní mez strany. `grid-coord` má 9 kvůli číslicím, `grid-linear` víc. */
-  maxSide?: number
-  /** Ruční override od uživatele. Když je zadaný, respektuje se i za cenu ústupků jinde. */
-  override?: { rows: number; cols: number }
 }
 
-const MIN_SIDE = 3
-const DEFAULT_MAX_SIDE = 12
+/**
+ * Strana šifrovací mřížky. Vždy 9×9, u obou strategií.
+ *
+ * Dřív se hledala nejmenší mřížka, která požadavek uveze. Bylo to úsporné
+ * a pedagogicky vadné: z tabulky 4×6 dítě přečte, že žádný výsledek nepřesáhne
+ * 46 a druhá číslice nikdy nebude větší než 6. Tím dostane **opravu zdarma** —
+ * kdo spočítá 58, pozná chybu bez ověřování, protože takový sloupec neexistuje.
+ * Právě to hledání chyby přitom má být tou prací, kterou po něm chceme.
+ *
+ * Devítka, a ne víc: u `grid-coord` je to strop zápisu (desátý řádek by dal
+ * kód 104 a dvouciferné čtení souřadnice by přestalo platit). `grid-linear`
+ * by unesl víc, ale drží se téhož čísla — jedna mřížka pro obě strategie
+ * znamená jednu sazbu a jeden rozměr buňky na papíře.
+ *
+ * ⚠ Pevná mřížka NEZUŽUJE, co jde vygenerovat. Devítka na devítku obsahuje
+ *   každou buňku, kterou by měla jakákoli menší mřížka, takže množina
+ *   použitelných kódů je nadmnožinou. Co se vygenerovalo dřív, se vygeneruje
+ *   i teď — jen jinam.
+ */
+export const GRID_SIDE = 9
 
 /**
- * Nejdelší přípustný poměr stran.
+ * Připraví mřížku a zjistí, které její kódy umí vrstva úloh vyrobit.
  *
- * Je to TVRDÉ omezení, ne až tie-break — jinak minimalizace počtu buněk vyhraje
- * nad tvarem a vzniknou mřížky jako 3×11, které se na A4 sázejí mizerně.
- * Ruční volba uživatele tímhle omezená není (§3.1: co uživatel nastavil, se
- * nepřepisuje).
+ * `null` = na písmena tajenky není dost dosažitelných kódů. Nastane to
+ * u úzkých výběrů (třetí třída, zaškrtnuté jen násobení: malá násobilka
+ * nabídne 14 dvouciferných výsledků), a je to strop vrstvy úloh, ne mřížky.
  */
-const MAX_ASPECT_RATIO = 2
+export function planFixedGrid(request: GridRequest): GridChoice | null {
+  const rows = GRID_SIDE
+  const cols = GRID_SIDE
+  const usableCodes: number[] = []
 
-/**
- * Najde nejmenší rozumnou mřížku, která uveze požadavek.
- *
- * Kritéria v pořadí: přijatelný tvar → dost použitelných kódů → dost buněk →
- * co nejmenší → co nejblíž čtverci.
- */
-export function chooseGrid(request: GridRequest): GridChoice | null {
-  const maxSide = request.maxSide ?? DEFAULT_MAX_SIDE
-
-  if (request.override) {
-    const { rows, cols } = request.override
-    return { rows, cols, usableCodes: usableCodesFor(rows, cols, request) }
-  }
-
-  let best: GridChoice | null = null
-  for (let rows = MIN_SIDE; rows <= maxSide; rows++) {
-    for (let cols = MIN_SIDE; cols <= maxSide; cols++) {
-      if (Math.max(rows, cols) / Math.min(rows, cols) > MAX_ASPECT_RATIO) continue
-      const capacity = rows * cols
-      if (capacity < request.totalCells) continue
-      const usableCodes = usableCodesFor(rows, cols, request)
-      if (usableCodes.length < request.letterCells) continue
-
-      if (
-        best === null ||
-        capacity < best.rows * best.cols ||
-        (capacity === best.rows * best.cols &&
-          Math.abs(rows - cols) < Math.abs(best.rows - best.cols))
-      ) {
-        best = { rows, cols, usableCodes }
-      }
-    }
-  }
-  return best
-}
-
-function usableCodesFor(rows: number, cols: number, request: GridRequest): number[] {
-  const codes: number[] = []
   for (let row = 1; row <= rows; row++) {
     for (let col = 1; col <= cols; col++) {
       const code = request.codeFor(row, col, rows, cols)
-      if (request.reachable.has(code)) codes.push(code)
+      if (request.reachable.has(code)) usableCodes.push(code)
     }
   }
-  return codes
+
+  if (usableCodes.length < request.letterCells) return null
+  return { rows, cols, usableCodes }
 }
 
 /** Zkratka pro záznam ústupku — ať se úroveň nepíše pokaždé ručně. */

@@ -7,7 +7,6 @@
 
 import type { CipherGridConfig, CipherStrategyId } from '../../core/model/index.js'
 import {
-  clamp01,
   isRecord,
   parseDifficulty,
   parseOutput,
@@ -60,22 +59,14 @@ export function parseCipherGridPayload(raw: unknown): CipherGridConfig | null {
     difficulty,
     taskMix,
     generatorMix: Object.keys(generatorMix).length > 0 ? generatorMix : { arithmetic: 1 },
+    // `grid` a `decoyDensity` ze starších souborů se sem záměrně nepřenášejí:
+    // mřížka je pevná a klamná písmena se nedávkují. Ignorovat je je správně,
+    // odmítnout soubor kvůli nim by bylo zbytečně kruté.
     cipher: {
       strategy: cipher.strategy as CipherStrategyId,
-      grid: parseGrid(cipher.grid),
       distinctCellPerOccurrence: cipher.distinctCellPerOccurrence !== false,
-      decoyDensity: clamp01(cipher.decoyDensity, 0.35),
     },
     // Šifra má co prozradit, takže se název na žákovský list defaultně netiskne.
     output: parseOutput(output, false),
   }
-}
-
-function parseGrid(raw: unknown): { rows: number; cols: number } | undefined {
-  if (!isRecord(raw)) return undefined
-  const { rows, cols } = raw
-  if (typeof rows !== 'number' || typeof cols !== 'number') return undefined
-  if (!Number.isInteger(rows) || !Number.isInteger(cols)) return undefined
-  if (rows < 1 || cols < 1 || rows > 20 || cols > 20) return undefined
-  return { rows, cols }
 }

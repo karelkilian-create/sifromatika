@@ -63,8 +63,3 @@ export function parseOutput(raw: Record<string, unknown>, printTitleByDefault: b
         : raw.printTitleOnWorksheet === true,
   }
 }
-
-export function clamp01(value: unknown, fallback: number): number {
-  if (typeof value !== 'number' || Number.isNaN(value)) return fallback
-  return Math.min(Math.max(value, 0), 1)
-}

@@ -239,21 +239,10 @@ export function EditorPanel({
 
           {isCipher && (
             <div className="fieldset">
-              <label className="field">
-                <span className="field__label">
-                  Klamná písmena v tabulce: {Math.round(cipher.decoyDensity * 100)} %
-                </span>
-                <input
-                  type="range"
-                  min={0}
-                  max={60}
-                  step={5}
-                  value={Math.round(cipher.decoyDensity * 100)}
-                  onChange={(event) =>
-                    patchCipher({ decoyDensity: Number(event.target.value) / 100 })
-                  }
-                />
-              </label>
+              {/* Posuvník na hustotu klamných písmen tu býval. Zmizel spolu
+                  s proměnnou velikostí tabulky: při pevných 9×9 jsou klamná
+                  všechna políčka, která nedostala písmeno tajenky, a dávkovat
+                  se nedají. Ovladač, který nic neřídí, je horší než žádný. */}
               <label className="checkbox">
                 <input
                   type="checkbox"

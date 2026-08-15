@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest'
+import { GRID_SIDE } from '../../core/constraints/index.js'
+import type { Grade } from '../../core/model/index.js'
 import { createRng } from '../../core/rng/index.js'
 import { plainLetters } from '../../core/text/index.js'
 import { decode, evaluateExpression } from '../../core/verify/index.js'
@@ -158,13 +160,21 @@ describe('generateCipherGrid — ústupky a meze', () => {
 })
 
 describe('generateCipherGrid — mřížka', () => {
-  it('velikost mřížky se odvodí z tajenky, ne z ručního nastavení', () => {
+  it('velikost tabulky neprozradí délku tajenky', () => {
+    // Tohle je celý smysl pevné mřížky. Dokud se hledala nejmenší tabulka,
+    // která tajenku uveze, byla čtyřpísmenná tajenka v mřížce 3×3 a dítě z ní
+    // přečetlo, že žádný výsledek nepřesáhne 33. Devítka na devítku vypadá
+    // stejně pro „AHOJ" i pro tajenku přes celou větu.
     const short = build('AHOJ', 4, 'kratka')
     const long = build('POKLAD JE UKRYTY POD STARYM DUBEM U POTOKA', 5, 'dlouha')
-    expect(short.table.cells.length).toBeLessThan(long.table.cells.length)
+
+    expect(short.table.rows).toBe(GRID_SIDE)
+    expect(short.table.cols).toBe(GRID_SIDE)
+    expect(long.table.rows).toBe(GRID_SIDE)
+    expect(long.table.cols).toBe(GRID_SIDE)
   })
 
-  it('mřížka je vždy zhruba čtvercová, aby se dala vytisknout', () => {
+  it('mřížka je 9×9 pro každou tajenku, kterou lze vygenerovat', () => {
     const rng = createRng('tvary')
     for (let i = 0; i < 20; i++) {
       const length = rng.int(4, 40)
@@ -172,8 +182,7 @@ describe('generateCipherGrid — mřížka', () => {
       const outcome = generateCipherGrid(defaultConfig(message, 5, `tvar${i}`))
       if (!outcome.ok) continue
       const { rows, cols } = outcome.sheet.table
-      // Poměr stran nejvýš 2:1 — 3×11 nebo 2×18 se na A4 sází mizerně.
-      expect(Math.max(rows, cols) / Math.min(rows, cols), `${rows}×${cols}`).toBeLessThanOrEqual(2)
+      expect({ rows, cols }).toEqual({ rows: GRID_SIDE, cols: GRID_SIDE })
     }
   })
 
@@ -277,4 +286,52 @@ describe('generateCipherGrid — desetinná čísla a procenta', () => {
       expect(slot.task.generatorId).toBe('arithmetic')
     }
   })
+})
+
+describe('zaškrtnuté operace se na list opravdu dostanou', () => {
+  /**
+   * Pojistka proti tichému rozporu se zadáním.
+   *
+   * Když se zavedla pevná mřížka 9×9, spadl podíl násobení a dělení pro 3. a 4.
+   * ročník ze 42 % na 17 % — hodnoty jako 71 vyrobí čtvrťák sčítáním, ale malou
+   * násobilkou ani dělením v oboru do sta nikdy, takže většina políček skončila
+   * u součtů. Učiteli, který si násobení zaškrtl, se vracel list samých sčítání.
+   *
+   * Měří se podíl na mnoha listech, ne na jednom: na patnácti příkladech je
+   * rozptyl velký a test by blikal.
+   */
+  function operationShare(grade: Grade, sheets: number): Record<string, number> {
+    const count: Record<string, number> = { add: 0, sub: 0, mul: 0, div: 0 }
+    let total = 0
+    for (let i = 0; i < sheets; i++) {
+      const outcome = generateCipherGrid(defaultConfig('POKLAD JE U BAZÉNU', grade, `podil-${i}`))
+      if (!outcome.ok) continue
+      for (const slot of outcome.sheet.slots) {
+        const text = slot.task.prompt.text
+        const operation = text.includes('·')
+          ? 'mul'
+          : text.includes(':')
+            ? 'div'
+            : text.includes('+')
+              ? 'add'
+              : 'sub'
+        count[operation]!++
+        total++
+      }
+    }
+    for (const key of Object.keys(count)) count[key] = count[key]! / total
+    return count
+  }
+
+  it.each([3, 4, 5, 6, 7, 8] as Grade[])(
+    '%i. ročník: násobení i dělení tvoří dohromady aspoň čtvrtinu příkladů',
+    (grade) => {
+      const share = operationShare(grade, 30)
+      expect(share.mul! + share.div!, JSON.stringify(share)).toBeGreaterThan(0.25)
+      // A žádná operace nesmí list ovládnout — to by taky nebyl mix.
+      for (const [operation, value] of Object.entries(share)) {
+        expect(value, `${operation} ${JSON.stringify(share)}`).toBeLessThan(0.5)
+      }
+    },
+  )
 })

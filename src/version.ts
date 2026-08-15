@@ -20,6 +20,11 @@
  *        oddělovač a v druhém stupni bude potřeba);
  *      • 6. a 7. ročník: složené výrazy, závorky, celá čísla.
  *      Mění obsah listů pro všechny dosavadní seedy.
+ *  3 — šifrovací tabulka je vždy 9×9, nehledá se nejmenší, která stačí.
+ *      Malá tabulka prozrazovala rozsah výsledků: z mřížky 4×6 dítě přečetlo,
+ *      že druhá číslice nikdy nepřesáhne 6, a chybný výpočet poznalo bez
+ *      ověřování. Mění rozmístění písmen, a tím i příklady — tedy obsah listů
+ *      pro všechny dosavadní seedy.
  */
-export const GENERATOR_VERSION = 2
+export const GENERATOR_VERSION = 3
 export const APP_VERSION = '0.1.0-dev'
