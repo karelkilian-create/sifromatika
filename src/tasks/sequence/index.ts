@@ -231,13 +231,31 @@ function fill(valueAt: (index: number) => number): number[] {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
+ * Nejvyšší člen řady bez ohledu na ročník.
+ *
+ * Obor šestého a osmého ročníku sahá do deseti tisíc, takže vznikaly řady jako
+ * `5184 5196 ? 5220 5232`. Pravidlo je v nich přitom totéž jako v `12 24 ? 48`
+ * — jen se hůř čte, a na kartičce pexesa se navíc láme na dva řádky. Čtvrtá
+ * cifra tu nepřidává učivo, jen práci s očima.
+ *
+ * ⚠ Platí i pro ročníky, jejichž obor je širší. Není to vlastnost ročníku, ale
+ *   vlastnost řady jako úlohy.
+ */
+const MAX_TERM = 999
+
+/** Strop členů pro daný profil — užší z oboru ročníku a `MAX_TERM`. */
+function termCeiling(profile: DifficultyProfile): number {
+  return Math.min(profile.numberRange.max, MAX_TERM)
+}
+
+/**
  * Je řada použitelná na listu pro tenhle ročník?
  *
  * Opakovaný člen se vylučuje schválně: `8, 8, 8, ?` sice pravidlo má, ale na
  * pracovním listu vypadá jako chyba sazby.
  */
 function isPrintable(terms: readonly number[], profile: DifficultyProfile): boolean {
-  const { max } = profile.numberRange
+  const max = termCeiling(profile)
   const seen = new Set<number>()
 
   for (const term of terms) {
@@ -355,7 +373,9 @@ export const sequenceGenerator: TaskGenerator = {
 
   reachableValues(profile, mix): Set<number> {
     const values = new Set<number>()
-    const { max } = profile.numberRange
+    // Tentýž strop jako v `isPrintable`, jinak by se slibovaly hodnoty, pro
+    // které se pak žádná tisknutelná řada nesestaví.
+    const max = termCeiling(profile)
     if (max < MIN_RANGE) return values
 
     // Slib musí být poctivý: hlásí se jen hodnoty, které opravdu umíme vydat.

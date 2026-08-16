@@ -24,14 +24,7 @@ import type {
 } from '../../core/model/index.js'
 import type { Rng } from '../../core/rng/index.js'
 import { evaluateExpression } from '../../core/verify/index.js'
-
-
-const SYMBOL: Record<OperationTag, string> = {
-  add: '+',
-  sub: '−', // U+2212, ne pomlčka
-  mul: '·', // U+00B7 MIDDLE DOT — tečka, ne křížek
-  div: ':', // školní zápis dělení
-}
+import { MIN_OPERAND, POWER_SHAPES, SYMBOL, inRange, type CompoundShape } from '../shapes.js'
 
 interface Operands {
   a: number
@@ -215,46 +208,14 @@ function hasCandidate(
  * ⚠ Výsledek musí zůstat KLADNÉ CELÉ číslo. Ne kvůli matematice, ale kvůli
  *   šifře: výsledek je kód políčka v mřížce. Záporný smí být operand, nikdy
  *   výsledek.
+ *
+ * Typ `CompoundShape`, pomůcka `inRange` i mocninné tvary sídlí v
+ * `../shapes.js`, protože je vedle aritmetiky používá i generátor `powers`.
  */
-interface CompoundShape {
-  id: string
-  /** Operace, které musí být povolené, aby se tvar směl použít. */
-  requires: OperationTag[]
-  /** Vyžaduje profil povolující záporná čísla? */
-  needsNegatives: boolean
-  /** Vyžaduje profil povolující mocniny a odmocniny? */
-  needsPowers?: boolean
-  skills: SkillTag[]
-  effort: number
-  build(target: number, profile: DifficultyProfile, rng: Rng): string | null
-}
 
 /** Druhý činitel do součinu. Malá čísla, ať výraz zůstane počitatelný z hlavy. */
 function pickFactor(rng: Rng): number {
   return rng.int(2, 10)
-}
-
-const MIN_OPERAND = 2
-
-/**
- * Meze základů mocnin.
- *
- * Osmák zná zpaměti druhé mocniny do dvaceti a třetí do pěti. Vyšší základ
- * není těžší úloha, jen delší počítání na papíře — a to není, co chceme.
- */
-const MAX_SQUARE_BASE = 20
-const MAX_CUBE_BASE = 5
-
-/**
- * Nejvyšší druhý člen u mocninných tvarů.
- *
- * Bez něj vzniká `18² − 283`: mocnina se vylosuje velká, cíl je malý a rozdíl
- * pak zabere víc počítání než samotná mocnina, kvůli které úloha vznikla.
- */
-const MAX_POWER_REMAINDER = 100
-
-function inRange(value: number, profile: DifficultyProfile): boolean {
-  return value >= MIN_OPERAND && value <= profile.numberRange.max
 }
 
 /** Dělitelé cílové hodnoty, kteří jsou zároveň v povolených tabulkách. */
@@ -408,78 +369,9 @@ const COMPOUND_SHAPES: readonly CompoundShape[] = [
       return `${first} ${SYMBOL.sub} (${SYMBOL.sub}${subtracted})`
     },
   },
-  {
-    id: 'square-then-add',
-    requires: ['mul', 'add'],
-    needsNegatives: false,
-    needsPowers: true,
-    skills: ['moc.druha-mocnina'],
-    effort: 3,
-    build(target, profile, rng) {
-      const base = rng.int(2, MAX_SQUARE_BASE)
-      const rest = target - base ** 2
-      if (base ** 2 > profile.numberRange.max || !inRange(rest, profile)) return null
-      return `${base}² ${SYMBOL.add} ${rest}`
-    },
-  },
-  {
-    id: 'square-then-sub',
-    requires: ['mul', 'sub'],
-    needsNegatives: false,
-    needsPowers: true,
-    skills: ['moc.druha-mocnina'],
-    effort: 3,
-    build(target, profile, rng) {
-      const base = rng.int(2, MAX_SQUARE_BASE)
-      const rest = base ** 2 - target
-      if (base ** 2 > profile.numberRange.max || !inRange(rest, profile)) return null
-      if (rest > MAX_POWER_REMAINDER) return null
-      return `${base}² ${SYMBOL.sub} ${rest}`
-    },
-  },
-  {
-    id: 'cube-then-add',
-    requires: ['mul', 'add'],
-    needsNegatives: false,
-    needsPowers: true,
-    skills: ['moc.treti-mocnina'],
-    effort: 4,
-    build(target, profile, rng) {
-      const base = rng.int(2, MAX_CUBE_BASE)
-      const rest = target - base ** 3
-      if (base ** 3 > profile.numberRange.max || !inRange(rest, profile)) return null
-      return `${base}³ ${SYMBOL.add} ${rest}`
-    },
-  },
-  {
-    id: 'root-then-add',
-    requires: ['add'],
-    needsNegatives: false,
-    needsPowers: true,
-    skills: ['moc.druha-odmocnina'],
-    effort: 3,
-    build(target, profile, rng) {
-      const root = rng.int(2, MAX_SQUARE_BASE)
-      const rest = target - root
-      // Odmocňovat se smí jen z úplného čtverce, jinak vyjde iracionální číslo.
-      if (root ** 2 > profile.numberRange.max || !inRange(rest, profile)) return null
-      return `√${root ** 2} ${SYMBOL.add} ${rest}`
-    },
-  },
-  {
-    id: 'root-then-sub',
-    requires: ['sub'],
-    needsNegatives: false,
-    needsPowers: true,
-    skills: ['moc.druha-odmocnina'],
-    effort: 4,
-    build(target, profile, rng) {
-      const root = rng.int(2, MAX_SQUARE_BASE)
-      const first = target + root
-      if (root ** 2 > profile.numberRange.max || !inRange(first, profile)) return null
-      return `${first} ${SYMBOL.sub} √${root ** 2}`
-    },
-  },
+  // ⚠ Mocninné tvary patří NA KONEC pole a v tomhle pořadí. `rng.pick` losuje
+  //   podle indexu, takže jakýkoli posun by změnil výstup uložených seedů.
+  ...POWER_SHAPES,
 ]
 
 /**

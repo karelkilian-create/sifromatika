@@ -14,6 +14,7 @@ import type { Grade } from '../../core/model/index.js'
 import { verifyDistinctValues } from '../../core/verify/index.js'
 import { CARD_HEIGHT_MM, CARD_WIDTH_MM, pexesoDocument } from './document.js'
 import { defaultPexesoConfig, generatePexeso, sheetChecksum, type PexesoSheet } from './index.js'
+import { pexesoModule } from './module.js'
 
 function build(grade: Grade = 5, seed = 'pexeso-1', pairs = 12): PexesoSheet {
   const outcome = generatePexeso(defaultPexesoConfig(grade, seed, pairs))
@@ -160,4 +161,195 @@ describe('meze', () => {
     }
     expect(new Set(outcome.sheet.tasks.map((t) => t.value)).size).toBe(outcome.sheet.tasks.length)
   })
+})
+
+/**
+ * Volba tématu — to, kvůli čemu celá změna vznikla. Učitel musí umět složit
+ * pexeso ze samých mocnin nebo samých procent, ne jen zpestřit počítání.
+ */
+describe('témata', () => {
+  function withTopics(
+    grade: Grade,
+    mix: Record<string, number>,
+    seed: string,
+    pairs = 12,
+  ): PexesoSheet {
+    const config = defaultPexesoConfig(grade, seed, pairs)
+    config.payload.generatorMix = mix
+    const outcome = generatePexeso(config)
+    if (!outcome.ok) throw new Error(outcome.reason)
+    expect(outcome.sheet.verification).toEqual({ ok: true })
+    return outcome.sheet
+  }
+
+  it('celé pexeso ze samých mocnin — každá kartička nese ² ³ nebo √', () => {
+    for (let i = 0; i < 10; i++) {
+      const sheet = withTopics(8, { powers: 1 }, `jen-mocniny-${i}`)
+      for (const task of sheet.tasks) {
+        expect(task.generatorId, task.prompt.text).toBe('powers')
+        expect(task.prompt.text).toMatch(/[²³√]/u)
+      }
+    }
+  })
+
+  it('celé pexeso ze samých procent', () => {
+    for (let i = 0; i < 10; i++) {
+      const sheet = withTopics(7, { percent: 1 }, `jen-procenta-${i}`)
+      for (const task of sheet.tasks) {
+        expect(task.prompt.text, task.prompt.text).toMatch(/^\d+ % z \d+$/u)
+      }
+    }
+  })
+
+  // Kolik dvojic z jednoho tématu spolehlivě vyjde. Kdyby některé téma na
+  // dvanáct dvojic nestačilo, učitel to pozná až u kopírky — proto se to měří
+  // tady, ne až na papíře.
+  it.each([
+    ['powers', 8, { powers: 1 }],
+    ['percent', 7, { percent: 1 }],
+    ['decimal', 7, { decimal: 1 }],
+    ['sequence', 7, { sequence: 1 }],
+    ['arithmetic', 7, { arithmetic: 1 }],
+  ] as [string, Grade, Record<string, number>][])(
+    'samotné téma %s dá plných dvanáct dvojic',
+    (_id, grade, mix) => {
+      for (let i = 0; i < 10; i++) {
+        const sheet = withTopics(grade, mix, `plnost-${_id}-${i}`)
+        expect(sheet.tasks.length, `seed ${i}`).toBe(12)
+        expect(sheet.relaxations.some((r) => r.code === 'fewer-pairs')).toBe(false)
+      }
+    },
+  )
+
+  it('míchání dvou témat sype obojí', () => {
+    const generators = new Set<string>()
+    for (let i = 0; i < 10; i++) {
+      const sheet = withTopics(8, { arithmetic: 1, powers: 1 }, `mix-${i}`)
+      for (const task of sheet.tasks) generators.add(task.generatorId)
+    }
+    expect(generators.has('arithmetic')).toBe(true)
+    expect(generators.has('powers')).toBe(true)
+  })
+
+  it('bez zaškrtnutých mocnin se generátor `powers` nepoužije', () => {
+    for (let i = 0; i < 10; i++) {
+      const sheet = withTopics(8, { arithmetic: 1 }, `bez-mocnin-${i}`)
+      for (const task of sheet.tasks) expect(task.generatorId).toBe('arithmetic')
+    }
+  })
+
+  /**
+   * ⚠ Zaškrtávátko „Mocniny a odmocniny" mocniny PŘIDÁVÁ, ale nevypíná.
+   *
+   * Aritmetika osmého ročníku má mocninné tvary v sobě od commitu 791c1ac a
+   * losuje si je z jednoho pytle se zbytkem (`POWER_SHAPES` v `tasks/shapes.ts`).
+   * Vyjmout je odtamtud by změnilo obsah šifer, které už někdo má uložené —
+   * proto tenhle test popisuje dnešní stav, ne ideál. Kdyby se chování mělo
+   * změnit, změní se s ním i tenhle test a `GENERATOR_VERSION`.
+   */
+  it('počítání v osmé třídě samo o sobě mocniny občas nabídne', () => {
+    let withPower = 0
+    for (let i = 0; i < 20; i++) {
+      const sheet = withTopics(8, { arithmetic: 1 }, `aritmetika-mocniny-${i}`)
+      withPower += sheet.tasks.filter((task) => /[²³√]/u.test(task.prompt.text)).length
+    }
+    expect(withPower).toBeGreaterThan(0)
+  })
+})
+
+describe('formulář → konfigurace', () => {
+  const shared = {
+    grade: 8 as Grade,
+    title: '',
+    operations: { add: true, sub: true, mul: true, div: true },
+  }
+
+  const topics = {
+    pairCount: 12,
+    arithmetic: false,
+    sequences: false,
+    decimals: false,
+    percents: false,
+    powers: true,
+  }
+
+  it('zaškrtnuté téma se propíše do vah, a to rovnoměrně', () => {
+    const config = pexesoModule.toConfig(
+      { ...topics, arithmetic: true },
+      shared,
+      'temata-vahy',
+    )
+    expect(config.payload.generatorMix).toEqual({ arithmetic: 1, powers: 1 })
+  })
+
+  it('samotné mocniny znamenají, že počítání v mixu není', () => {
+    const config = pexesoModule.toConfig(topics, shared, 'jen-mocniny-mix')
+    expect(config.payload.generatorMix).toEqual({ powers: 1 })
+  })
+
+  // Bez téhle pojistky by osmák s mocninami přepnutý na šestou třídu dostal
+  // místo pexesa hlášku, že pro tuhle obtížnost není žádný generátor.
+  it('téma, které ročník neumí, se nahradí počítáním', () => {
+    const config = pexesoModule.toConfig(topics, { ...shared, grade: 6 }, 'mocniny-v-sestce')
+    expect(config.payload.generatorMix).toEqual({ arithmetic: 1 })
+
+    const outcome = generatePexeso(config)
+    expect(outcome.ok).toBe(true)
+  })
+
+  it('konfigurace → formulář vrátí tatáž zaškrtnutí', () => {
+    const config = pexesoModule.toConfig(topics, shared, 'zpet-do-formulare')
+    expect(pexesoModule.fromConfig(config)).toEqual(topics)
+  })
+
+  it('soubor bez volby témat se otevře jako samotné počítání', () => {
+    const config = defaultPexesoConfig(8, 'stary-soubor', 12)
+    expect(pexesoModule.fromConfig(config)).toEqual({
+      pairCount: 12,
+      arithmetic: true,
+      sequences: false,
+      decimals: false,
+      percents: false,
+      powers: false,
+    })
+  })
+})
+
+describe('délka textu na kartičce', () => {
+  /**
+   * Kartička je 60 mm se 3mm okrajem, písmo 20 pt tučné — na řádek se vejde
+   * zhruba 12 znaků a do výšky tři řádky. Delší text se zalomí, což je v
+   * pořádku, ale nekonečně dlouhý přeteče přes linku, po které se stříhá.
+   *
+   * Naměřeno při zavedení volby témat (16. 8. 2026), nejdelší kartička:
+   *   mocniny 10 („428 − √361“), procenta 11, desetinná 15,
+   *   počítání v 8. třídě 16 („(726 + 3499) · 2“), řady 18 („1000 ? 986 979 972“).
+   *
+   * Mez je s rezervou nad tím. Není to estetický ideál, ale pojistka proti
+   * generátoru, který by jednou začal sázet romány — u kartiček je papír
+   * jediný soudce a ten se ozve až po rozstříhání.
+   */
+  const MAX_CARD_CHARS = 30
+
+  it.each([
+    ['powers', 8, { powers: 1 }],
+    ['percent', 7, { percent: 1 }],
+    ['decimal', 7, { decimal: 1 }],
+    ['sequence', 7, { sequence: 1 }],
+    ['arithmetic', 8, { arithmetic: 1 }],
+  ] as [string, Grade, Record<string, number>][])(
+    '%s: žádná kartička nepřeteče přes linku',
+    (_id, grade, mix) => {
+      for (let i = 0; i < 15; i++) {
+        const config = defaultPexesoConfig(grade, `delka-${_id}-${i}`, 12)
+        config.payload.generatorMix = mix
+        const outcome = generatePexeso(config)
+        expect(outcome.ok).toBe(true)
+        if (!outcome.ok) continue
+        for (const card of outcome.sheet.cards) {
+          expect(card.text.length, `"${card.text}"`).toBeLessThanOrEqual(MAX_CARD_CHARS)
+        }
+      }
+    },
+  )
 })

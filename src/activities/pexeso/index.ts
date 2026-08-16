@@ -130,29 +130,40 @@ function generateOnce(config: PexesoProject): PexesoOutcome {
 
   // Hodnoty, ze kterých se vybírá. Nikdo si je nediktuje — pexeso není na nic
   // navázané, na rozdíl od šifry, kde je určuje mřížka.
-  const pool = new Set<number>()
+  //
+  // ⚠ Zásoba se vede pro KAŽDÉ téma zvlášť a téma se losuje podle vah. Dřív se
+  //   všechny hodnoty slily do jednoho pytle a losoval se z něj cíl — jenže
+  //   aritmetika osmého ročníku jich nabízí přes deset tisíc a mocniny sto,
+  //   takže zaškrtnutí mocnin vedle počítání se na kartičkách neprojevilo
+  //   prakticky nikdy. Poměr témat nesmí záviset na tom, jak široký obor čísel
+  //   který generátor náhodou pokrývá.
+  const pools = new Map<string, number[]>()
   for (const generator of generators) {
-    for (const value of generator.reachableValues(payload.difficulty, payload.taskMix)) {
-      pool.add(value)
-    }
+    pools.set(
+      generator.id,
+      rng.shuffle([...generator.reachableValues(payload.difficulty, payload.taskMix)]),
+    )
   }
 
-  const targets = rng.shuffle([...pool])
   const usedExpressions = new Set<string>()
   const tasks: Task[] = []
   // Klíčové místo celé aktivity: každá hodnota nejvýš jednou.
   const usedValues = new Set<number>()
+  const context = { profile: payload.difficulty, mix: payload.taskMix, usedExpressions }
 
-  for (const target of targets) {
-    if (tasks.length >= payload.pairCount) break
+  // Strop pokusů: každé kolo spotřebuje jednu hodnotu ze zásoby vylosovaného
+  // tématu, takže bez něj by se cyklilo jen do vyčerpání — ale to je u velkých
+  // oborů deset tisíc kol na dvanáct kartiček.
+  const maxAttempts = payload.pairCount * 20
+  for (let attempt = 0; tasks.length < payload.pairCount && attempt < maxAttempts; attempt++) {
+    const available = generators.filter((generator) => (pools.get(generator.id)?.length ?? 0) > 0)
+    if (available.length === 0) break
+
+    const generator = pickGenerator(available, generatorMix, rng)
+    const target = pools.get(generator.id)!.pop()!
     if (usedValues.has(target)) continue
 
-    const context = { profile: payload.difficulty, mix: payload.taskMix, usedExpressions }
-    let task: Task | null = null
-    for (const generator of rng.shuffle([...generators])) {
-      task = generator.generateForValue(target, context, rng)
-      if (task !== null) break
-    }
+    const task = generator.generateForValue(target, context, rng)
     if (task === null) continue
 
     tasks.push(task)
@@ -212,6 +223,23 @@ function generateOnce(config: PexesoProject): PexesoOutcome {
       ),
     },
   }
+}
+
+/**
+ * Které téma teď na řadu. Váhy jsou rovnoměrné, takže při dvou zaškrtnutých
+ * padne na každé zhruba polovina kartiček.
+ *
+ * Vlastní kopie téhož, co má šifra (`cipher-grid/index.ts`). Sdílet to zatím
+ * nemá kde — obě aktivity by musely sáhnout do společného modulu a ten by
+ * existoval kvůli pěti řádkům. Až přibude domino, bude důvod.
+ */
+function pickGenerator(
+  generators: readonly (typeof taskGenerators)[number][],
+  weights: Readonly<Record<string, number>>,
+  rng: ReturnType<typeof createRng>,
+) {
+  if (generators.length === 1) return generators[0]!
+  return rng.weighted(generators.map((generator) => [generator, weights[generator.id] ?? 1] as const))
 }
 
 /** Desetinná čárka, ne tečka — na českém listu se píše `2,5`. */

@@ -92,6 +92,44 @@ export function EditorPanel({
     patchShared({ operations: next })
   }
 
+  /** Témata pexesa, která ročník opravdu umí. */
+  const pexesoTopics = {
+    arithmetic: pexeso.arithmetic,
+    sequences: pexeso.sequences,
+    decimals: pexeso.decimals && profile.decimals > 0,
+    percents: pexeso.percents && profile.percents,
+    powers: pexeso.powers && profile.powers,
+  }
+
+  const togglePexesoTopic = (topic: keyof typeof pexesoTopics) => {
+    // Aspoň jedno téma musí zůstat — ze žádného se kartičky složit nedají.
+    // Počítá se jen to, co ročník umí: samotné odškrtnutelné „Procenta"
+    // u čtvrťáka by pexeso nechala prázdné.
+    const next = { ...pexesoTopics, [topic]: !pexesoTopics[topic] }
+    if (Object.values(next).every((enabled) => !enabled)) return
+    patchPexeso({ [topic]: !pexeso[topic] })
+  }
+
+  const changeGrade = (grade: Grade) => {
+    // Zaškrtnutá témata se přepnutím ročníku NEMAŽOU — učitel, který se vrátí
+    // z šesté do osmé, má své mocniny najít tam, kde je nechal. Doplní se jen
+    // záchrana pro případ, že by v novém ročníku nezbylo použitelné nic.
+    const next = gradeProfile(grade)
+    const usable =
+      pexeso.arithmetic ||
+      pexeso.sequences ||
+      (pexeso.decimals && next.decimals > 0) ||
+      (pexeso.percents && next.percents) ||
+      (pexeso.powers && next.powers)
+    onChange({
+      ...state,
+      shared: { ...state.shared, grade },
+      byActivity: usable
+        ? state.byActivity
+        : { ...state.byActivity, pexeso: { ...pexeso, arithmetic: true } },
+    })
+  }
+
   return (
     <form className="editor no-print" onSubmit={(event) => event.preventDefault()}>
       <div className="editor__primary">
@@ -160,7 +198,7 @@ export function EditorPanel({
           <select
             className="field__input"
             value={state.shared.grade}
-            onChange={(event) => patchShared({ grade: Number(event.target.value) as Grade })}
+            onChange={(event) => changeGrade(Number(event.target.value) as Grade)}
           >
             <option value={3}>3. třída</option>
             <option value={4}>4. třída</option>
@@ -197,7 +235,7 @@ export function EditorPanel({
         <div className="editor__advanced-grid">
           <fieldset className="fieldset">
             <legend className="field__label">
-              {isCipher ? 'Typy příkladů' : 'Povolené operace'}
+              {isCipher || isPexeso ? 'Typy příkladů' : 'Povolené operace'}
             </legend>
             {(Object.keys(OPERATION_LABELS) as OperationTag[]).map((operation) => (
               <label className="checkbox" key={operation}>
@@ -247,6 +285,63 @@ export function EditorPanel({
                   to kód políčka v tabulce.
                 </p>
               </>
+            ) : isPexeso ? (
+              <>
+                {/* Na rozdíl od šifry jde odškrtnout i počítání. Pexeso je hra
+                    na jedno téma — celé pexeso ze samých mocnin je legitimní
+                    zadání, kdežto list na hodinu ze samých mocnin není. */}
+                <label className="checkbox">
+                  <input
+                    type="checkbox"
+                    checked={pexesoTopics.arithmetic}
+                    onChange={() => togglePexesoTopic('arithmetic')}
+                  />
+                  Počítání
+                </label>
+                <label className="checkbox">
+                  <input
+                    type="checkbox"
+                    checked={pexesoTopics.sequences}
+                    onChange={() => togglePexesoTopic('sequences')}
+                  />
+                  Číselné řady
+                </label>
+                {profile.decimals > 0 && (
+                  <label className="checkbox">
+                    <input
+                      type="checkbox"
+                      checked={pexesoTopics.decimals}
+                      onChange={() => togglePexesoTopic('decimals')}
+                    />
+                    Desetinná čísla
+                  </label>
+                )}
+                {profile.percents && (
+                  <label className="checkbox">
+                    <input
+                      type="checkbox"
+                      checked={pexesoTopics.percents}
+                      onChange={() => togglePexesoTopic('percents')}
+                    />
+                    Procenta
+                  </label>
+                )}
+                {profile.powers && (
+                  <label className="checkbox">
+                    <input
+                      type="checkbox"
+                      checked={pexesoTopics.powers}
+                      onChange={() => togglePexesoTopic('powers')}
+                    />
+                    Mocniny a odmocniny
+                  </label>
+                )}
+                <p className="hint">
+                  Zaškrtnuté typy se na kartičkách míchají rovnoměrně. Necháte-li zaškrtnutý
+                  jediný, bude z něj celé pexeso — třeba samé mocniny („7²“, „√81“, „2³ − 8“).
+                  Operace platí zároveň, ale holé mocniny se objeví i bez nich.
+                </p>
+              </>
             ) : (
               <p className="hint">
                 Určují, jak řada postupuje. Bez násobení se neobjeví řady jako „3, 6, 12, 24, ?“,
@@ -263,7 +358,13 @@ export function EditorPanel({
                 type="text"
                 value={state.shared.title}
                 onChange={(event) => patchShared({ title: event.target.value })}
-                placeholder={isCipher ? 'např. Lov pirátského pokladu' : 'např. Rozcvička na řady'}
+                placeholder={
+                  isCipher
+                    ? 'např. Lov pirátského pokladu'
+                    : isPexeso
+                      ? 'např. Mocniny na kartičkách'
+                      : 'např. Rozcvička na řady'
+                }
                 autoComplete="off"
               />
             </label>
@@ -284,6 +385,11 @@ export function EditorPanel({
                   odvozený z tajenky se na něj nedostane nikdy — prozradil by ji.
                 </p>
               </>
+            ) : isPexeso ? (
+              <p className="hint">
+                Název se tiskne na seznam pro učitele. Na kartičky ne — na těch by zabral místo
+                a dítěti neřekne nic.
+              </p>
             ) : (
               <p className="hint">
                 Na list řad se název tiskne vždycky. Není tu žádná tajenka, kterou by mohl

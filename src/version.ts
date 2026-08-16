@@ -29,6 +29,13 @@
  *      seed. Zhruba každý desátý list pro 3. a 4. ročník měl jediný příklad
  *      na násobení nebo dělení, přestože si učitel obojí zaškrtl. Mění list
  *      jen tam, kde byl vadný — ale odvozený seed posune i ty ostatní.
+ *  5 — pexeso losuje TÉMA podle vah, a teprve pak z jeho zásoby cíl. Do
+ *      verze 4 se všechny dosažitelné hodnoty slily do jednoho pytle, takže
+ *      poměr témat na kartičkách závisel na tom, jak široký obor čísel který
+ *      generátor náhodou pokrývá: aritmetika osmého ročníku jich nabízí přes
+ *      deset tisíc a mocniny sto, takže zaškrtnutí mocnin vedle počítání se
+ *      neprojevilo prakticky nikdy. Mění kartičky ve všech ročnících;
+ *      odvozený seed posune i šifru a list řad.
  */
-export const GENERATOR_VERSION = 4
+export const GENERATOR_VERSION = 5
 export const APP_VERSION = '0.1.0-dev'

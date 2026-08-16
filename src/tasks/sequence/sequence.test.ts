@@ -134,3 +134,25 @@ describe('generátor řad — sliby o dosažitelných hodnotách', () => {
     expect(sequenceGenerator.reachableValues(tiny, {}).size).toBe(0)
   })
 })
+
+describe('délka členů', () => {
+  /**
+   * Obor šestého a osmého ročníku sahá do deseti tisíc, takže bez stropu
+   * vznikaly řady jako `5184 5196 ? 5220 5232`. Pravidlo je v nich totéž jako
+   * v `12 24 ? 48`, jen se hůř čte — a na kartičce pexesa se láme na dva řádky.
+   */
+  it.each([3, 4, 5, 6, 7, 8] as Grade[])('%i. ročník: žádný člen nemá čtyři cifry', (grade) => {
+    const profile = gradeProfile(grade)
+    const values = [...sequenceGenerator.reachableValues(profile, {})]
+    expect(values.length).toBeGreaterThan(0)
+
+    for (const value of values.slice(0, 300)) {
+      const task = generate(value, grade, `cifry-${grade}-${value}`)
+      if (task === null) continue
+      for (const term of task.prompt.text.split(' ')) {
+        if (term === '?') continue
+        expect(Number(term), task.prompt.text).toBeLessThanOrEqual(999)
+      }
+    }
+  })
+})

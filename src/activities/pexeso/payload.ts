@@ -9,7 +9,12 @@ import { clampPairCount } from '../../core/constraints/index.js'
 import type { PexesoConfig } from '../../core/model/index.js'
 import { isRecord, parseDifficulty, parseOutput, parseTaskMix } from '../payload-utils.js'
 
-const GENERATORS = ['arithmetic', 'sequence', 'decimal', 'percent']
+/**
+ * ⚠ Jen pexeso zná `powers`. Šifra ho ve svém seznamu nemá schválně: nemá pro
+ *   mocniny zaškrtávátko, takže by je soubor uměl zapnout, ale formulář by to
+ *   po načtení neuměl ukázat ani vypnout.
+ */
+const GENERATORS = ['arithmetic', 'sequence', 'decimal', 'percent', 'powers']
 
 export function parsePexesoPayload(raw: unknown): PexesoConfig | null {
   if (!isRecord(raw)) return null
