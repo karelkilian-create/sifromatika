@@ -283,7 +283,14 @@ body {
   color: var(--ui-muted);
 }
 
+/*
+ * Výška je daná natvrdo, protože `select` si ji jinak spočítá po svém a vyjde
+ * o dva pixely vyšší než `input` se stejným písmem i odsazením — a `line-height`
+ * si u něj prohlížeč nenechá poručit. Vedle sebe je ten rozdíl vidět.
+ */
 .field__input {
+  box-sizing: border-box;
+  height: 2.5rem;
   padding: 0.5rem 0.6rem;
   font: inherit;
   color: inherit;
