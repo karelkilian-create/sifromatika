@@ -180,7 +180,7 @@
  * Kreslí ji pseudoprvek, ne `text-decoration: overline`: dekoraci si prohlížeč
  * posadí podle fontu a posunout se nedá, takže by hrot znaku `√` minula.
  * Všechny míry jsou v `em`, aby čára držela stejně na 11pt zadání i na 20pt
- * kartičce. Svislou polohu měří `alignVinculum` — viz `math.tsx`; než doměří,
+ * kartičce. Svislou polohu měří `alignVinculum` — viz `vinculum.ts`; než doměří,
  * platí záložní hodnota, která u běžných bezpatkových fontů trefí aspoň řádově.
  */
 .radical {
@@ -188,6 +188,10 @@
 }
 
 .radical__radicand {
+  /* Tloušťka čáry: o něco silnější než vlas, aby přežila tisk na školní
+     kopírce. Zároveň je to míra, o kterou se čára zvedá — viz `::before`. */
+  --radical-vinculum-rule: 0.08em;
+
   position: relative;
   /* Záporný odsazovač zatáhne čáru až na hrot znaku `√`, jinak mezi nimi
      zůstane světlá skulina. */
@@ -195,10 +199,16 @@
   padding: 0 0.06em 0 0.08em;
 }
 
+/*
+ * Změřená hodnota je poloha samotného hrotu `√`. Čára od ní roste dolů, takže
+ * bez posunu by celá ležela pod hrotem a znak by z ní vykukoval. Posun o její
+ * vlastní tloušťku ji položí spodní hranou přesně na hrot — čára pak vypadá
+ * jako pokračování znaku, ne jako druhá linka o kus níž.
+ */
 .radical__radicand::before {
   position: absolute;
-  inset: var(--radical-vinculum-top, 0.14em) 0 auto 0;
-  border-top: 0.055em solid currentcolor;
+  inset: calc(var(--radical-vinculum-top, 0.14em) - var(--radical-vinculum-rule)) 0 auto 0;
+  border-top: var(--radical-vinculum-rule) solid currentcolor;
   content: '';
 }
 

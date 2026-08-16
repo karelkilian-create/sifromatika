@@ -218,15 +218,25 @@ body {
   border-radius: 8px;
 }
 
+/*
+ * Pole se rovnají HORNÍ hranou, ne spodní. Nápovědu má jen jedno z nich
+ * („24 kartiček na 2 listech…"), a při zarovnání na spodek by ten řádek navíc
+ * strhl sousední pole o kus níž — popisky by pak stály každý jinde a řádek by
+ * vypadal rozsypaně.
+ */
 .editor__primary {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: 0.75rem;
 }
 
+/* Tlačítka nemají popisek, takže by u horní hrany stála vedle popisků polí,
+   ne vedle jejich rámečků. Na širokém okně, kde se vejdou do téhož řádku, je
+   proto sráží dolů. */
 .editor__actions {
   display: flex;
+  align-self: flex-end;
   gap: 0.75rem;
 }
 
