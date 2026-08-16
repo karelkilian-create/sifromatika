@@ -190,14 +190,18 @@
 
 /*
  * Čára jde výš, než kam sahá hrot `√`, aby nad číslicemi zůstal vzduch —
- * a znak se za ní protáhne, jinak by pod ní visel utržený. Otáčí se kolem
- * spodní hrany, aby zůstal stát na účaří; s tím počítá i výpočet měřítka.
+ * a znak se za ní zvětší, jinak by pod ní visel utržený.
+ *
+ * Zvětšuje ho stupeň písma, ne `transform`: transformace je kresba a tiskový
+ * renderer ji nepoužil, takže na papíře znak končil pod čarou, i když na
+ * obrazovce seděl. Stupeň písma je sazba a ta v tisku platí stejně.
+ *
+ * `line-height` drží řádek na uzdě: bez ní by větší stupeň roztáhl řádkový
+ * proklad a řádky s odmocninou by byly vyšší než ostatní.
  */
 .radical__sign {
-  display: inline-block;
+  font-size: calc(1em * var(--radical-sign-scale, 1));
   line-height: 1;
-  transform: scaleY(var(--radical-sign-scale, 1));
-  transform-origin: bottom;
 }
 
 .radical__radicand {

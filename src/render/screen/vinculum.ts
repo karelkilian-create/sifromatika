@@ -14,8 +14,11 @@
  *     čára o číslice dře, i když na obrazovce vypadala v pořádku, protože ji
  *     tam prohlížeč odskočil na celý pixel.
  *
- * Čára jde tedy výš z obou důvodů a znak `√` se k ní natáhne. Protažení je to
- * mírné (jednotky procent) a dělá totéž, co dělá matematická sazba odjakživa:
+ * Čára jde tedy výš z obou důvodů a znak `√` se k ní zvětší. Zvětšuje se
+ * stupněm písma, ne transformací: transformace je kresba, a tiskový renderer
+ * ji nepoužil — na papíře pak znak končil o kus pod čarou, i když na obrazovce
+ * seděl. Stupeň písma je sazba, tu tisk obejít nemůže. Zvětšení je mírné
+ * (jednotky procent) a dělá totéž, co dělá matematická sazba odjakživa:
  * odmocnina roste podle toho, co je pod ní.
  *
  * Měří se jednou; systémové fonty se za běhu nemění a webfont projekt žádný
@@ -31,12 +34,13 @@ const MAX_SIGN_SCALE = 1.3
 /**
  * Zdvih navíc, o který `√` zajede pod čáru.
  *
- * Změřená výška hrotu vychází z obrysu glyfu a je o vlásek vyšší než to, co
- * se opravdu vybarví. Sesadit obojí přesně na sebe proto znamená nechat mezi
- * nimi světlý šev — na obrazovce ho není vidět, v tisku ano. Kus navíc šev
- * zavře a nikde nevykoukne: čára se kreslí přes znak a je desetkrát silnější.
+ * Změřená výška hrotu vychází z obrysu glyfu a je o vlásek vyšší než to, co se
+ * opravdu vybarví; navíc obojí padá při vykreslení na celé pixely, každý po
+ * svém. Sesadit obojí přesně na sebe proto znamená nechat mezi nimi světlý šev.
+ * Kus navíc šev zavře a nikde nevykoukne: čára se kreslí přes znak a je
+ * čtyřikrát silnější než tenhle zdvih.
  */
-const OVERSHOOT_EM = 0.01
+const OVERSHOOT_EM = 0.02
 
 /**
  * Stupeň, na kterém se měří. Sonda je neviditelná, takže na velikosti nezáleží
@@ -64,14 +68,13 @@ export function alignVinculum() {
   try {
     const style = getComputedStyle(probe)
     const fontSize = parseFloat(style.fontSize)
-    const sign = probe.querySelector('.radical__sign')?.getBoundingClientRect()
     // Vodorovné odsazení výšku nemění, takže horní hrana číslice je zároveň
     // horní hrana řádkového boxu — a od té CSS počítá `top`.
     const lineTop = probe.querySelector('.radical__radicand')?.getBoundingClientRect().top
     // Prázdný inline-block nulové výšky stojí spodní hranou přesně na účaří.
     const baseline = probe.querySelector('[data-baseline]')?.getBoundingClientRect().bottom
     const context = document.createElement('canvas').getContext('2d')
-    if (sign === undefined || lineTop === undefined || baseline === undefined) return
+    if (lineTop === undefined || baseline === undefined) return
     if (context === null || !(fontSize > 0)) return
 
     // Obrysy glyfu z DOM vyčíst nejde, na to je plátno.
@@ -82,10 +85,9 @@ export function alignVinculum() {
 
     const lineHeight = (baseline - lineTop) / fontSize
     const vinculum = Math.max(rootTip, digitTop + MIN_CLEARANCE_EM)
-    // `√` se protahuje kolem spodní hrany svého boxu (`transform-origin`),
-    // a ta leží kousek pod účařím — do poměru proto patří obojí.
-    const pivot = (sign.bottom - baseline) / fontSize
-    const scale = (vinculum + OVERSHOOT_EM + pivot) / (rootTip + pivot)
+    // Větší stupeň zvedne hrot úměrně, protože znak stojí na účaří a roste
+    // vzhůru — poměr výšek je tedy rovnou poměrem stupňů.
+    const scale = (vinculum + OVERSHOOT_EM) / rootTip
 
     const root = document.documentElement.style
     root.setProperty('--radical-vinculum-top', `${Math.max(0, lineHeight - vinculum).toFixed(3)}em`)
