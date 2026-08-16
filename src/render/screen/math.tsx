@@ -32,7 +32,8 @@ function splitRoots(text: string) {
     if (start > cursor) parts.push(text.slice(cursor, start))
     parts.push(
       <span className="radical" key={start}>
-        √<span className="radical__radicand">{match[1]}</span>
+        <span className="radical__sign">√</span>
+        <span className="radical__radicand">{match[1]}</span>
       </span>,
     )
     cursor = start + match[0].length
