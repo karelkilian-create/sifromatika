@@ -171,6 +171,37 @@
   min-width: 10mm;
 }
 
+/* ── Odmocnina ────────────────────────────────────────────────────── */
+
+/*
+ * Bez čáry nad odmocňovaným číslem není `57 − √49` jednoznačné — dá se číst
+ * i jako `√(57 − 49)`. Čára (vinculum) rozsah ukáže a závorky nejsou potřeba.
+ *
+ * Kreslí ji pseudoprvek, ne `text-decoration: overline`: dekoraci si prohlížeč
+ * posadí podle fontu a posunout se nedá, takže by hrot znaku `√` minula.
+ * Všechny míry jsou v `em`, aby čára držela stejně na 11pt zadání i na 20pt
+ * kartičce. Svislou polohu měří `alignVinculum` — viz `math.tsx`; než doměří,
+ * platí záložní hodnota, která u běžných bezpatkových fontů trefí aspoň řádově.
+ */
+.radical {
+  white-space: nowrap;
+}
+
+.radical__radicand {
+  position: relative;
+  /* Záporný odsazovač zatáhne čáru až na hrot znaku `√`, jinak mezi nimi
+     zůstane světlá skulina. */
+  margin-left: -0.04em;
+  padding: 0 0.06em 0 0.08em;
+}
+
+.radical__radicand::before {
+  position: absolute;
+  inset: var(--radical-vinculum-top, 0.14em) 0 auto 0;
+  border-top: 0.055em solid currentcolor;
+  content: '';
+}
+
 /* ── Řádek na tajenku ─────────────────────────────────────────────── */
 
 .answer-row {

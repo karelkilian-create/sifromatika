@@ -14,6 +14,8 @@
  *   `answer-row` bez `letters` je prázdná mřížka rámečků.
  */
 
+import { useLayoutEffect } from 'react'
+
 import type {
   CardFace,
   DocumentBlock,
@@ -22,9 +24,15 @@ import type {
   InlineRun,
 } from '../../core/document/index.js'
 import type { CipherTable } from '../../core/model/index.js'
+import { MathText } from './math.js'
+import { alignVinculum } from './vinculum.js'
 import './sheet.css'
 
 export function DocumentView({ document }: { document: DocumentModel }) {
+  // Před vykreslením, ne po něm: kdyby se čára nad odmocninou usadila až po
+  // prvním snímku, viděl by učitel poskočit sazbu.
+  useLayoutEffect(alignVinculum, [])
+
   return (
     <>
       {document.pages.map((page, index) => (
@@ -128,7 +136,9 @@ function CardGridView({
     >
       {cards.map((card, index) => (
         <div className="card" style={{ width: `${widthMm}mm`, height: `${heightMm}mm` }} key={index}>
-          <span className="card__text">{card.text}</span>
+          <span className="card__text">
+            <MathText text={card.text} />
+          </span>
         </div>
       ))}
     </div>
@@ -148,7 +158,13 @@ function PrintScaleCheck({ lengthMm }: { lengthMm: number }) {
 }
 
 function RunView({ run }: { run: InlineRun }) {
-  return run.strong === true ? <strong>{run.text}</strong> : <>{run.text}</>
+  return run.strong === true ? (
+    <strong>
+      <MathText text={run.text} />
+    </strong>
+  ) : (
+    <MathText text={run.text} />
+  )
 }
 
 /**
@@ -172,7 +188,10 @@ function TaskListView({
           key={index}
         >
           <span className="task-list__number">{index + 1}.</span>
-          <span className="task-list__prompt">{item.showEquals ? `${item.text} =` : item.text}</span>
+          <span className="task-list__prompt">
+            <MathText text={item.text} />
+            {item.showEquals ? ' =' : ''}
+          </span>
           <span className="task-list__blank" />
         </li>
       ))}
@@ -202,7 +221,9 @@ function TableView({
         {rows.map((row, rowIndex) => (
           <tr key={rowIndex}>
             {row.map((cell, cellIndex) => (
-              <td key={cellIndex}>{cell}</td>
+              <td key={cellIndex}>
+                <MathText text={cell} />
+              </td>
             ))}
           </tr>
         ))}
