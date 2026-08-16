@@ -206,8 +206,9 @@
   --radical-vinculum-rule: 0.08em;
 
   position: relative;
-  /* Záporný odsazovač zatáhne čáru až na hrot znaku `√`, jinak mezi nimi
-     zůstane světlá skulina. */
+  /* Záporný odsazovač zatáhne čáru doleva přes konec znaku `√`, aby mezi nimi
+     nezůstal světlý šev. Klín pod čarou z toho nevznikne: vršek `√` je vpravo
+     seříznutý rovně a ta rovinka je širší než tenhle překryv. */
   margin-left: -0.04em;
   padding: 0 0.06em 0 0.08em;
 }

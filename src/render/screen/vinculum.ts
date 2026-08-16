@@ -29,6 +29,16 @@ const MIN_CLEARANCE_EM = 0.12
 const MAX_SIGN_SCALE = 1.3
 
 /**
+ * Zdvih navíc, o který `√` zajede pod čáru.
+ *
+ * Změřená výška hrotu vychází z obrysu glyfu a je o vlásek vyšší než to, co
+ * se opravdu vybarví. Sesadit obojí přesně na sebe proto znamená nechat mezi
+ * nimi světlý šev — na obrazovce ho není vidět, v tisku ano. Kus navíc šev
+ * zavře a nikde nevykoukne: čára se kreslí přes znak a je desetkrát silnější.
+ */
+const OVERSHOOT_EM = 0.01
+
+/**
  * Stupeň, na kterém se měří. Sonda je neviditelná, takže na velikosti nezáleží
  * — a záměrně je obrovská: obrysy glyfů se totiž zaokrouhlují na celé pixely.
  * Při skutečných 11 pt (necelých 15 px) je to zaokrouhlení tak hrubé, že se
@@ -75,7 +85,7 @@ export function alignVinculum() {
     // `√` se protahuje kolem spodní hrany svého boxu (`transform-origin`),
     // a ta leží kousek pod účařím — do poměru proto patří obojí.
     const pivot = (sign.bottom - baseline) / fontSize
-    const scale = (vinculum + pivot) / (rootTip + pivot)
+    const scale = (vinculum + OVERSHOOT_EM + pivot) / (rootTip + pivot)
 
     const root = document.documentElement.style
     root.setProperty('--radical-vinculum-top', `${Math.max(0, lineHeight - vinculum).toFixed(3)}em`)
@@ -84,3 +94,4 @@ export function alignVinculum() {
     probe.remove()
   }
 }
+
