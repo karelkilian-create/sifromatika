@@ -516,7 +516,7 @@ export function verifyTasks(slots: readonly SheetSlot[]): VerificationReport {
 /**
  * Mají všechny úlohy navzájem různý výsledek?
  *
- * ⚠ Volá se JEN u párovacích aktivit (pexeso, později domino), NIKOLI u šifry.
+ * ⚠ Volá se JEN u párovacích aktivit (pexeso, domino), NIKOLI u šifry.
  *   V mřížce jsou dvě zadání s toutéž hodnotou legitimní a po ústupku
  *   `coordinate-reuse` dokonce běžná — dvě různá písmena prostě ukazují na
  *   totéž políčko.
@@ -541,6 +541,130 @@ export function verifyDistinctValues(tasks: readonly Task[]): VerificationReport
     })
   }
   return failures.length === 0 ? { ok: true } : { ok: false, failures }
+}
+
+/**
+ * Jeden kámen domina tak, jak je vytištěný.
+ *
+ * Obě půlky jsou TEXT, ne čísla z generátoru. Verifikace si hodnotu přečte
+ * z papíru a spočítá znovu — jinak by ověřovala generátor místo toho, co
+ * dostane dítě do ruky.
+ */
+export interface ChainTile {
+  /** Levá půlka: hotová hodnota (`56`). */
+  left: string
+  /** Pravá půlka: zadání, jehož výsledek ukazuje na další kámen (`7 · 8`). */
+  right: string
+  /** Jak se čte pravá půlka. Chybí-li, čte se jako aritmetický výraz. */
+  kind?: PromptNode['kind']
+}
+
+/** Přečte vytištěnou hodnotu. `null` = nejde přečíst jako číslo. */
+function readPrintedValue(text: string): number | null {
+  // Čárka je na českém listu desetinný oddělovač; hodnoty kamenů jsou sice
+  // vždy celé, ale číst je tolerantně nic nestojí.
+  const parsed = Number(text.trim().replace(',', '.'))
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+/** Spočítá pravou půlku. `null` = nejde vyhodnotit nebo má víc řešení. */
+function computePrinted(text: string, kind: PromptNode['kind'] | undefined): number | null {
+  if (kind === 'sequence') {
+    try {
+      const inference = inferMissing(parseSequence(text))
+      return inference.kind === 'unique' ? inference.value : null
+    } catch (error) {
+      if (!(error instanceof SequenceError)) throw error
+      return null
+    }
+  }
+  try {
+    return evaluateExpression(text)
+  } catch (error) {
+    if (!(error instanceof ExpressionError)) throw error
+    return null
+  }
+}
+
+/**
+ * Tvoří kameny JEDEN souvislý kruh?
+ *
+ * Tohle je celé nové pravidlo domina a žádná kontrola jednotlivé úlohy ho
+ * nenahradí: osm kamenů s osmi různými hodnotami se dá spojit i jako dva
+ * kroužky po čtyřech. Každý kámen má souseda, každý příklad je spočítaný
+ * správně — a dítě to na koberci stejně nesloží.
+ *
+ * Z konstrukce generátoru to vyjít má; ověřuje se to stejně. Verifikace je
+ * poslední pojistka před tiskem, ne ozdoba — kdyby se generátor někdy přepsal,
+ * musí to spadnout tady.
+ */
+export function verifyChain(tiles: readonly ChainTile[]): VerificationReport {
+  const failures: VerificationFailure[] = []
+  const fail = (message: string): VerificationReport => ({
+    ok: false,
+    failures: [{ code: 'broken-chain', message }],
+  })
+
+  if (tiles.length === 0) return fail('Domino nemá jediný kámen — není co skládat.')
+
+  // Kam který kámen ukazuje levou půlkou. Dvě stejné hodnoty vlevo znamenají,
+  // že na jedno zadání pasují dva kameny a řetěz se větví.
+  const byLeft = new Map<number, number>()
+  tiles.forEach((tile, index) => {
+    const value = readPrintedValue(tile.left)
+    if (value === null) {
+      failures.push({
+        code: 'broken-chain',
+        message: `Levá půlka kamene č. ${index + 1} („${tile.left}") není číslo.`,
+      })
+      return
+    }
+    if (byLeft.has(value)) {
+      failures.push({
+        code: 'broken-chain',
+        message: `Hodnota ${value} je vlevo na dvou kamenech — dítě by mělo na výběr a obě volby by byly správně.`,
+      })
+      return
+    }
+    byLeft.set(value, index)
+  })
+  if (failures.length > 0) return { ok: false, failures }
+
+  // Následník: kámen, jehož levá půlka se rovná výsledku pravé půlky.
+  const next: number[] = []
+  for (const [index, tile] of tiles.entries()) {
+    const computed = computePrinted(tile.right, tile.kind)
+    if (computed === null) {
+      return fail(`Zadání na kameni č. ${index + 1} („${tile.right}") nejde vyhodnotit.`)
+    }
+    const successor = byLeft.get(computed)
+    if (successor === undefined) {
+      return fail(
+        `Na kámen č. ${index + 1} („${tile.right}" = ${computed}) nenavazuje žádný další — řetěz se přetrhne.`,
+      )
+    }
+    next.push(successor)
+  }
+
+  // Obchůzka: z prvního kamene se musí projít VŠECHNY a skončit zase u něj.
+  // Kratší okruh znamená, že se domino rozpadlo na několik kroužků.
+  const visited = new Set<number>()
+  let current = 0
+  for (let step = 0; step < tiles.length; step++) {
+    if (visited.has(current)) break
+    visited.add(current)
+    current = next[current]!
+  }
+
+  if (visited.size < tiles.length) {
+    return fail(
+      `Kameny netvoří jeden kruh, ale ${Math.ceil(tiles.length / visited.size)} kroužky — obejít jich jde jen ${visited.size} z ${tiles.length}.`,
+    )
+  }
+  if (current !== 0) {
+    return fail('Řetěz se neuzavírá — poslední kámen nenavazuje na první.')
+  }
+  return { ok: true }
 }
 
 export interface VerifiableSheet {

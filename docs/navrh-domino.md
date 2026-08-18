@@ -1,7 +1,7 @@
 # Domino — návrh
 
-**Stav: k prohlédnutí, nic z toho ještě není v kódu.** Sepsáno 16. 8. 2026,
-`main` na commitu d700184, pracovní strom čistý.
+**Stav: hotovo a v kódu** (18. 8. 2026). Sepsáno 16. 8. 2026, `main` tehdy na
+commitu d700184. Co se při implementaci odchýlilo, je v §12.
 
 Stav před zásahem: 17 testovacích souborů, 364 testů, `GENERATOR_VERSION` 5,
 tři hotové aktivity (šifra, číselné řady, pexeso).
@@ -303,4 +303,37 @@ Neřekneš-li jinak, jdu podle §0 a §10.
 
 ## 12. Co se odchýlilo
 
-*(Doplní se po implementaci — viz konvence ostatních návrhů.)*
+Implementováno 18. 8. 2026. Návrh držel — všechna tři rozhodnutí z §11 zůstala
+(kruh, kámen 84 × 42 mm, dvanáct kamenů výchozí). Odchylky jsou čtyři, žádná
+zásadní:
+
+1. **Směr zřetězení je závazný, ne libovolný.** §6 říkal „kámen *i* nese
+   hodnotu *v(i)* a zadání s výsledkem *v(i+1)*". První verze to udělala
+   obráceně (zadání *předchozí* úlohy) a dostala stejně platný kruh — jenže
+   učitelská tabulka se pak četla naruby: výsledek v řádku byl zadáním v řádku
+   *nad* ním. Poznalo se to až na obrazovce, ne v testech. Směr teď hlídá test
+   „učitelská tabulka se čte shora dolů".
+
+2. **Verifikace řetězu čte z papíru, ne z generátoru.** §3 mluvil jen o kódu
+   selhání `broken-chain`. `verifyChain` dostává **vytištěné texty obou půlek**
+   a hodnotu si spočítá znovu — jinak by ověřovala generátor místo toho, co
+   dostane dítě do ruky. Potřebovalo to jeden údaj navíc: u zadání, které je
+   číselná řada, se musí říct, že je to řada (`kind`), protože jako výraz se
+   „864 875 886 897 ?" vyhodnotit nedá.
+
+3. **Sdílení kódu vyšlo o kus širší, než §7 sliboval.** Kromě `pickGenerator`
+   se do `tasks/mix.ts` přesunul i překlad zaškrtávátek na váhy
+   (`generatorMixFromTopics`, `topicsFromGeneratorMix`, `usableTopics`) —
+   pexeso i domino ho měly znak po znaku stejný, a to i v `EditorPanel`, kde
+   z toho zmizela druhá sada zaškrtávátek. Golden snapshoty prošly **bez
+   přepsání** a `GENERATOR_VERSION` zůstal na 5, což bylo u téhle extrakce
+   jediné měřítko správnosti.
+
+4. **Půlka kamene sází menším stupněm písma než pexesová kartička** (16 pt
+   proti 20 pt). Nebylo to v návrhu, ale plyne z něj: půlka je 42 mm proti
+   60 mm, takže při 20 pt se „(24 − 8) · 2" zalomí doprostřed výrazu. Nejdelší
+   naměřená půlka má 17 znaků (řady a počítání v 8. třídě); mez v testu je 24.
+
+**Co ještě není ověřené:** zkušební tisk. Rozměr kamene, dělicí čára i stupeň
+písma jsou z obrazovky, a u kartiček je jediný soudce papír. Záloha při
+těsném výsledku zůstává 90 × 45 mm za cenu dvou stránek na dvanáct kamenů.

@@ -42,7 +42,9 @@ function textOfBlock(block: DocumentBlock): string[] {
       // se ale nepočítá: obsahuje všechna písmena včetně klamných.
       return []
     case 'card-grid':
-      return block.cards.map((card) => card.text)
+      // Obě podoby kartičky, ne jen ta pexesová: kdyby se sem dostal kámen
+      // domina, hlídač úniku řešení by mlčky přeskočil půlku papíru.
+      return block.cards.flatMap((card) => ('text' in card ? [card.text] : [card.left, card.right]))
     case 'print-scale-check':
       return []
   }

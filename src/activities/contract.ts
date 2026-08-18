@@ -25,7 +25,7 @@ import type {
 } from '../core/model/index.js'
 
 /** Aktivity v katalogu — hotové i připravované. */
-export type CatalogId = ActivityId | 'bingo' | 'pexeso'
+export type CatalogId = ActivityId | 'bingo'
 
 export interface ActivityInfo {
   id: CatalogId

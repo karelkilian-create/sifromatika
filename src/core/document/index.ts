@@ -31,12 +31,15 @@ export interface InlineRun {
 /**
  * Obsah jedné kartičky.
  *
- * Dnes jeden řádek — u pexesa buď zadání (`7 · 8`), nebo výsledek (`56`).
- * Domino si přidá druhý; proto je to objekt, a ne holý řetězec.
+ * Unie, ne objekt s nepovinnou půlkou: pexesová kartička nese jeden text
+ * (`7 · 8` nebo `56`), dominový kámen dva oddělené čarou. Kdyby to bylo
+ * `{ text?, left?, right? }`, šlo by vyrobit kartičku se všemi třemi nebo
+ * s žádným — a projevilo by se to až prázdným místem na papíře.
+ *
+ * ⚠ Tvar rozhoduje o sazbě, ale NIKOLI o významu půlek. Že je vlevo výsledek
+ *   a vpravo zadání, je pravidlo domina; model o něm nic neví a vědět nemá.
  */
-export interface CardFace {
-  text: string
-}
+export type CardFace = { text: string } | { left: string; right: string }
 
 /** Jedna položka očíslovaného seznamu úloh. */
 export interface TaskListItem {

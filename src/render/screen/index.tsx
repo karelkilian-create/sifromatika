@@ -135,10 +135,28 @@ function CardGridView({
       style={{ gridTemplateColumns: `repeat(${columns}, ${widthMm}mm)` }}
     >
       {cards.map((card, index) => (
-        <div className="card" style={{ width: `${widthMm}mm`, height: `${heightMm}mm` }} key={index}>
-          <span className="card__text">
-            <MathText text={card.text} />
-          </span>
+        <div
+          className={`card${'text' in card ? '' : ' card--split'}`}
+          style={{ width: `${widthMm}mm`, height: `${heightMm}mm` }}
+          key={index}
+        >
+          {'text' in card ? (
+            <span className="card__text">
+              <MathText text={card.text} />
+            </span>
+          ) : (
+            <>
+              <span className="card__text card__half">
+                <MathText text={card.left} />
+              </span>
+              {/* Čára, ne rámeček: dělí půlky kamene a nesmí vypadat jako
+                  střihová linka. O tvaru rozhoduje CSS, viz `.card__divider`. */}
+              <span className="card__divider" aria-hidden="true" />
+              <span className="card__text card__half">
+                <MathText text={card.right} />
+              </span>
+            </>
+          )}
         </div>
       ))}
     </div>

@@ -58,7 +58,8 @@ describe('katalog aktivit', () => {
   })
 
   it('id z novější verze neprojde jako známé', () => {
-    for (const value of ['bingo', 'domino', '', 'cipher', null, 42]) {
+    // Domino tu bývalo taky — od chvíle, kdy existuje, je to známé id.
+    for (const value of ['bingo', 'magicky-ctverec', '', 'cipher', null, 42]) {
       expect(isActivityId(value)).toBe(false)
     }
   })

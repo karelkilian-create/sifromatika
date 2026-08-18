@@ -261,10 +261,36 @@ export interface PexesoConfig {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Aktivita „domino"
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Kameny o dvou půlkách: vlevo výsledek, vpravo zadání.
+ *
+ * Proti pexesu jediné nové pravidlo, zato tvrdší: hodnoty musí tvořit **jeden
+ * souvislý kruh**, ne několik kroužků. Různé hodnoty na to nestačí — osm
+ * kamenů s osmi různými hodnotami se dá spojit i do dvou čtyřkruhů, ve kterých
+ * má každý kámen souseda a dítě je stejně nesloží.
+ *
+ * Kruh, a ne otevřený řetěz: dítě skončí tam, kde začalo, a tím si samo
+ * zkontroluje, že to má dobře. Otevřený řetěz to neumí — komu zbyly tři
+ * kameny, ví, že něco je špatně, ale ne kde.
+ */
+export interface DominoConfig {
+  /** Kolik KAMENŮ. Každý nese jednu hodnotu a jedno zadání. */
+  tileCount: number
+  difficulty: DifficultyProfile
+  taskMix: Partial<Record<OperationTag, number>>
+  /** Viz `CipherGridConfig.generatorMix` — chybějící hodnota znamená aritmetiku. */
+  generatorMix?: Readonly<Record<string, number>>
+  output: OutputConfig
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Projekt
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type ActivityId = 'cipher-grid' | 'sequence-sheet' | 'pexeso'
+export type ActivityId = 'cipher-grid' | 'sequence-sheet' | 'pexeso' | 'domino'
 
 /**
  * Společná hlavička každé uložené aktivity — vše kromě `activity` a `payload`.
@@ -302,11 +328,17 @@ export type SequenceSheetProject = Project<'sequence-sheet', SequenceSheetConfig
 
 export type PexesoProject = Project<'pexeso', PexesoConfig>
 
+export type DominoProject = Project<'domino', DominoConfig>
+
 /**
  * Uložitelná aktivita. Rozlišená unie podle `activity` — přidání další hry
  * je nový člen, ne další volitelná pole v jednom společném objektu.
  */
-export type ProjectConfig = CipherGridProject | SequenceSheetProject | PexesoProject
+export type ProjectConfig =
+  | CipherGridProject
+  | SequenceSheetProject
+  | PexesoProject
+  | DominoProject
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Výstup generování
@@ -391,5 +423,13 @@ export interface VerificationFailure {
      * dítě spáruje špatně a bude mít pravdu. U šifry naopak v pořádku.
      */
     | 'ambiguous-pairing'
+    /**
+     * Kameny domina netvoří jeden souvislý kruh.
+     *
+     * Osm kamenů se dá spojit i jako dva kroužky po čtyřech: každý kámen má
+     * souseda, každá hodnota je jednou — a přesto to dítě nesloží. Vada, kterou
+     * neodhalí žádná kontrola jednotlivé úlohy, protože každá je správně.
+     */
+    | 'broken-chain'
   message: string
 }

@@ -147,6 +147,22 @@ export const MESSAGE_LETTER_LIMITS = { min: 2, max: 24 } as const
  */
 export const PAIR_COUNT_LIMITS = { min: 6, max: 18, fallback: 12 } as const
 
+/**
+ * Kolik KAMENŮ smí mít domino.
+ *
+ * Tytéž meze jako u pexesa, ale z jiného důvodu: šest kamenů je kruh, který
+ * dítě složí dřív, než se posadí, a osmnáct je půldruhé stránky — a hlavně
+ * osmnáct různých hodnot, které v malém ročníku nemusí být z čeho vzít.
+ * Dvanáct je přesně jeden list.
+ */
+export const TILE_COUNT_LIMITS = { min: 6, max: 18, fallback: 12 } as const
+
+export function clampTileCount(value: unknown): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return TILE_COUNT_LIMITS.fallback
+  const rounded = Math.round(value)
+  return Math.min(Math.max(rounded, TILE_COUNT_LIMITS.min), TILE_COUNT_LIMITS.max)
+}
+
 export function clampPairCount(value: unknown): number {
   if (typeof value !== 'number' || !Number.isFinite(value)) return PAIR_COUNT_LIMITS.fallback
   const rounded = Math.round(value)

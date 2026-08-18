@@ -21,6 +21,12 @@ import {
   sheetChecksum as sequenceChecksum,
 } from '../../src/activities/sequence-sheet/index.js'
 import type { SequenceSheet } from '../../src/activities/sequence-sheet/index.js'
+import {
+  defaultDominoConfig,
+  generateDomino,
+  sheetChecksum as dominoChecksum,
+} from '../../src/activities/domino/index.js'
+import type { DominoSheet } from '../../src/activities/domino/index.js'
 
 function render(sheet: CipherGridSheet): string {
   const rows: string[] = []
@@ -307,6 +313,71 @@ describe('DoD 0.1 bod 7 — zmrazený výstup listu řad', () => {
          5. 50 ? 32 23 14 → 41   (krok −9: 50 41 32 23 14)
          6. 87 90 ? 96 99 → 93   (krok +3: 87 90 93 96 99)
       součet 49958cf9"
+    `)
+  })
+})
+
+/**
+ * U domina zamrzá i **pořadí kamenů na papíře**, ne jen jejich obsah.
+ *
+ * Zamíchání je součást toho, co učitel dostane: kdyby se posunulo, vytiskla by
+ * `.sifra` uložená loni jiné listy, přestože by řetěz seděl. Proto se sází
+ * v pořadí tisku a k němu se připisuje pozice v kruhu.
+ */
+function renderTiles(sheet: DominoSheet): string {
+  const tiles = sheet.tiles
+    .map(
+      (tile, index) =>
+        `  ${String(index + 1).padStart(2)}. ${tile.left} | ${tile.right}   (v kruhu ${tile.chainIndex + 1}.)`,
+    )
+    .join('\n')
+  return [sheet.title, tiles, `součet ${dominoChecksum(sheet)}`].join('\n')
+}
+
+describe('DoD 0.1 bod 7 — zmrazené domino', () => {
+  it('domino, 5. ročník, dvanáct kamenů', () => {
+    const outcome = generateDomino(defaultDominoConfig(5, 'golden-domino', 12))
+    if (!outcome.ok) throw new Error(outcome.reason)
+    expect(outcome.sheet.verification).toEqual({ ok: true })
+    expect(renderTiles(outcome.sheet)).toMatchInlineSnapshot(`
+      "Domino — 5. třída
+         1. 876 | 780 + 26   (v kruhu 2.)
+         2. 625 | 864 − 324   (v kruhu 5.)
+         3. 540 | 7 + 24   (v kruhu 6.)
+         4. 948 | 113 + 651   (v kruhu 11.)
+         5. 823 | 342 + 649   (v kruhu 9.)
+         6. 7 | 135 + 688   (v kruhu 8.)
+         7. 31 | 23 − 16   (v kruhu 7.)
+         8. 991 | 634 + 314   (v kruhu 10.)
+         9. 423 | 371 + 505   (v kruhu 1.)
+        10. 846 | 693 − 68   (v kruhu 4.)
+        11. 806 | 982 − 136   (v kruhu 3.)
+        12. 764 | 846 : 2   (v kruhu 12.)
+      součet 99952949"
+    `)
+  })
+
+  it('domino ze samých procent, 7. ročník', () => {
+    const config = defaultDominoConfig(7, 'golden-domino-procenta', 12)
+    config.payload.generatorMix = { percent: 1 }
+    const outcome = generateDomino(config)
+    if (!outcome.ok) throw new Error(outcome.reason)
+    expect(outcome.sheet.verification).toEqual({ ok: true })
+    expect(renderTiles(outcome.sheet)).toMatchInlineSnapshot(`
+      "Domino — 7. třída
+         1. 237 | 20 % z 540   (v kruhu 1.)
+         2. 51 | 50 % z 770   (v kruhu 4.)
+         3. 108 | 75 % z 952   (v kruhu 2.)
+         4. 716 | 50 % z 894   (v kruhu 11.)
+         5. 385 | 50 % z 744   (v kruhu 5.)
+         6. 447 | 25 % z 948   (v kruhu 12.)
+         7. 59 | 80 % z 725   (v kruhu 8.)
+         8. 580 | 20 % z 830   (v kruhu 9.)
+         9. 365 | 10 % z 590   (v kruhu 7.)
+        10. 372 | 50 % z 730   (v kruhu 6.)
+        11. 714 | 10 % z 510   (v kruhu 3.)
+        12. 166 | 80 % z 895   (v kruhu 10.)
+      součet 9abc469f"
     `)
   })
 })

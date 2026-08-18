@@ -23,10 +23,12 @@ Učitel zadá tajenku, například `POKLAD JE U BAZÉNU`. Aplikace k ní vytvoř
 Žák spočítá příklad, najde políčko podle souřadnice, opíše písmeno — a po patnácti příkladech
 mu vyjde tajenka. Mimochodem si přitom osahá soustavu souřadnic, kterou se bude učit později.
 
-Vedle šifry umí Šifromatika **list číselných řad** a **pexeso**: kartičky k vystřižení,
-na jedné příklad, na druhé jeho výsledek. Kartičky se dotýkají, takže se stříhají pár
-rovnými řezy přes celý list, a na každé stránce je kontrolní úsečka 100 mm — tiskárna,
-která zmenšuje, se tím prozradí dřív, než učitel sáhne po nůžkách.
+Vedle šifry umí Šifromatika **list číselných řad**, **pexeso** a **domino**. Pexeso jsou
+kartičky k vystřižení, na jedné příklad, na druhé jeho výsledek. Domino jsou kameny o dvou
+půlkách — vlevo výsledek, vpravo zadání — a skládají se za sebe do kruhu, takže si dítě
+samo zkontroluje, že to má dobře: skončí tam, kde začalo. Kartičky i kameny se dotýkají,
+takže se stříhají pár rovnými řezy přes celý list, a na každé stránce je kontrolní úsečka
+100 mm — tiskárna, která zmenšuje, se tím prozradí dřív, než učitel sáhne po nůžkách.
 
 ## Na čem si dává práci
 
@@ -129,8 +131,8 @@ Podrobněji:
 
 **Verze 0.1.** Použitelná: vytvoří list, ověří ho a vytiskne.
 
-Umí tři aktivity — šifru se souřadnicovou i lineární tabulkou, list číselných řad a pexeso —
-pro **3. až 8. ročník**. Vedle čtyř základních operací zvládne pořadí operací a závorky,
+Umí čtyři aktivity — šifru se souřadnicovou i lineární tabulkou, list číselných řad, pexeso
+a domino — pro **3. až 8. ročník**. Vedle čtyř základních operací zvládne pořadí operací a závorky,
 celá čísla, mocniny a odmocniny, desetinná čísla (`3,5 · 4`) a procenta (`25 % z 80`).
 K tomu klamná písmena, tisk, soubory `.sifra` a diplom ke stažení.
 
@@ -140,13 +142,12 @@ osmáckou matematiku pod nadpisem „9. třída" je horší než ročník nenab�
 Výsledek každé úlohy je vždy kladné celé číslo — je to kód políčka v tabulce. Desetinná
 čísla a procenta proto patří do zadání, ne do výsledku.
 
-Zatím neumí bingo ani pexeso (jsou v katalogu poctivě označené jako připravované),
-slovní úlohy, geometrii, převody jednotek, zlomky, PDF export bez tiskového dialogu,
+Zatím neumí bingo (v katalogu je poctivě označené jako připravované), slovní úlohy, geometrii, převody jednotek, zlomky, PDF export bez tiskového dialogu,
 offline režim ani sdílení odkazem. Plán je v [roadmapě](docs/sifromatika-navrh-architektury.md#7-roadmapa-01--10).
 
 ## Testování
 
-272 testů. Kromě obvyklých jednotkových testů dva druhy, na kterých projekt stojí:
+415 testů. Kromě obvyklých jednotkových testů dva druhy, na kterých projekt stojí:
 
 - **Property testy** — 10 000 náhodných konfigurací musí dát nula nepoužitelných listů.
   Ruční testy tenhle prostor kombinací nepokryjí.

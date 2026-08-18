@@ -10,6 +10,11 @@ import type { ActivityModule } from '../contract.js'
 import { applyShared } from '../shared-state.js'
 import { PAIR_COUNT_LIMITS } from '../../core/constraints/index.js'
 import type { PexesoConfig, PexesoProject } from '../../core/model/index.js'
+import {
+  generatorMixFromTopics,
+  topicsFromGeneratorMix,
+  type TopicSelection,
+} from '../../tasks/mix.js'
 import { defaultPexesoConfig, generatePexeso, sheetChecksum, type PexesoSheet } from './index.js'
 import { parsePexesoPayload } from './payload.js'
 import { pexesoDocument } from './document.js'
@@ -23,19 +28,9 @@ import { pexesoDocument } from './document.js'
  * pexeso ze samých mocnin, tedy i **počítání odškrtnout**. Proto má vlastní
  * příznak a všechna témata mají váhu 1.
  */
-export interface PexesoEditorState {
+export interface PexesoEditorState extends TopicSelection {
   /** Kolik DVOJIC. Kartiček je dvakrát tolik. */
   pairCount: number
-  /** Běžné příklady (`7 · 8`). Na rozdíl od šifry se smí vypnout. */
-  arithmetic: boolean
-  /** Číselné řady (`4 10 16 22 ?`). */
-  sequences: boolean
-  /** Desetinná čísla (`3,5 · 4`). Od 5. ročníku. */
-  decimals: boolean
-  /** Procenta (`25 % z 80`). Od 7. ročníku. */
-  percents: boolean
-  /** Mocniny a odmocniny (`7²`, `√81`). 8. ročník. */
-  powers: boolean
 }
 
 /**
@@ -66,37 +61,17 @@ export const pexesoModule = {
   toConfig(state, shared, seed): PexesoProject {
     const config = applyShared(defaultPexesoConfig(shared.grade, seed, state.pairCount), shared)
 
-    // Téma, které ročník neumí, se do konfigurace nedostane, i kdyby v
-    // formuláři zůstalo zaškrtnuté po přepnutí ročníku. Bez téhle pojistky by
-    // osmák s mocninami přepnutý na šestou třídu dostal místo pexesa hlášku,
-    // že pro tuhle obtížnost není žádný generátor.
-    const profile = config.payload.difficulty
-    const generatorMix: Record<string, number> = {}
-    if (state.arithmetic) generatorMix.arithmetic = 1
-    if (state.sequences) generatorMix.sequence = 1
-    if (state.decimals && profile.decimals > 0) generatorMix.decimal = 1
-    if (state.percents && profile.percents) generatorMix.percent = 1
-    if (state.powers && profile.powers) generatorMix.powers = 1
-
-    // Váhy jsou rovnoměrné — viz komentář u `PexesoEditorState`.
-    config.payload.generatorMix =
-      Object.keys(generatorMix).length > 0 ? generatorMix : { arithmetic: 1 }
+    // Váhy jsou rovnoměrné a téma, které ročník neumí, se do konfigurace
+    // nedostane — obojí řeší `generatorMixFromTopics`, protože je to pravidlo
+    // vrstvy úloh, ne pexesa. Domino ho má stejné.
+    config.payload.generatorMix = generatorMixFromTopics(state, config.payload.difficulty)
     return config
   },
 
   fromConfig(config): PexesoEditorState {
-    const mix = config.payload.generatorMix
-    const enabled = (id: string) => (mix?.[id] ?? 0) > 0
     return {
       pairCount: config.payload.pairCount,
-      // Soubor bez `generatorMix` vznikl dřív, než volba témat existovala —
-      // `parsePexesoPayload` v něm doplní samotnou aritmetiku, takže sem
-      // dorazí zaškrtnuté „Počítání" a nic jiného.
-      arithmetic: enabled('arithmetic'),
-      sequences: enabled('sequence'),
-      decimals: enabled('decimal'),
-      percents: enabled('percent'),
-      powers: enabled('powers'),
+      ...topicsFromGeneratorMix(config.payload.generatorMix),
     }
   },
 

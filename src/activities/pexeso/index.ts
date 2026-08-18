@@ -25,6 +25,7 @@ import type {
 } from '../../core/model/index.js'
 import { createRng } from '../../core/rng/index.js'
 import { verifyDistinctValues, verifyTasks } from '../../core/verify/index.js'
+import { pickGenerator } from '../../tasks/mix.js'
 import { taskGenerators } from '../../tasks/registry.js'
 import { APP_VERSION, GENERATOR_VERSION } from '../../version.js'
 
@@ -223,23 +224,6 @@ function generateOnce(config: PexesoProject): PexesoOutcome {
       ),
     },
   }
-}
-
-/**
- * Které téma teď na řadu. Váhy jsou rovnoměrné, takže při dvou zaškrtnutých
- * padne na každé zhruba polovina kartiček.
- *
- * Vlastní kopie téhož, co má šifra (`cipher-grid/index.ts`). Sdílet to zatím
- * nemá kde — obě aktivity by musely sáhnout do společného modulu a ten by
- * existoval kvůli pěti řádkům. Až přibude domino, bude důvod.
- */
-function pickGenerator(
-  generators: readonly (typeof taskGenerators)[number][],
-  weights: Readonly<Record<string, number>>,
-  rng: ReturnType<typeof createRng>,
-) {
-  if (generators.length === 1) return generators[0]!
-  return rng.weighted(generators.map((generator) => [generator, weights[generator.id] ?? 1] as const))
 }
 
 /** Desetinná čárka, ne tečka — na českém listu se píše `2,5`. */

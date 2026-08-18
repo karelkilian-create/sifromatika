@@ -338,6 +338,48 @@
   font-variant-numeric: tabular-nums;
 }
 
+/*
+ * Dominový kámen: dvě půlky vedle sebe.
+ *
+ * Odsazení nese půlka, ne kámen — text musí zůstat uvnitř své poloviny,
+ * i když se zalomí do dvou řádků.
+ */
+.card--split {
+  position: relative;
+  padding: 0;
+}
+
+.card__half {
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: 2mm;
+  /*
+   * Menší stupeň než na pexesové kartičce: půlka kamene měří 42 mm proti
+   * 60 mm, takže při 20 pt by se „(24 − 8) · 2“ zalomilo doprostřed výrazu.
+   * Papír je tady jediný soudce — tohle je první číslo ke kontrole po
+   * zkušebním tisku.
+   */
+  font-size: 16pt;
+}
+
+/*
+ * Dělicí čára uvnitř kamene.
+ *
+ * Tenčí než střihové linky (0,15 proti 0,25 mm) a nedotažená k okrajům.
+ * Střih vede přes celý list od kraje ke kraji; čára, která se okrajů
+ * nedotýká, se s ním neplete — a kámen se tak nerozstřihne vejpůl.
+ */
+.card__divider {
+  position: absolute;
+  top: 4mm;
+  bottom: 4mm;
+  left: 50%;
+  border-left: 0.15mm solid var(--sheet-ink);
+}
+
 /* ── Kontrola měřítka tisku ───────────────────────────────────────── */
 
 .print-scale-check__ruler {

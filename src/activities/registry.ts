@@ -21,6 +21,7 @@
 import type { DocumentModel } from '../core/document/index.js'
 import type { ActivityId, ProjectBase, ProjectConfig } from '../core/model/index.js'
 import { cipherGridModule } from './cipher-grid/module.js'
+import { dominoModule } from './domino/module.js'
 import { pexesoModule } from './pexeso/module.js'
 import { sequenceSheetModule } from './sequence-sheet/module.js'
 import type {
@@ -38,6 +39,7 @@ export const activityModules = {
   'cipher-grid': cipherGridModule,
   'sequence-sheet': sequenceSheetModule,
   pexeso: pexesoModule,
+  domino: dominoModule,
 } satisfies Record<ActivityId, AnyActivityModule>
 
 type ActivityModules = typeof activityModules
