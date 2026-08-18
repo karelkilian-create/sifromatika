@@ -128,7 +128,8 @@ Zbytek papírových pravidel se dědí a nemění:
 - rub se netiskne.
 
 **Nové je jen dělicí čára uprostřed kamene** — a ta nesmí svádět k tomu, aby ji
-někdo přestřihl. Návrh: tenčí než střihové linky (0,15 mm proti 0,25 mm)
+někdo přestřihl. Návrh: tenčí než střihové linky (0,15 mm proti 0,25 mm — od
+18. 8. 2026 jsou střihové linky 0,5 mm, viz `--cut-line` v `sheet.css`)
 a nedotažená k okrajům, s mezerou 4 mm nahoře a dole. Střih vede přes celý
 list od kraje ke kraji; čára, která se okraje nedotýká, se s ním neplete.
 

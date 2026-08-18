@@ -10,6 +10,24 @@
   --sheet-ink: #111;
   --sheet-rule: #444;
 
+  /*
+   * Dvě tloušťky linek u kartiček, a je mezi nimi rozdíl v POKYNU, ne
+   * v estetice:
+   *
+   *   --cut-line   „tudy se stříhá" — okraj kartičky, kamene, karty,
+   *   --inner-line „tudy se NEstříhá" — půlka domina, políčka bingo karty.
+   *
+   * Proto je střihová linka výrazně tlustší. Půl milimetru je zároveň STROP:
+   * širší čára přestane být přesným vodítkem, protože se stříhá jejím středem
+   * a kartičky by se rozešly v rozměru.
+   *
+   * ⚠ Na obrazovce je rozdíl menší, než jaký bude na papíře. Náhled je
+   *   zmenšená A4 a prohlížeč obě tloušťky zaokrouhlí k témuž pixelu; při
+   *   300 dpi je z 0,5 mm šest bodů a z 0,15 mm dva.
+   */
+  --cut-line: 0.5mm;
+  --inner-line: 0.15mm;
+
   box-sizing: border-box;
   width: 210mm;
   min-height: 297mm;
@@ -311,8 +329,8 @@
   gap: 0;
   width: max-content;
   margin: 0 auto 6mm;
-  border-top: 0.25mm solid var(--sheet-ink);
-  border-left: 0.25mm solid var(--sheet-ink);
+  border-top: var(--cut-line) solid var(--sheet-ink);
+  border-left: var(--cut-line) solid var(--sheet-ink);
 }
 
 .card {
@@ -321,8 +339,8 @@
   align-items: center;
   justify-content: center;
   padding: 3mm;
-  border-right: 0.25mm solid var(--sheet-ink);
-  border-bottom: 0.25mm solid var(--sheet-ink);
+  border-right: var(--cut-line) solid var(--sheet-ink);
+  border-bottom: var(--cut-line) solid var(--sheet-ink);
   text-align: center;
 }
 
@@ -387,8 +405,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-right: 0.15mm solid var(--sheet-ink);
-  border-bottom: 0.15mm solid var(--sheet-ink);
+  border-right: var(--inner-line) solid var(--sheet-ink);
+  border-bottom: var(--inner-line) solid var(--sheet-ink);
   font-size: 14pt;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -416,7 +434,7 @@
   top: 4mm;
   bottom: 4mm;
   left: 50%;
-  border-left: 0.15mm solid var(--sheet-ink);
+  border-left: var(--inner-line) solid var(--sheet-ink);
 }
 
 /* ── Kontrola měřítka tisku ───────────────────────────────────────── */
