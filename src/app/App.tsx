@@ -17,6 +17,7 @@ import { SifromatikaMark } from '../render/brand/index.js'
 import { DocumentView } from '../render/screen/index.js'
 import { DiplomaScreen } from '../features/diploma/DiplomaScreen.js'
 import { ActivityNav } from '../features/editor/ActivityNav.js'
+import { QuickGuide } from '../features/help/QuickGuide.js'
 import { EditorPanel } from '../features/editor/EditorPanel.js'
 import { INITIAL_EDITOR_STATE, fromConfig, type EditorState } from '../features/editor/state.js'
 import { parseSifra, serializeSifra, suggestFileName } from '../storage/sifra.js'
@@ -176,6 +177,8 @@ export function App() {
 
       {view === 'worksheets' && (
         <>
+          <QuickGuide />
+
           <ActivityNav
             value={state.activity}
             onChange={(activity) => {

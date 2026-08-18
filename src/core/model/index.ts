@@ -287,10 +287,34 @@ export interface DominoConfig {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Aktivita „bingo"
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Karty s výsledky, příklady vyvolává učitel.
+ *
+ * Na kartě jsou VÝHRADNĚ výsledky. Kdyby na ní byly příklady, dítě si je
+ * spočítá dopředu a ze hry zbyde hledání čísla — bingo je jediná aktivita
+ * v Šifromatice, kde se počítá z hlavy a hned.
+ *
+ * Nové pravidlo hry: **každé číslo na kartě musí jít vyvolat.** Zásoba
+ * vyvolávaných čísel je proto větší než karta, ale karta z ní nesmí vybočit.
+ */
+export interface BingoConfig {
+  /** Kolik KARET, tedy pro kolik dětí. Každá je jiná. */
+  cardCount: number
+  difficulty: DifficultyProfile
+  taskMix: Partial<Record<OperationTag, number>>
+  /** Viz `CipherGridConfig.generatorMix` — chybějící hodnota znamená aritmetiku. */
+  generatorMix?: Readonly<Record<string, number>>
+  output: OutputConfig
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Projekt
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type ActivityId = 'cipher-grid' | 'sequence-sheet' | 'pexeso' | 'domino'
+export type ActivityId = 'cipher-grid' | 'sequence-sheet' | 'pexeso' | 'domino' | 'bingo'
 
 /**
  * Společná hlavička každé uložené aktivity — vše kromě `activity` a `payload`.
@@ -330,6 +354,8 @@ export type PexesoProject = Project<'pexeso', PexesoConfig>
 
 export type DominoProject = Project<'domino', DominoConfig>
 
+export type BingoProject = Project<'bingo', BingoConfig>
+
 /**
  * Uložitelná aktivita. Rozlišená unie podle `activity` — přidání další hry
  * je nový člen, ne další volitelná pole v jednom společném objektu.
@@ -339,6 +365,7 @@ export type ProjectConfig =
   | SequenceSheetProject
   | PexesoProject
   | DominoProject
+  | BingoProject
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Výstup generování
@@ -423,6 +450,20 @@ export interface VerificationFailure {
      * dítě spáruje špatně a bude mít pravdu. U šifry naopak v pořádku.
      */
     | 'ambiguous-pairing'
+    /**
+     * Číslo na bingo kartě, které není ve vyvolávacím seznamu.
+     *
+     * Dítě s takovým číslem nemůže vyhrát a nemá jak poznat, že to není jeho
+     * chyba — hledá výsledek, který učitel nikdy nepřečte.
+     */
+    | 'uncallable-value'
+    /**
+     * Dvě stejné bingo karty, nebo totéž číslo dvakrát na jedné kartě.
+     *
+     * Stejné karty znamenají dvě děti volající bingo naráz; číslo dvakrát na
+     * kartě znamená, že jedno škrtnutí zabere dvě políčka.
+     */
+    | 'duplicate-card'
     /**
      * Kameny domina netvoří jeden souvislý kruh.
      *

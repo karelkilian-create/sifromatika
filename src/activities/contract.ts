@@ -24,8 +24,14 @@ import type {
   VerificationReport,
 } from '../core/model/index.js'
 
-/** Aktivity v katalogu — hotové i připravované. */
-export type CatalogId = ActivityId | 'bingo'
+/**
+ * Aktivity v katalogu — hotové i připravované.
+ *
+ * Dnes se rovná `ActivityId`, protože chystaná není žádná. Typ zůstává
+ * samostatný: až se do `plannedActivities` vrátí slib, přibude sem jeho id
+ * a nikdo jiný se toho nedotkne.
+ */
+export type CatalogId = ActivityId
 
 export interface ActivityInfo {
   id: CatalogId

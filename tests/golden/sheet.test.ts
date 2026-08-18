@@ -27,6 +27,12 @@ import {
   sheetChecksum as dominoChecksum,
 } from '../../src/activities/domino/index.js'
 import type { DominoSheet } from '../../src/activities/domino/index.js'
+import {
+  defaultBingoConfig,
+  generateBingo,
+  sheetChecksum as bingoChecksum,
+} from '../../src/activities/bingo/index.js'
+import type { BingoSheet } from '../../src/activities/bingo/index.js'
 
 function render(sheet: CipherGridSheet): string {
   const rows: string[] = []
@@ -378,6 +384,71 @@ describe('DoD 0.1 bod 7 — zmrazené domino', () => {
         11. 714 | 10 % z 510   (v kruhu 3.)
         12. 166 | 80 % z 895   (v kruhu 10.)
       součet 9abc469f"
+    `)
+  })
+})
+
+/**
+ * U binga zamrzá **pořadí vyvolávání i rozmístění čísel na kartách**.
+ *
+ * Obojí je součást toho, co učitel dostane: jiné pořadí čtení je jiná hra
+ * a jinak rozmístěná karta vyhrává v jiném okamžiku. Sází se první dvě karty
+ * — na tři stránky karet snímek nemá smysl a určit determinismus stačí.
+ */
+function renderBingo(sheet: BingoSheet): string {
+  const called = sheet.tasks
+    .map((task, index) => `  ${String(index + 1).padStart(2)}. ${task.prompt.text} = ${task.value}`)
+    .join('\n')
+  const cards = sheet.cards
+    .slice(0, 2)
+    .map((card, index) => [`  karta ${index + 1}`, ...card.map((row) => `    ${row.join(' ')}`)].join('\n'))
+    .join('\n')
+
+  return [sheet.title, called, cards, `součet ${bingoChecksum(sheet)}`].join('\n')
+}
+
+describe('DoD 0.1 bod 7 — zmrazené bingo', () => {
+  it('bingo, 5. ročník, dvanáct karet', () => {
+    const outcome = generateBingo(defaultBingoConfig(5, 'golden-bingo', 12))
+    if (!outcome.ok) throw new Error(outcome.reason)
+    expect(outcome.sheet.verification).toEqual({ ok: true })
+    expect(renderBingo(outcome.sheet)).toMatchInlineSnapshot(`
+      "Bingo — 5. třída
+         1. 810 : 9 = 90
+         2. 556 − 73 = 483
+         3. 830 − 134 = 696
+         4. 981 − 44 = 937
+         5. 694 − 453 = 241
+         6. 834 : 2 = 417
+         7. 361 − 67 = 294
+         8. 468 + 86 = 554
+         9. 894 : 2 = 447
+        10. 640 : 5 = 128
+        11. 705 − 77 = 628
+        12. 638 − 125 = 513
+        13. 300 + 261 = 561
+        14. 693 − 443 = 250
+        15. 243 + 115 = 358
+        16. 925 + 53 = 978
+        17. 16 + 505 = 521
+        18. 68 − 20 = 48
+        19. 261 + 26 = 287
+        20. 101 − 63 = 38
+        21. 958 : 2 = 479
+        22. 541 − 248 = 293
+        23. 218 + 173 = 391
+        24. 768 : 3 = 256
+        karta 1
+          90 628 128 483
+          358 937 38 250
+          294 561 513 447
+          48 293 287 391
+        karta 2
+          479 628 90 128
+          391 294 417 250
+          447 48 483 978
+          513 293 937 256
+      součet 5ac51224"
     `)
   })
 })

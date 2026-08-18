@@ -667,6 +667,70 @@ export function verifyChain(tiles: readonly ChainTile[]): VerificationReport {
   return { ok: true }
 }
 
+/**
+ * Bingo karty tak, jak jsou vytištěné.
+ *
+ * Čísla jsou TEXT, ne hodnoty z generátoru — verifikace si je přečte z papíru
+ * a porovná s tím, co učitel opravdu bude číst nahlas.
+ */
+export interface BingoCards {
+  /** Jedna karta = řádky mřížky, buňka je vytištěný text. */
+  cards: readonly (readonly (readonly string[])[])[]
+  /** Čísla ve vyvolávacím seznamu, jak jsou vytištěná na listu pro učitele. */
+  called: readonly string[]
+}
+
+/**
+ * Jde každé číslo na kartě vyvolat, a jsou karty navzájem různé?
+ *
+ * Dvě kontroly, obě takové, že je žádný přepočet jednotlivé úlohy neodhalí:
+ *
+ *  1. **Číslo, které nikdo nepřečte.** Dítě, které ho má na kartě, nemůže
+ *     vyhrát — a nepozná, že to není jeho chyba.
+ *  2. **Dvě stejné karty** (dvě děti volají bingo naráz) nebo totéž číslo
+ *     dvakrát na jedné kartě (jedno škrtnutí zabere dvě políčka).
+ */
+export function verifyBingoCards(sheet: BingoCards): VerificationReport {
+  const failures: VerificationFailure[] = []
+  const called = new Set(sheet.called.map((value) => value.trim()))
+
+  const seenCards = new Map<string, number>()
+  sheet.cards.forEach((card, index) => {
+    const cells = card.flatMap((row) => row.map((cell) => cell.trim()))
+
+    for (const cell of cells) {
+      if (!called.has(cell)) {
+        failures.push({
+          code: 'uncallable-value',
+          message: `Karta č. ${index + 1} má číslo ${cell}, které není ve vyvolávacím seznamu — dítě s touhle kartou nemůže vyhrát.`,
+        })
+      }
+    }
+
+    if (new Set(cells).size !== cells.length) {
+      failures.push({
+        code: 'duplicate-card',
+        message: `Karta č. ${index + 1} má totéž číslo dvakrát — jedno škrtnutí by zabralo dvě políčka.`,
+      })
+    }
+
+    // Pořadí čísel na kartě je součást karty: dvě karty s týmiž čísly jinak
+    // rozmístěnými jsou různé karty a vyhrají v jiném okamžiku.
+    const fingerprint = cells.join('|')
+    const twin = seenCards.get(fingerprint)
+    if (twin !== undefined) {
+      failures.push({
+        code: 'duplicate-card',
+        message: `Karty č. ${twin + 1} a ${index + 1} jsou stejné — dvě děti by volaly bingo naráz.`,
+      })
+    } else {
+      seenCards.set(fingerprint, index)
+    }
+  })
+
+  return failures.length === 0 ? { ok: true } : { ok: false, failures }
+}
+
 export interface VerifiableSheet {
   table: CipherTable
   slots: readonly SheetSlot[]

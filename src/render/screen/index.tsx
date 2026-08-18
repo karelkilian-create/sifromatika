@@ -136,29 +136,70 @@ function CardGridView({
     >
       {cards.map((card, index) => (
         <div
-          className={`card${'text' in card ? '' : ' card--split'}`}
+          className={`card${cardModifier(card)}`}
           style={{ width: `${widthMm}mm`, height: `${heightMm}mm` }}
           key={index}
         >
-          {'text' in card ? (
-            <span className="card__text">
-              <MathText text={card.text} />
-            </span>
-          ) : (
-            <>
-              <span className="card__text card__half">
-                <MathText text={card.left} />
-              </span>
-              {/* Čára, ne rámeček: dělí půlky kamene a nesmí vypadat jako
-                  střihová linka. O tvaru rozhoduje CSS, viz `.card__divider`. */}
-              <span className="card__divider" aria-hidden="true" />
-              <span className="card__text card__half">
-                <MathText text={card.right} />
-              </span>
-            </>
-          )}
+          <CardFaceView card={card} />
         </div>
       ))}
+    </div>
+  )
+}
+
+/** Třída podle tvaru kartičky. Sazbu řeší CSS, tvar rozhoduje jen o třídě. */
+function cardModifier(card: CardFace): string {
+  if ('text' in card) return ''
+  return 'left' in card ? ' card--split' : ' card--grid'
+}
+
+/**
+ * Obsah kartičky podle jejího tvaru.
+ *
+ * Rozlišená unie znamená, že překladač ukáže každý tvar, který tahle funkce
+ * neumí — na rozdíl od nepovinných polí, kde by chybějící větev skončila
+ * prázdným místem na papíře.
+ */
+function CardFaceView({ card }: { card: CardFace }) {
+  if ('text' in card) {
+    return (
+      <span className="card__text">
+        <MathText text={card.text} />
+      </span>
+    )
+  }
+
+  if ('left' in card) {
+    return (
+      <>
+        <span className="card__text card__half">
+          <MathText text={card.left} />
+        </span>
+        {/* Čára, ne rámeček: dělí půlky kamene a nesmí vypadat jako
+            střihová linka. O tvaru rozhoduje CSS, viz `.card__divider`. */}
+        <span className="card__divider" aria-hidden="true" />
+        <span className="card__text card__half">
+          <MathText text={card.right} />
+        </span>
+      </>
+    )
+  }
+
+  // Mřížka bingo karty. Buňky mají vlastní linky — na rozdíl od kartiček se
+  // uvnitř karty NEstříhá, takže se linky nesmí zaměnit se střihovými:
+  // vnitřní jsou tenčí a nedosahují k okraji karty.
+  return (
+    <div
+      className="card__grid"
+      style={{ gridTemplateColumns: `repeat(${card.grid[0]?.length ?? 1}, 1fr)` }}
+    >
+      {card.grid.flatMap((row, rowIndex) =>
+        row.map((cell, cellIndex) => (
+          <span className="card__cell" key={`${rowIndex}-${cellIndex}`}>
+            <MathText text={cell} />
+          </span>
+        )),
+      )}
     </div>
   )
 }

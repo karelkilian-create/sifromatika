@@ -102,6 +102,14 @@ describe('.sifra — uložení a načtení', () => {
             percents: false,
             powers: false,
           },
+          bingo: {
+            cardCount: 12,
+            arithmetic: true,
+            sequences: false,
+            decimals: false,
+            percents: false,
+            powers: false,
+          },
         },
       },
       'kolecko',
@@ -184,8 +192,11 @@ describe('.sifra — uložení a načtení', () => {
   })
 
   it('odmítne soubor s neznámou aktivitou místo tichého převodu na šifru', () => {
+    // Aktivita z novější Šifromatiky. Dřív tu stálo „bingo" — od chvíle, kdy
+    // existuje, musí být neznámá jiná; tichý převod na šifru by učiteli
+    // podstrčil úplně jiný list, než jaký ukládal.
     const parsed = parseSifra(
-      '{"format":"sifromatika","schemaVersion":1,"checksum":"a","config":{"schemaVersion":1,"generatorVersion":1,"appVersion":"9.9","activity":"bingo","seed":"s","locale":"cs","payload":{"difficulty":{"grade":4},"taskMix":{"add":1},"output":{}}}}',
+      '{"format":"sifromatika","schemaVersion":1,"checksum":"a","config":{"schemaVersion":1,"generatorVersion":1,"appVersion":"9.9","activity":"magicky-ctverec","seed":"s","locale":"cs","payload":{"difficulty":{"grade":4},"taskMix":{"add":1},"output":{}}}}',
     )
     expect(parsed.ok).toBe(false)
   })

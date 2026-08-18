@@ -31,15 +31,21 @@ export interface InlineRun {
 /**
  * Obsah jedné kartičky.
  *
- * Unie, ne objekt s nepovinnou půlkou: pexesová kartička nese jeden text
- * (`7 · 8` nebo `56`), dominový kámen dva oddělené čarou. Kdyby to bylo
- * `{ text?, left?, right? }`, šlo by vyrobit kartičku se všemi třemi nebo
- * s žádným — a projevilo by se to až prázdným místem na papíře.
+ * Unie, ne objekt s nepovinnými poli: pexesová kartička nese jeden text
+ * (`7 · 8` nebo `56`), dominový kámen dva oddělené čarou, bingo karta mřížku
+ * čísel. Kdyby to bylo `{ text?, left?, right?, grid? }`, šlo by vyrobit
+ * kartičku se vším naráz nebo s ničím — a projevilo by se to až prázdným
+ * místem na papíře.
  *
- * ⚠ Tvar rozhoduje o sazbě, ale NIKOLI o významu půlek. Že je vlevo výsledek
- *   a vpravo zadání, je pravidlo domina; model o něm nic neví a vědět nemá.
+ * ⚠ Tvar rozhoduje o sazbě, ale NIKOLI o významu. Že je na kameni vlevo
+ *   výsledek a vpravo zadání, je pravidlo domina; že se na bingo kartě škrtá,
+ *   je pravidlo binga. Model o obojím nic neví a vědět nemá.
  */
-export type CardFace = { text: string } | { left: string; right: string }
+export type CardFace =
+  | { text: string }
+  | { left: string; right: string }
+  /** Řádky mřížky, každý stejně dlouhý. Buňka je hotový text, ne číslo. */
+  | { grid: readonly (readonly string[])[] }
 
 /** Jedna položka očíslovaného seznamu úloh. */
 export interface TaskListItem {

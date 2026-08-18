@@ -482,3 +482,48 @@ a.button {
     flex: 1 1 8rem;
   }
 }
+
+/* ── Krátký návod ─────────────────────────────────────────────────────
+ *
+ * Zavřený zabírá jeden řádek, otevřený patnáct. Sazba je proto úsporná:
+ * menší písmo než formulář, protože se čte jednou a pak už nikdy.
+ */
+.guide {
+  margin-bottom: 1rem;
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  background: var(--ui-surface);
+  padding: 0.6rem 1rem;
+}
+
+.guide summary {
+  cursor: pointer;
+  color: var(--ui-accent);
+  font-weight: 600;
+}
+
+.guide__steps,
+.guide__notes {
+  margin: 0.75rem 0 0;
+  padding-left: 1.4rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--ui-text);
+}
+
+.guide__steps li,
+.guide__notes li {
+  margin-bottom: 0.25rem;
+}
+
+/* Poznámky jsou pod kroky a čtou se jako dodatek, ne jako další postup. */
+.guide__notes {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--ui-border);
+  color: var(--ui-muted);
+}
+
+.guide code {
+  font-size: 0.9em;
+}

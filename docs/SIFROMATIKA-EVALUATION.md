@@ -72,7 +72,7 @@ core → nic                        (ani React, ani dom lib)
 | **Matematika** | 4 operace, závorky, celá čísla, mocniny a odmocniny, číselné řady |
 | **Výstup** | A4, náhled = tisk, řešení na samostatný list, tisk z prohlížeče |
 | **Soubor** | `.sifra` = konfigurace + seed + kontrolní součet, ~500 B |
-| **V katalogu, ale nehotové** | bingo (poctivě označené `available: false`) |
+| **V katalogu, ale nehotové** | nic — od 18. 8. 2026 je hotové všech pět |
 
 ### Stavební bloky a jejich znovupoužitelnost
 
@@ -480,7 +480,7 @@ potenciálem**, které si zaslouží zmínku, i když jsou dražší:
 | 5 | **`DocumentModel`** bez PDF (C.2) ✅ | střední | předpoklad pro bingo, pexeso i domino |
 | 6 | **Kartičková sazba** (C.3) + **pexeso** ✅ | střední | primitivum se ověří na nejjednodušším uživateli |
 | 7 | **Domino** ✅ | malá–střední | po pexesu zbývá jen kontrola řetězce |
-| 8 | **Bingo** | střední | je v katalogu, učitelé ho čekají; potřebuje kroky 5 a C.4 |
+| 8 | **Bingo** ✅ | střední | je v katalogu, učitelé ho čekají; potřebuje kroky 5 a C.4 |
 | 9 | **Příkazová vrstva + widget** (E.1) | střední | až teď je co ovládat |
 | 10 | **Magické čtverce, buňkové bludiště, osmisměrka** | střední | nad mřížkovou sazbou z C.4 |
 | 11 | **Detektivní obal + hledání chyby** | malá | obsahová práce nad hotovým |

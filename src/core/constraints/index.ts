@@ -163,6 +163,45 @@ export function clampTileCount(value: unknown): number {
   return Math.min(Math.max(rounded, TILE_COUNT_LIMITS.min), TILE_COUNT_LIMITS.max)
 }
 
+/**
+ * Strana bingo karty. Vždy 4 × 4, tedy šestnáct čísel.
+ *
+ * Není to volba, a ze stejného důvodu jako u pevné mřížky 9 × 9 u šifry: jeden
+ * rozměr znamená jednu sazbu a jedno chování. Šestnáct čísel je jedna
+ * rozcvička — devět je hotových dřív, než se třída ztiší, pětadvacet přeteče
+ * přes hodinu.
+ *
+ * ⚠ Šestnáct různých hodnot je zároveň tvrdé minimum, které musí vrstva úloh
+ *   nabídnout. Zmenšit kartu při úzkém výběru nejde — mřížka má šestnáct
+ *   políček a prázdné by dítě škrtlo hned.
+ */
+export const BINGO_SIDE = 4
+
+/** Kolik políček má karta. Odvozené, ať se to nepočítá na třech místech. */
+export const BINGO_CELLS = BINGO_SIDE * BINGO_SIDE
+
+/**
+ * Poměr vyvolávaných čísel k políčkům na kartě.
+ *
+ * 3 : 2, tedy 24 čísel na šestnáctipolíčkovou kartu. Kdyby se vyvolávalo
+ * přesně šestnáct, musel by učitel přečíst úplně všechno a vyhráli by všichni
+ * naráz. Odhad od stolu — ukáže se až ve třídě a mění se tímhle jedním číslem.
+ */
+export const BINGO_POOL_RATIO = 1.5
+
+/**
+ * Kolik KARET smí bingo mít. Jedna na dítě, každá jiná.
+ *
+ * Třicet je velká třída; míň než dvě karty není hra, ale pracovní list.
+ */
+export const CARD_COUNT_LIMITS = { min: 2, max: 30, fallback: 12 } as const
+
+export function clampCardCount(value: unknown): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return CARD_COUNT_LIMITS.fallback
+  const rounded = Math.round(value)
+  return Math.min(Math.max(rounded, CARD_COUNT_LIMITS.min), CARD_COUNT_LIMITS.max)
+}
+
 export function clampPairCount(value: unknown): number {
   if (typeof value !== 'number' || !Number.isFinite(value)) return PAIR_COUNT_LIMITS.fallback
   const rounded = Math.round(value)

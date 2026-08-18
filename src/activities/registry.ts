@@ -20,6 +20,7 @@
 
 import type { DocumentModel } from '../core/document/index.js'
 import type { ActivityId, ProjectBase, ProjectConfig } from '../core/model/index.js'
+import { bingoModule } from './bingo/module.js'
 import { cipherGridModule } from './cipher-grid/module.js'
 import { dominoModule } from './domino/module.js'
 import { pexesoModule } from './pexeso/module.js'
@@ -40,6 +41,7 @@ export const activityModules = {
   'sequence-sheet': sequenceSheetModule,
   pexeso: pexesoModule,
   domino: dominoModule,
+  bingo: bingoModule,
 } satisfies Record<ActivityId, AnyActivityModule>
 
 type ActivityModules = typeof activityModules
@@ -49,15 +51,15 @@ export type ActivityStates = {
   [K in ActivityId]: ActivityModules[K]['initialState']
 }
 
-/** Aktivity, které v katalogu jsou vidět, ale ještě nejdou vybrat. */
-const plannedActivities: readonly ActivityInfo[] = [
-  {
-    id: 'bingo',
-    label: 'Bingo',
-    tagline: 'Připravujeme',
-    available: false,
-  },
-]
+/**
+ * Aktivity, které v katalogu jsou vidět, ale ještě nejdou vybrat.
+ *
+ * Dnes prázdné — bingo bylo poslední slib a od 18. 8. 2026 je hotové.
+ * Mechanismus zůstává schválně: ukázat chystanou aktivitu je poctivější než ji
+ * skrývat, a až bude co slibovat, vrátí se sem jeden řádek. Prázdný seznam je
+ * lepší než slib, za kterým ještě nic není.
+ */
+const plannedActivities: readonly ActivityInfo[] = []
 
 /** Katalog v pořadí, v jakém ho uvidí učitel: hotové napřed, pak chystané. */
 export const activityCatalog: readonly ActivityInfo[] = [

@@ -13,6 +13,7 @@
 import type { Grade, OperationTag } from '../../core/model/index.js'
 import type { SharedEditorState } from '../../activities/contract.js'
 import {
+  CARD_COUNT_LIMITS,
   MESSAGE_LETTER_LIMITS,
   ONE_PAGE_LETTERS,
   PAIR_COUNT_LIMITS,
@@ -60,12 +61,14 @@ export function EditorPanel({
   const isCipher = state.activity === 'cipher-grid'
   const isPexeso = state.activity === 'pexeso'
   const isDomino = state.activity === 'domino'
+  const isBingo = state.activity === 'bingo'
   /** Kartičkové hry. Liší se počítaným kusem, zbytek formuláře mají stejný. */
-  const isCards = isPexeso || isDomino
+  const isCards = isPexeso || isDomino || isBingo
   const cipher = state.byActivity['cipher-grid']
   const sequence = state.byActivity['sequence-sheet']
   const pexeso = state.byActivity.pexeso
   const domino = state.byActivity.domino
+  const bingo = state.byActivity.bingo
 
   // Volby, které ročník neumí, se neschovávají do neaktivního stavu, ale
   // úplně mizí — zašedlá „Procenta" u čtvrťáka je jen šum.
@@ -88,6 +91,9 @@ export function EditorPanel({
   const patchDomino = (changes: Partial<typeof domino>) =>
     onChange({ ...state, byActivity: { ...state.byActivity, domino: { ...domino, ...changes } } })
 
+  const patchBingo = (changes: Partial<typeof bingo>) =>
+    onChange({ ...state, byActivity: { ...state.byActivity, bingo: { ...bingo, ...changes } } })
+
   const patchSequence = (changes: Partial<typeof sequence>) =>
     onChange({
       ...state,
@@ -101,11 +107,11 @@ export function EditorPanel({
     patchShared({ operations: next })
   }
 
-  // Témata má pexeso i domino stejná — jedna sada zaškrtávátek, jeden zdroj
-  // pravdy. Kdyby si je každá hra vedla zvlášť, opravovaly by se dvakrát.
-  const topicsState: TopicSelection = isDomino ? domino : pexeso
+  // Témata mají pexeso, domino i bingo stejná — jedna sada zaškrtávátek, jeden
+  // zdroj pravdy. Kdyby si je každá hra vedla zvlášť, opravovaly by se třikrát.
+  const topicsState: TopicSelection = isBingo ? bingo : isDomino ? domino : pexeso
   const patchTopics = (changes: Partial<TopicSelection>) =>
-    isDomino ? patchDomino(changes) : patchPexeso(changes)
+    isBingo ? patchBingo(changes) : isDomino ? patchDomino(changes) : patchPexeso(changes)
 
   /** Zaškrtnutá témata omezená na ta, která ročník opravdu umí. */
   const topics = usableTopics(topicsState, profile)
@@ -135,6 +141,7 @@ export function EditorPanel({
         ...state.byActivity,
         pexeso: rescue(pexeso),
         domino: rescue(domino),
+        bingo: rescue(bingo),
       },
     })
   }
@@ -206,6 +213,26 @@ export function EditorPanel({
                 ? 'na jednom listu'
                 : `na ${Math.ceil(domino.tileCount / 12)} listech`}{' '}
               plus list pro učitele se správným pořadím
+            </span>
+          </label>
+        ) : isBingo ? (
+          <label className="field">
+            <span className="field__label">Počet karet</span>
+            <input
+              className="field__input"
+              type="number"
+              min={CARD_COUNT_LIMITS.min}
+              max={CARD_COUNT_LIMITS.max}
+              value={bingo.cardCount}
+              onChange={(event) => patchBingo({ cardCount: Number(event.target.value) })}
+            />
+            {/* Každé dítě má jinou kartu, takže počet karet = počet dětí.
+                Šest na stránku — a to učitel u kopírky potřebuje vědět dřív,
+                než zjistí, kolik listů mu vyleze. */}
+            <span className="field__hint">
+              jedna na dítě, každá jiná — {Math.ceil(bingo.cardCount / 6)}{' '}
+              {Math.ceil(bingo.cardCount / 6) === 1 ? 'list' : 'listy'} karet plus list pro
+              učitele s příklady
             </span>
           </label>
         ) : (
@@ -367,10 +394,10 @@ export function EditorPanel({
                   </label>
                 )}
                 <p className="hint">
-                  Zaškrtnuté typy se {isDomino ? 'na kamenech' : 'na kartičkách'} míchají
-                  rovnoměrně. Necháte-li zaškrtnutý jediný, bude z něj celé{' '}
-                  {isDomino ? 'domino' : 'pexeso'} — třeba samé mocniny („7²“, „√81“, „2³ − 8“).
-                  Operace platí zároveň, ale holé mocniny se objeví i bez nich.
+                  Zaškrtnuté typy se míchají rovnoměrně. Necháte-li zaškrtnutý jediný, bude z něj
+                  celé {isBingo ? 'bingo' : isDomino ? 'domino' : 'pexeso'} — třeba samé mocniny
+                  („7²“, „√81“, „2³ − 8“). Operace platí zároveň, ale holé mocniny se objeví
+                  i bez nich.
                 </p>
               </>
             ) : (
@@ -396,7 +423,9 @@ export function EditorPanel({
                       ? 'např. Mocniny na kartičkách'
                       : isDomino
                         ? 'např. Procenta v kruhu'
-                        : 'např. Rozcvička na řady'
+                        : isBingo
+                          ? 'např. Násobilkové bingo'
+                          : 'např. Rozcvička na řady'
                 }
                 autoComplete="off"
               />
@@ -420,8 +449,9 @@ export function EditorPanel({
               </>
             ) : isCards ? (
               <p className="hint">
-                Název se tiskne na list pro učitele. Na {isDomino ? 'kameny' : 'kartičky'} ne — na
-                těch by zabral místo a dítěti neřekne nic.
+                Název se tiskne na list pro učitele. Na{' '}
+                {isBingo ? 'karty' : isDomino ? 'kameny' : 'kartičky'} ne — na těch by zabral
+                místo a dítěti neřekne nic.
               </p>
             ) : (
               <p className="hint">
