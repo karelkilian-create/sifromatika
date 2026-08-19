@@ -288,6 +288,44 @@ describe('generateCipherGrid — desetinná čísla a procenta', () => {
   })
 })
 
+describe('hláška o poměru operací', () => {
+  /** Ústupky listu pro dané semínko, bez ohledu na to, jestli se povedl. */
+  function relaxationCodes(message: string, seed: string, grade: 3 | 4 | 5 = 4): string[] {
+    const outcome = generateCipherGrid(defaultConfig(message, grade, seed))
+    return outcome.ok ? outcome.sheet.relaxations.map((entry) => entry.code) : []
+  }
+
+  it('na dvoupísmennou tajenku se čtyři operace nevejdou — a řekne se to rovnou', () => {
+    // Čtyři operace po jednom příkladu potřebují čtyři příklady, jsou dva.
+    // Dřív to hlásilo „pro tenhle ročník není dost výsledků", což je nesmysl:
+    // není to o ročníku a žádné jiné semínko to nespraví.
+    for (let i = 0; i < 10; i++) {
+      const codes = relaxationCodes('AB', `kratka-${i}`)
+      expect(codes).toContain('operation-mix-impossible')
+      expect(codes).not.toContain('operation-mix-thin')
+    }
+  })
+
+  it('chudý list radí Jinou variantu, ne změnu ročníku', () => {
+    const messages: string[] = []
+    for (let i = 0; i < 60; i++) {
+      const outcome = generateCipherGrid(defaultConfig('Matika je cool', 4, `chudy-${i}`))
+      if (!outcome.ok) continue
+      for (const entry of outcome.sheet.relaxations) {
+        if (entry.code === 'operation-mix-thin') messages.push(entry.message)
+      }
+    }
+
+    // Zhruba každé osmé semínko; ze šedesáti tedy nějaké padne skoro jistě.
+    expect(messages.length).toBeGreaterThan(0)
+    for (const message of messages) {
+      expect(message).toContain('Jinou variantu')
+      // Ročník si učitel nevybírá podle generátoru, ale podle toho, koho učí.
+      expect(message).not.toContain('ročník')
+    }
+  })
+})
+
 describe('zaškrtnuté operace se na list opravdu dostanou', () => {
   /**
    * Pojistka proti tichému rozporu se zadáním.

@@ -120,6 +120,43 @@ function mixShortfall(sheet: CipherGridSheet): number {
 }
 
 /**
+ * Co se učiteli řekne o nevyváženém poměru operací.
+ *
+ * Dvě různé situace, dvě různé věty — a ani jedna neradí změnit ročník. Ten
+ * si učitel nevybírá podle generátoru, ale podle toho, koho učí; rada „zkus
+ * šestou třídu" je čtvrťákovi k ničemu.
+ *
+ * 1. **Příkladů je míň než zaškrtnutých operací.** Pak se to nemá jak povést
+ *    a není to vada listu, ale aritmetika: každý příklad umí jednu operaci.
+ *    Na dvoupísmennou tajenku se čtyři operace prostě nevejdou.
+ * 2. **Jinak je to smůla na semínko.** Generátor to zkusil `MAX_ATTEMPTS`krát
+ *    a nevyšlo to; při dalším pokusu to obvykle vyjde. Proto je první rada
+ *    „Jiná varianta" — měřeno na 4. třídě a dvanácti písmenech vyjde chudý
+ *    list ve zhruba každém osmém semínku, takže jedno kliknutí ho s velkou
+ *    pravděpodobností spraví.
+ */
+function mixNotice(sheet: CipherGridSheet): RelaxationLog {
+  const mix = sheet.config.payload.taskMix
+  const requested = ALL_OPERATIONS.filter((operation) => (mix[operation] ?? 0) > 0)
+  const operations = (requested.length > 0 ? requested : ALL_OPERATIONS).length
+  const tasks = sheet.slots.length
+
+  if (tasks < operations) {
+    return relaxation.notice(
+      'operation-mix-impossible',
+      `Na ${tasks} příkladech se ${operations} zaškrtnuté operace neprocvičí — každý příklad` +
+        ' umí jednu. Delší tajenka je unese všechny.',
+    )
+  }
+
+  return relaxation.notice(
+    'operation-mix-thin',
+    'Některá ze zvolených operací je na listu zastoupená jen málo. Zkus Jinou variantu —' +
+      ' většinou stačí. Když se to zopakuje, pomůže delší tajenka nebo míň zaškrtnutých operací.',
+  )
+}
+
+/**
  * Vygeneruje list. Při selhání verifikace to zkusí znovu s odvozeným seedem —
  * teprve po vyčerpání pokusů to vzdá. Neověřený list se ven nikdy nedostane.
  *
@@ -160,13 +197,7 @@ export function generateCipherGrid(config: CipherGridProject): CipherGridOutcome
   }
 
   if (best !== null) {
-    best.outcome.sheet.relaxations.push(
-      relaxation.notice(
-        'operation-mix-thin',
-        'Některá ze zvolených operací je na listu zastoupená jen málo — pro tenhle ročník' +
-          ' není dost výsledků, které by šly vyrobit. Pomůže vyšší ročník nebo méně operací.',
-      ),
-    )
+    best.outcome.sheet.relaxations.push(mixNotice(best.outcome.sheet))
     return best.outcome
   }
 
