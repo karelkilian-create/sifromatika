@@ -6,8 +6,10 @@
  * mít vedle sebe zdroj i odvozeninu znamená dva zdroje pravdy, které se dřív
  * nebo později rozejdou (docs/rozsah-0.1.md §3.4).
  *
- * Tatáž serializace poslouží v 0.4 pro sdílení odkazem — proto je oddělená
- * od způsobu uložení.
+ * Tatáž serializace nese i **odkaz na list** (`storage/share-link`) — proto je
+ * oddělená od způsobu uložení. Soubor a odkaz se liší jen obalem: jeden je
+ * text na disku, druhý base64url ve fragmentu URL. Kontroluje je týž parser,
+ * protože obojí přichází zvenčí a obojí může být upravené.
  *
  * ⚠ Vstup je NEDŮVĚRYHODNÝ. Soubor může přijít e-mailem od kolegyně, projít
  *   cizí verzí aplikace nebo být ručně upravený. Proto se všechno kontroluje
@@ -28,44 +30,96 @@ export interface SifraFile {
   config: ProjectConfig
 }
 
-export function serializeSifra(config: ProjectConfig, checksum: string): string {
-  const file: SifraFile = {
+/**
+ * Obsah souboru i odkazu — jedno místo, kde se skládá hlavička.
+ *
+ * Kdyby si ho odkaz stavěl po svém, rozešel by se se souborem přesně ve chvíli,
+ * kdy do hlavičky přibude pole: uložený list by ho měl, sdílený ne.
+ */
+export function buildSifraFile(config: ProjectConfig, checksum: string): SifraFile {
+  return {
     format: SIFRA_FORMAT,
     schemaVersion: SIFRA_SCHEMA_VERSION,
     checksum,
     config,
   }
-  return `${JSON.stringify(file, null, 2)}\n`
+}
+
+export function serializeSifra(config: ProjectConfig, checksum: string): string {
+  // Odsazený zápis jen pro soubor: učitel si ho může otevřít v poznámkovém
+  // bloku. Odkaz šetří každý znak, a tak si JSON serializuje sám, kompaktně.
+  return `${JSON.stringify(buildSifraFile(config, checksum), null, 2)}\n`
+}
+
+/**
+ * Odkud konfigurace přišla.
+ *
+ * Mění **jen znění hlášek**. Kontroly jsou pro soubor i odkaz totožné, protože
+ * obojí je stejně nedůvěryhodné — odkaz dokonce o něco víc, ten jde přepsat
+ * v adresním řádku.
+ *
+ * Celé věty místo skloňovaného podstatného jména: „Souboru chybí…" a „Odkazu
+ * chybí…" se liší pádem a jedna proměnná uprostřed věty by češtinu nezachránila.
+ */
+export type SifraSource = 'file' | 'link'
+
+interface SifraMessages {
+  unreadable: string
+  notSifra: string
+  foreign: string
+  wrongVersion: (version: string) => string
+  missingChecksum: string
+  brokenConfig: string
+}
+
+const MESSAGES: Record<SifraSource, SifraMessages> = {
+  file: {
+    unreadable: 'Soubor není platný .sifra — nejde přečíst.',
+    notSifra: 'Soubor není platný .sifra.',
+    foreign: 'Tenhle soubor nepochází ze Šifromatiky.',
+    wrongVersion: (version) =>
+      `Soubor je ve formátu verze ${version}, tahle Šifromatika umí ${SIFRA_SCHEMA_VERSION}.`,
+    missingChecksum: 'Souboru chybí kontrolní součet.',
+    brokenConfig: 'Nastavení v souboru je poškozené.',
+  },
+  link: {
+    unreadable: 'Odkaz se cestou poškodil. Nech si ho poslat znovu, celý.',
+    notSifra: 'Tenhle odkaz nevede na list ze Šifromatiky.',
+    foreign: 'Tenhle odkaz nepochází ze Šifromatiky.',
+    wrongVersion: (version) =>
+      `Odkaz je ve formátu verze ${version}, tahle Šifromatika umí ${SIFRA_SCHEMA_VERSION}.`,
+    missingChecksum: 'Odkazu chybí kontrolní součet.',
+    brokenConfig: 'Nastavení v odkazu je poškozené.',
+  },
 }
 
 export type SifraParseResult =
   | { ok: true; file: SifraFile }
   | { ok: false; error: string }
 
-export function parseSifra(text: string): SifraParseResult {
+export function parseSifra(text: string, source: SifraSource = 'file'): SifraParseResult {
+  const messages = MESSAGES[source]
+
   let raw: unknown
   try {
     raw = JSON.parse(text)
   } catch {
-    return { ok: false, error: 'Soubor není platný .sifra — nejde přečíst.' }
+    return { ok: false, error: messages.unreadable }
   }
 
-  if (!isRecord(raw)) return { ok: false, error: 'Soubor není platný .sifra.' }
+  if (!isRecord(raw)) return { ok: false, error: messages.notSifra }
   if (raw.format !== SIFRA_FORMAT) {
-    return { ok: false, error: 'Tenhle soubor nepochází ze Šifromatiky.' }
+    return { ok: false, error: messages.foreign }
   }
   if (raw.schemaVersion !== SIFRA_SCHEMA_VERSION) {
-    return {
-      ok: false,
-      error: `Soubor je ve formátu verze ${String(raw.schemaVersion)}, tahle Šifromatika umí ${SIFRA_SCHEMA_VERSION}.`,
-    }
+    return { ok: false, error: messages.wrongVersion(String(raw.schemaVersion)) }
   }
   if (typeof raw.checksum !== 'string') {
-    return { ok: false, error: 'Souboru chybí kontrolní součet.' }
+    return { ok: false, error: messages.missingChecksum }
   }
 
   const config = parseConfig(raw.config)
-  if (config === null) return { ok: false, error: 'Nastavení v souboru je poškozené.' }
+  if (config === null) return { ok: false, error: messages.brokenConfig }
 
   return { ok: true, file: { format: SIFRA_FORMAT, schemaVersion: 1, checksum: raw.checksum, config } }
 }

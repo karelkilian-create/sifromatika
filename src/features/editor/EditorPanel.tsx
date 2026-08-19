@@ -45,6 +45,7 @@ export interface EditorPanelProps {
   onReroll: () => void
   onPrint: () => void
   onSave: () => void
+  onShare: () => void
   onOpen: () => void
   canPrint: boolean
 }
@@ -55,6 +56,7 @@ export function EditorPanel({
   onReroll,
   onPrint,
   onSave,
+  onShare,
   onOpen,
   canPrint,
 }: EditorPanelProps) {
@@ -278,6 +280,11 @@ export function EditorPanel({
           </button>
           <button type="button" className="button" onClick={onSave} disabled={!canPrint}>
             Uložit
+          </button>
+          {/* Blokované stejně jako Uložit a Vytisknout: list, který neprošel
+              kontrolou, se nemá jak dostat ke kolegyni. */}
+          <button type="button" className="button" onClick={onShare} disabled={!canPrint}>
+            Sdílet
           </button>
           <button type="button" className="button" onClick={onOpen}>
             Otevřít zadání

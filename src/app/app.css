@@ -443,6 +443,26 @@ a.button {
   border-color: #e8cf90;
 }
 
+/* Třetí plán sdílení: prohlížeč bez systémové nabídky i bez schránky.
+   Odkaz musí být vidět celý a dát se označit jedním tahem, proto vlastní
+   řádek a neproporcionální písmo — v proporcionálním splyne „l" s „1". */
+.share-fallback {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.share-fallback__input {
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  color: var(--ui-text);
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: 5px;
+}
+
 .banner--info {
   color: #1c4a63;
   background: #e8f2f8;

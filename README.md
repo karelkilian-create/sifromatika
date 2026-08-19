@@ -3,7 +3,8 @@
 **Matematická šifrovací hra pro učitele základních škol.** Napíšeš tajenku, vybereš ročník
 a během vteřiny máš hotový pracovní list, řešení i tisk na A4.
 
-Běží celá v prohlížeči. Bez serveru, bez účtu, bez registrace — nic se nikam neodesílá.
+Běží celá v prohlížeči — nic se neinstaluje. Bez účtu, bez registrace, bez evidence:
+tajenky ani jména žáků z tvého počítače neodcházejí.
 
 ![Náhled aplikace](docs/img/nahled.jpg)
 
@@ -62,6 +63,12 @@ Hotovou aktivitu lze uložit jako soubor `.sifra` a později otevřít, upravit 
 Soubor má kolem půl kilobajtu, protože obsahuje jen zadání a náhodné semínko — tabulka
 i příklady se dopočítají. Součástí je kontrolní součet, takže když by budoucí verze aplikace
 vytvořila z téhož souboru jiný list, dozvíš se to, místo aby ti nesedělo dřív vytištěné řešení.
+
+Tlačítko **Sdílet** pošle kolegyni odkaz na ten konkrétní list — ne na aplikaci a ne na soubor.
+Na telefonu se otevře systémová nabídka (Messenger, mail, SMS), na počítači se odkaz zkopíruje
+do schránky. Nastavení sedí v části odkazu za `#`, kterou prohlížeč na server neposílá: tajenka
+tak zůstává mezi tebou a tím, komu odkaz pošleš. Právě proto ho neposílej dětem — kdo má odkaz,
+má i řešení.
 
 ## Spuštění
 

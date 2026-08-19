@@ -20,6 +20,7 @@ import { ActivityNav } from '../features/editor/ActivityNav.js'
 import { QuickGuide } from '../features/help/QuickGuide.js'
 import { EditorPanel } from '../features/editor/EditorPanel.js'
 import { INITIAL_EDITOR_STATE, fromConfig, type EditorState } from '../features/editor/state.js'
+import { buildShareLink, readShareLink } from '../storage/share-link.js'
 import { parseSifra, serializeSifra, suggestFileName } from '../storage/sifra.js'
 import '../render/print/print.css'
 import './app.css'
@@ -27,6 +28,66 @@ import './app.css'
 interface FileNotice {
   level: 'info' | 'error'
   message: string
+}
+
+/**
+ * Věta, která se přidává za každé úspěšné sdílení.
+ *
+ * Kdo má odkaz, má i tajenku — jinak to nejde, celý smysl je, že kolegyně
+ * dostane tentýž list. Říct se to ale dá, a to jednou větou v běžném banneru:
+ * učitel to potřebuje vědět jednou, podruhé už by ho to jen otravovalo.
+ */
+const SOLUTION_WARNING = 'Je v něm i řešení — patří kolegům, ne dětem.'
+
+interface InitialApp {
+  state: EditorState
+  seed: string
+  notice: FileNotice | null
+}
+
+/**
+ * Výchozí stav aplikace: buď sdílený list z odkazu, nebo prázdný formulář.
+ *
+ * Čte se v inicializátoru `useState`, ne v efektu — sdílený list je známý
+ * dřív, než se poprvé vykreslí, a probliknutí prázdného formuláře by vypadalo
+ * jako chyba. Jediný `useEffect` v aplikaci tak zůstává ten na šířku okna.
+ *
+ * Nečitelný odkaz neshodí start: aplikace naběhne prázdná a řekne proč.
+ * Prázdná Šifromatika je horší než sdílený list, ale nesrovnatelně lepší
+ * než bílá obrazovka.
+ */
+function initialApp(): InitialApp {
+  const blank = { state: INITIAL_EDITOR_STATE, seed: randomSeed() }
+
+  const parsed = readShareLink(window.location.hash)
+  if (parsed === null) return { ...blank, notice: null }
+  if (!parsed.ok) return { ...blank, notice: { level: 'error', message: parsed.error } }
+
+  const restored = fromConfig(parsed.file.config)
+  const checksum = checksumForConfig(parsed.file.config)
+  // Týž test determinismu jako u souboru: konfigurace sedí, ale tahle verze
+  // z ní počítá jiný list, než jaký měl na obrazovce ten, kdo odkaz posílal.
+  const notice: FileNotice =
+    checksum !== null && checksum !== parsed.file.checksum
+      ? {
+          level: 'error',
+          message: `Tenhle odkaz vznikl ve verzi ${parsed.file.config.appVersion}. Aktuální verze z něj vytvoří jiný list — vytištěné řešení kolegy už nemusí sedět.`,
+        }
+      : { level: 'info', message: 'Otevřen sdílený list.' }
+
+  return { ...restored, notice }
+}
+
+/**
+ * Odkaz v adresním řádku platí, dokud se učitel dívá na sdílený list.
+ *
+ * První úpravou přestane: URL by ukazovala na něco jiného, než co je na
+ * obrazovce. Do té chvíle zůstává schválně — na telefonu se prohlížeč běžně
+ * sám restartuje a obnovení stránky musí vrátit tentýž list.
+ */
+function forgetShareLink(): void {
+  if (window.location.hash === '') return
+  window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`)
 }
 
 /**
@@ -87,10 +148,13 @@ function Preview({ children }: { children: ReactNode }) {
 }
 
 export function App() {
+  const [initial] = useState(initialApp)
   const [view, setView] = useState<AppView>('worksheets')
-  const [state, setState] = useState<EditorState>(INITIAL_EDITOR_STATE)
-  const [seed, setSeed] = useState(() => randomSeed())
-  const [fileNotice, setFileNotice] = useState<FileNotice | null>(null)
+  const [state, setState] = useState<EditorState>(initial.state)
+  const [seed, setSeed] = useState(initial.seed)
+  const [fileNotice, setFileNotice] = useState<FileNotice | null>(initial.notice)
+  /** Odkaz k ručnímu zkopírování — třetí plán sdílení, viz `handleShare`. */
+  const [shareLink, setShareLink] = useState<string | null>(null)
   const fileInput = useRef<HTMLInputElement>(null)
 
   const generated = useMemo(
@@ -118,6 +182,76 @@ export function App() {
     setFileNotice({ level: 'info', message: `Uloženo jako ${link.download}` })
   }
 
+  /** Druhý plán: schránka. Třetí: odkaz se ukáže a učitel si ho vezme sám. */
+  const copyShareLink = async (link: string) => {
+    try {
+      await navigator.clipboard.writeText(link)
+      setFileNotice({ level: 'info', message: `Odkaz zkopírován. ${SOLUTION_WARNING}` })
+    } catch {
+      // Schránka je jen v zabezpečeném kontextu a starší prohlížeče ji nemají
+      // vůbec. Selhat tady je v pořádku, mlčet by nebylo.
+      //
+      // Hláška z minulého sdílení musí pryč: „Odkaz zkopírován" nad polem
+      // „Zkopíruj odkaz" si protiřečí a učitel neví, čemu věřit.
+      setFileNotice(null)
+      setShareLink(link)
+    }
+  }
+
+  /**
+   * Sdílení odkazem.
+   *
+   * Odkaz se staví **synchronně**, ještě před prvním `await`: `navigator.share`
+   * se smí zavolat jen z gesta uživatele a čekání na cokoli předtím by aplikaci
+   * o to gesto připravilo.
+   *
+   * Cesty jsou tři — systémová nabídka, schránka, ruční zkopírování — protože
+   * `navigator.share` na desktopovém Chrome pod Linuxem neexistuje a schránka
+   * chybí mimo HTTPS. Viz docs/navrh-sdileni-odkazem.md §4.
+   */
+  const handleShare = () => {
+    if (!outcome.ok) return
+    const checksum = checksumForConfig(generated.config)
+    if (checksum === null) return
+
+    const link = buildShareLink(
+      `${window.location.origin}${window.location.pathname}`,
+      generated.config,
+      checksum,
+    )
+    setShareLink(null)
+
+    if ('share' in navigator) {
+      // Bez `text`: Messenger a WhatsApp by popisek poslaly jako druhou
+      // zprávu a vypadalo by to jako překlep.
+      navigator
+        .share({ title: `Šifromatika — ${outcome.sheet.title}`, url: link })
+        .then(() => {
+          setFileNotice({ level: 'info', message: `Odkaz odešel. ${SOLUTION_WARNING}` })
+        })
+        .catch((error: unknown) => {
+          // Zavřená systémová nabídka není chyba a nehlásí se k ní nic.
+          if (error instanceof DOMException && error.name === 'AbortError') return
+          void copyShareLink(link)
+        })
+      return
+    }
+
+    void copyShareLink(link)
+  }
+
+  /**
+   * Úklid po úpravě formuláře.
+   *
+   * Odkaz v adresním řádku i nabídnutý odkaz ke zkopírování patří listu, který
+   * byl na obrazovce před chvílí. Od první úpravy ukazují jinam než formulář.
+   */
+  const afterEdit = () => {
+    setFileNotice(null)
+    setShareLink(null)
+    forgetShareLink()
+  }
+
   const handleOpen = async (file: File) => {
     const parsed = parseSifra(await file.text())
     if (!parsed.ok) {
@@ -128,6 +262,8 @@ export function App() {
     const restored = fromConfig(parsed.file.config)
     setState(restored.state)
     setSeed(restored.seed)
+    setShareLink(null)
+    forgetShareLink()
 
     // Soubor nese jen konfiguraci — list se dopočítá. Kontrolní součet je
     // jediné, co odhalí, že ho jiná verze generátoru dopočítala jinak.
@@ -183,7 +319,7 @@ export function App() {
             value={state.activity}
             onChange={(activity) => {
               setState({ ...state, activity })
-              setFileNotice(null)
+              afterEdit()
             }}
           />
 
@@ -191,14 +327,15 @@ export function App() {
             state={state}
             onChange={(next) => {
               setState(next)
-              setFileNotice(null)
+              afterEdit()
             }}
             onReroll={() => {
               setSeed(randomSeed())
-              setFileNotice(null)
+              afterEdit()
             }}
             onPrint={() => window.print()}
             onSave={handleSave}
+            onShare={handleShare}
             onOpen={() => fileInput.current?.click()}
             canPrint={verified}
           />
@@ -229,6 +366,22 @@ export function App() {
             >
               {fileNotice.message}
             </p>
+          )}
+
+          {shareLink !== null && (
+            <div className="banner banner--info no-print share-fallback">
+              <label className="share-fallback__label" htmlFor="share-link">
+                Zkopíruj odkaz a pošli ho. {SOLUTION_WARNING}
+              </label>
+              <input
+                id="share-link"
+                className="share-fallback__input"
+                type="text"
+                readOnly
+                value={shareLink}
+                onFocus={(event) => event.currentTarget.select()}
+              />
+            </div>
           )}
 
           {notices
