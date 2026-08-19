@@ -146,6 +146,20 @@ export function checksumForConfig(config: ProjectConfig): string | null {
   return outcome.ok ? module.checksum(outcome.sheet) : null
 }
 
+/**
+ * Kontrolní součet listu, který právě vznikl.
+ *
+ * Protipól `checksumForConfig`: ten list vyrábí znovu, a je proto testem
+ * determinismu při ukládání souboru. Tenhle jen sáhne na hotový výsledek —
+ * pro průběžné zapamatování nastavení, kde by regenerace při každém stisku
+ * klávesy zdvojnásobila práci a neověřila nic, co by nebylo na obrazovce.
+ */
+export function checksumOfRun(run: ActivityRun): string | null {
+  if (!run.outcome.ok) return null
+  const module = activityModules[run.config.activity] as AnyActivityModule
+  return module.checksum(run.outcome.sheet)
+}
+
 /** Stav formuláře pro tu aktivitu, které konfigurace patří. */
 export function activityStateFromConfig(config: ProjectConfig): Partial<ActivityStates> {
   const module = activityModules[config.activity] as AnyActivityModule

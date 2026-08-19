@@ -240,11 +240,28 @@ a při startu se načte, když v URL žádný odkaz není. Pořadí uvnitř krok
 odkaz v URL   >   localStorage   >   výchozí formulář
 ```
 
-Navrhuju to udělat **až po sdílení, jako samostatný commit**. Je to patnáct
-řádků, ale má vlastní otázku k rozhodnutí: obnovovat i **seed** (učitel najde
-přesně ten list, co měl včera), nebo jen nastavení (najde svou tajenku, ale
-jinou variantu)? Doporučuju obnovovat i seed — kdo chce jiný, má tlačítko
-Jiná varianta; kdo si list vytiskl a hledá ho zítra, ten druhou šanci nemá.
+**Hotovo 19. 8. 2026**, samostatným commitem po sdílení. Obnovuje se **i seed**
+— kdo chce jiný list, má tlačítko Jiná varianta; kdo si ho vytiskl a hledá ho
+zítra, ten druhou šanci nemá. Modul je `src/storage/last-session.ts`.
+
+Dvě věci, které se rozhodly až při psaní:
+
+- **Chyby se polykají.** U souboru i odkazu se hlásí, protože je učitel vědomě
+  otevřel. Zapamatovaný záznam nevytvořil vědomě, takže poškozený obsah,
+  chybějící úložiště i zakázané cookies znamenají prázdný formulář a **žádnou
+  hlášku**. Jediné, co se hlásí, je nesouhlasící kontrolní součet: to znamená,
+  že tahle verze počítá jinak než ta včerejší, a to učitel s vytištěným listem
+  v ruce vědět musí.
+- **Cizí odkaz zapamatovaný list nepřepíše.** Ukázal to až náhled: jedno
+  kliknutí na odkaz od kolegyně smazalo vlastní rozdělanou práci, kterou —
+  na rozdíl od odkazu — učitel nikde jinde nemá. List z odkazu se proto
+  neukládá, dokud do něj učitel nesáhne; první úpravou se z cizího stává
+  vlastní. V `App` to drží stav `remembering`.
+
+⚠ V úložišti zůstává tajenka i po zavření okna. Na učitelově notebooku je to
+žádoucí, na společném počítači ve sborovně to uvidí i další člověk. Karel to
+19. 8. posoudil jako přijatelné — je to jeho vlastní list, ne cizí data — a je
+to popsané v README.
 
 ---
 
@@ -256,12 +273,12 @@ Jiná varianta; kdo si list vytiskl a hledá ho zítra, ten druhou šanci nemá.
 | 2 | refaktor `sifra.ts` na sdílený validátor | `npm run check`, stávající testy `.sifra` musí projít beze změny |
 | 3 | čtení odkazu při startu (`App.tsx`) | odkaz vložený do adresního řádku otevře týž list |
 | 4 | tlačítko Sdílet a záložní plány | v prohlížeči na desktopu: schránka; DevTools → simulace mobilu na fallback nesáhne |
-| 5 | nasazení a zkouška na telefonu | **tohle udělá Karel** — systémová nabídka jde vyzkoušet jen na skutečném telefonu přes HTTPS |
+| 5 | nasazení a zkouška na telefonu | **hotovo 19. 8. 2026** — Karel sdílel z telefonu systémovou nabídkou a odkaz otevřel na počítači; list seděl |
 
-Krok 5 nejde odbýt v testech: `navigator.share` na desktopovém Chrome pod
-Linuxem neexistuje, takže nativní cestou v tomhle prostředí neprojde ani
-jeden řádek. Za hotové to prohlásíme, až odkaz doopravdy dorazí z telefonu
-do Messengeru a otevře se z něj správný list.
+Krok 5 nešel odbýt v testech: `navigator.share` na desktopovém Chrome pod
+Linuxem neexistuje, takže nativní cestou v tomhle prostředí neprošel ani
+jeden řádek. Proběhl 19. 8. 2026 na Karlově telefonu — odkaz odešel systémovou
+nabídkou a na počítači z něj naskočil tentýž list. **Tím je krok hotový celý.**
 
 ---
 

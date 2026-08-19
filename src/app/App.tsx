@@ -3,7 +3,9 @@
  *
  * Jediné místo, kde se potkává stav formuláře, generátor a vykreslení.
  * Generování je čistá funkce konfigurace, takže se dá počítat v `useMemo` —
- * žádné efekty, žádná synchronizace stavu.
+ * žádná synchronizace stavu efektem. Efekty jsou tu jen dva a ani jeden nic
+ * neodvozuje: měření šířky okna a zápis nastavení do prohlížeče. Obojí je
+ * komunikace s vnějškem, na kterou `useEffect` je.
  *
  * O tom, které aktivity existují a co která umí, ví `activities/registry`.
  * Shell zná jen jeho kontrakt — proto v něm není jediné `if` na aktivitu
@@ -11,7 +13,7 @@
  */
 
 import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
-import { checksumForConfig, runActivity } from '../activities/registry.js'
+import { checksumForConfig, checksumOfRun, runActivity } from '../activities/registry.js'
 import { randomSeed } from '../core/rng/index.js'
 import { SifromatikaMark } from '../render/brand/index.js'
 import { DocumentView } from '../render/screen/index.js'
@@ -20,8 +22,9 @@ import { ActivityNav } from '../features/editor/ActivityNav.js'
 import { QuickGuide } from '../features/help/QuickGuide.js'
 import { EditorPanel } from '../features/editor/EditorPanel.js'
 import { INITIAL_EDITOR_STATE, fromConfig, type EditorState } from '../features/editor/state.js'
+import { readLastSession, saveLastSession } from '../storage/last-session.js'
 import { buildShareLink, readShareLink } from '../storage/share-link.js'
-import { parseSifra, serializeSifra, suggestFileName } from '../storage/sifra.js'
+import { parseSifra, serializeSifra, suggestFileName, type SifraFile } from '../storage/sifra.js'
 import '../render/print/print.css'
 import './app.css'
 
@@ -43,39 +46,77 @@ interface InitialApp {
   state: EditorState
   seed: string
   notice: FileNotice | null
+  /** Přišel list z odkazu? Pak se do zapamatování nesmí sáhnout — viz `App`. */
+  fromLink: boolean
+}
+
+/** Odkud se list obnovil. Liší se tím, co se učiteli hlásí. */
+type RestoreSource = 'link' | 'last'
+
+const MISMATCH: Record<RestoreSource, (version: string) => string> = {
+  link: (version) =>
+    `Tenhle odkaz vznikl ve verzi ${version}. Aktuální verze z něj vytvoří jiný list — vytištěné řešení kolegy už nemusí sedět.`,
+  last: (version) =>
+    `Zapamatované nastavení je z verze ${version}. Aktuální verze z něj vytvoří jiný list — co jsi vytiskl dřív, už nemusí sedět.`,
 }
 
 /**
- * Výchozí stav aplikace: buď sdílený list z odkazu, nebo prázdný formulář.
+ * Obnovení listu z uložené konfigurace.
  *
- * Čte se v inicializátoru `useState`, ne v efektu — sdílený list je známý
- * dřív, než se poprvé vykreslí, a probliknutí prázdného formuláře by vypadalo
- * jako chyba. Jediný `useEffect` v aplikaci tak zůstává ten na šířku okna.
+ * Hlásí se dvě různé věci podle zdroje. U odkazu i úspěch („Otevřen sdílený
+ * list"), protože učitel čeká cizí práci a musí vidět, že dorazila. U posledního
+ * nastavení mlčení — svou vlastní práci na svém počítači čeká a hláška při
+ * každém spuštění by byla otrava.
+ */
+function restore(file: SifraFile, source: RestoreSource): InitialApp {
+  const restored = fromConfig(file.config)
+  const checksum = checksumForConfig(file.config)
+
+  // Týž test determinismu jako u souboru: konfigurace sedí, ale tahle verze
+  // z ní počítá jiný list, než jaký viděl ten, kdo ji ukládal.
+  const fromLink = source === 'link'
+  if (checksum !== null && checksum !== file.checksum) {
+    return {
+      ...restored,
+      fromLink,
+      notice: { level: 'error', message: MISMATCH[source](file.config.appVersion) },
+    }
+  }
+
+  return {
+    ...restored,
+    fromLink,
+    notice: fromLink ? { level: 'info', message: 'Otevřen sdílený list.' } : null,
+  }
+}
+
+/**
+ * Výchozí stav aplikace: sdílený odkaz, poslední nastavení, prázdný formulář —
+ * v tomhle pořadí.
+ *
+ * Odkaz je napřed schválně: kdo klikl na odkaz od kolegyně, chce ten list,
+ * ne svůj včerejší. Zapamatované nastavení se přitom nepřepíše, dokud učitel
+ * do formuláře nesáhne.
+ *
+ * Čte se v inicializátoru `useState`, ne v efektu — obojí je známé dřív, než
+ * se poprvé vykreslí, a probliknutí prázdného formuláře by vypadalo jako chyba.
  *
  * Nečitelný odkaz neshodí start: aplikace naběhne prázdná a řekne proč.
  * Prázdná Šifromatika je horší než sdílený list, ale nesrovnatelně lepší
  * než bílá obrazovka.
  */
 function initialApp(): InitialApp {
-  const blank = { state: INITIAL_EDITOR_STATE, seed: randomSeed() }
+  const blank = { state: INITIAL_EDITOR_STATE, seed: randomSeed(), fromLink: false }
 
   const parsed = readShareLink(window.location.hash)
-  if (parsed === null) return { ...blank, notice: null }
-  if (!parsed.ok) return { ...blank, notice: { level: 'error', message: parsed.error } }
+  if (parsed !== null) {
+    return parsed.ok
+      ? restore(parsed.file, 'link')
+      : { ...blank, notice: { level: 'error', message: parsed.error } }
+  }
 
-  const restored = fromConfig(parsed.file.config)
-  const checksum = checksumForConfig(parsed.file.config)
-  // Týž test determinismu jako u souboru: konfigurace sedí, ale tahle verze
-  // z ní počítá jiný list, než jaký měl na obrazovce ten, kdo odkaz posílal.
-  const notice: FileNotice =
-    checksum !== null && checksum !== parsed.file.checksum
-      ? {
-          level: 'error',
-          message: `Tenhle odkaz vznikl ve verzi ${parsed.file.config.appVersion}. Aktuální verze z něj vytvoří jiný list — vytištěné řešení kolegy už nemusí sedět.`,
-        }
-      : { level: 'info', message: 'Otevřen sdílený list.' }
-
-  return { ...restored, notice }
+  const last = readLastSession()
+  return last === null ? { ...blank, notice: null } : restore(last, 'last')
 }
 
 /**
@@ -155,12 +196,32 @@ export function App() {
   const [fileNotice, setFileNotice] = useState<FileNotice | null>(initial.notice)
   /** Odkaz k ručnímu zkopírování — třetí plán sdílení, viz `handleShare`. */
   const [shareLink, setShareLink] = useState<string | null>(null)
+  /**
+   * Smí se zapisovat poslední nastavení?
+   *
+   * U listu otevřeného z cizího odkazu ne, dokud do něj učitel nesáhne. Jinak
+   * by jediné kliknutí na odkaz od kolegyně přepsalo jeho vlastní rozdělanou
+   * práci — a tu, na rozdíl od odkazu, nemá nikde jinde.
+   */
+  const [remembering, setRemembering] = useState(!initial.fromLink)
   const fileInput = useRef<HTMLInputElement>(null)
 
   const generated = useMemo(
     () => runActivity(state.activity, state.byActivity, state.shared, seed),
     [state, seed],
   )
+
+  // Zápis do prohlížeče, ne odvozování stavu — proto efekt. Ukládá se jen
+  // list, který se povedl: rozdělaná konfigurace, ze které nic nevzniklo, by
+  // se zítra obnovila jako nefunkční formulář a vypadala by jako ztracená práce.
+  //
+  // Součet se bere z hotového listu (`checksumOfRun`), ne přepočtem — jinak by
+  // se při každém stisku klávesy generovalo dvakrát.
+  useEffect(() => {
+    if (!remembering) return
+    const checksum = checksumOfRun(generated)
+    if (checksum !== null) saveLastSession(generated.config, checksum)
+  }, [generated, remembering])
 
   const { outcome } = generated
   // Ústupky se hlásí i při neúspěchu — často právě ony vysvětlují, proč to nešlo.
@@ -250,6 +311,8 @@ export function App() {
     setFileNotice(null)
     setShareLink(null)
     forgetShareLink()
+    // Úpravou se z cizího listu stal vlastní, takže se od teď pamatuje.
+    setRemembering(true)
   }
 
   const handleOpen = async (file: File) => {
@@ -264,6 +327,8 @@ export function App() {
     setSeed(restored.seed)
     setShareLink(null)
     forgetShareLink()
+    // Soubor otevřel učitel sám, to je jeho práce — pamatuje se hned.
+    setRemembering(true)
 
     // Soubor nese jen konfiguraci — list se dopočítá. Kontrolní součet je
     // jediné, co odhalí, že ho jiná verze generátoru dopočítala jinak.

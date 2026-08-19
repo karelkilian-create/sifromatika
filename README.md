@@ -64,6 +64,11 @@ Soubor má kolem půl kilobajtu, protože obsahuje jen zadání a náhodné sem�
 i příklady se dopočítají. Součástí je kontrolní součet, takže když by budoucí verze aplikace
 vytvořila z téhož souboru jiný list, dozvíš se to, místo aby ti nesedělo dřív vytištěné řešení.
 
+Poslední nastavení si Šifromatika pamatuje, takže po zavření prohlížeče najdeš svůj list
+tam, kde jsi ho nechal — včetně té varianty, kterou sis vybral. Zůstává ve tvém prohlížeči
+a nikam se neodesílá; na sdíleném počítači ve sborovně počítej s tím, že tam tajenka zůstane
+i pro dalšího, kdo si Šifromatiku otevře.
+
 Tlačítko **Sdílet** pošle kolegyni odkaz na ten konkrétní list — ne na aplikaci a ne na soubor.
 Na telefonu se otevře systémová nabídka (Messenger, mail, SMS), na počítači se odkaz zkopíruje
 do schránky. Nastavení sedí v části odkazu za `#`, kterou prohlížeč na server neposílá: tajenka
