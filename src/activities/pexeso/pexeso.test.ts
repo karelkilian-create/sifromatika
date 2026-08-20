@@ -5,6 +5,8 @@
 
 import { describe, expect, it } from 'vitest'
 import {
+  CARD_GRID_GAP_MM,
+  CUT_LINE_MM,
   chunkCards,
   planCardLayout,
   PRINTABLE_A4,
@@ -93,10 +95,12 @@ describe('rozvržení na papír', () => {
     // Kdyby přetekla, poslední řada by skončila mimo papír — a to je vada,
     // kterou odhalí až nůžky. Patička s kontrolní úsečkou se musí počítat
     // taky: je na každé stránce kartiček.
-    expect(layout.columns * CARD_WIDTH_MM).toBeLessThanOrEqual(PRINTABLE_A4.widthMm)
-    expect(layout.rows * CARD_HEIGHT_MM + SCALE_CHECK_HEIGHT_MM).toBeLessThanOrEqual(
-      PRINTABLE_A4.heightMm,
-    )
+    // Do rozpočtu patří i střihový rám mřížky a mezera nad patičkou. Bez nich
+    // vycházela stránka na milimetr přesně a při tisku 20. 8. 2026 přetekla.
+    expect(layout.columns * CARD_WIDTH_MM + CUT_LINE_MM).toBeLessThanOrEqual(PRINTABLE_A4.widthMm)
+    expect(
+      layout.rows * CARD_HEIGHT_MM + CUT_LINE_MM + CARD_GRID_GAP_MM + SCALE_CHECK_HEIGHT_MM,
+    ).toBeLessThanOrEqual(PRINTABLE_A4.heightMm)
   })
 
   it('kartička větší než papír se nezmenší, ale odmítne', () => {

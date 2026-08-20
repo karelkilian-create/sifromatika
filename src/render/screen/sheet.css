@@ -17,16 +17,24 @@
    *   --cut-line   „tudy se stříhá" — okraj kartičky, kamene, karty,
    *   --inner-line „tudy se NEstříhá" — půlka domina, políčka bingo karty.
    *
-   * Proto je střihová linka výrazně tlustší. Půl milimetru je zároveň STROP:
-   * širší čára přestane být přesným vodítkem, protože se stříhá jejím středem
-   * a kartičky by se rozešly v rozměru.
+   * ⚠ MUSÍ to být celé pixely, ne milimetry.
    *
-   * ⚠ Na obrazovce je rozdíl menší, než jaký bude na papíře. Náhled je
-   *   zmenšená A4 a prohlížeč obě tloušťky zaokrouhlí k témuž pixelu; při
-   *   300 dpi je z 0,5 mm šest bodů a z 0,15 mm dva.
+   *   Blink zaokrouhluje `border-width` DOLŮ na celé CSS pixely a všechno
+   *   pod 1 px zvedne na 1 px. Předchozí sazba měla 0,5 mm a 0,15 mm, což
+   *   je 1,89 px a 0,57 px — obojí skončilo na 1 px a na papíře vyšly obě
+   *   linky STEJNĚ. Zkušební tisk 20. 8. 2026 to potvrdil: mezi střihovou
+   *   linkou a půlkou kamene nešel poznat rozdíl.
+   *
+   *   1 px je tedy podlaha: tenčí linka z prohlížeče nevyleze. Střihová
+   *   musí být násobek, aby snap rozdíl nesmazal — 3 px je na papíře
+   *   0,79 mm proti 0,26 mm, tedy rozdíl, který je vidět i na kopii.
+   *
+   * Původní strop 0,5 mm chránil přesnost řezu (stříhá se středem linky).
+   * 0,79 mm znamená ±0,4 mm na kartičku — méně, než kolik ujede řezačka,
+   * a mnohem méně, než stojí linka, kterou učitel od vnitřní nerozezná.
    */
-  --cut-line: 0.5mm;
-  --inner-line: 0.15mm;
+  --cut-line: 3px;
+  --inner-line: 1px;
 
   box-sizing: border-box;
   width: 210mm;
@@ -328,7 +336,9 @@
   display: grid;
   gap: 0;
   width: max-content;
-  margin: 0 auto 6mm;
+  /* Mezera pod mřížkou je zároveň jediná rezerva stránky — patička s
+     kontrolní úsečkou stojí hned pod ní. Viz CARD_GRID_GAP_MM v cards.ts. */
+  margin: 0 auto 2mm;
   border-top: var(--cut-line) solid var(--sheet-ink);
   border-left: var(--cut-line) solid var(--sheet-ink);
 }
@@ -386,7 +396,7 @@
 /*
  * Bingo karta: mřížka políček uvnitř kartičky.
  *
- * Vnitřní linky jsou tenčí než střihové (0,15 proti 0,25 mm) — uvnitř karty
+ * Vnitřní linky jsou tenčí než střihové (1 px proti 3 px) — uvnitř karty
  * se NEstříhá a nic k tomu nesmí svádět. Vnější okraj mřížky žádný není:
  * tu roli má už řez, kterým se karta oddělí od sousední.
  */
@@ -425,7 +435,8 @@
 /*
  * Dělicí čára uvnitř kamene.
  *
- * Tenčí než střihové linky (0,15 proti 0,25 mm) a nedotažená k okrajům.
+ * Tenčí než střihové linky (1 px proti 3 px, tedy 0,26 proti 0,79 mm)
+ * a nedotažená k okrajům.
  * Střih vede přes celý list od kraje ke kraji; čára, která se okrajů
  * nedotýká, se s ním neplete — a kámen se tak nerozstřihne vejpůl.
  */
@@ -439,14 +450,38 @@
 
 /* ── Kontrola měřítka tisku ───────────────────────────────────────── */
 
+/*
+ * Úsečka a popisek vedle sebe, ne pod sebou.
+ *
+ * Zkušební tisk 20. 8. 2026: patička stála pod mřížkou na milimetr přesně
+ * a přetekla — na jednom listu zůstala úsečka a popisek odjel na další
+ * papír, jinde odjela celá patička a vyrobila stránku navíc. Vedle sebe je
+ * blok o dvě třetiny nižší a `break-inside: avoid` zaručí, že se úsečka od
+ * svého popisku už neodtrhne.
+ */
+.print-scale-check {
+  display: flex;
+  gap: 3mm;
+  align-items: center;
+  break-inside: avoid;
+}
+
+/*
+ * ⚠ `box-sizing: border-box` je tu měřicí, ne kosmetické: pravítko se
+ *   přikládá k VNĚJŠÍM koncům úsečky, takže těch 100 mm musí být včetně
+ *   svislých patek. Bez toho měřila o šířku obou patek víc.
+ */
 .print-scale-check__ruler {
-  height: 3mm;
-  border: 0.3mm solid var(--sheet-ink);
+  box-sizing: border-box;
+  flex: none;
+  height: 2.5mm;
+  border: 1px solid var(--sheet-ink);
   border-top: none;
 }
 
 .print-scale-check__note {
-  margin: 1.5mm 0 0;
+  margin: 0;
   font-size: 8pt;
+  line-height: 1.2;
   color: #444;
 }

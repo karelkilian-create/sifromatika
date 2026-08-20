@@ -10,7 +10,14 @@ import {
   BINGO_SIDE,
   CARD_COUNT_LIMITS,
 } from '../../core/constraints/index.js'
-import { chunkCards, planCardLayout, PRINTABLE_A4, SCALE_CHECK_HEIGHT_MM } from '../../core/document/cards.js'
+import {
+  CARD_GRID_GAP_MM,
+  CUT_LINE_MM,
+  chunkCards,
+  planCardLayout,
+  PRINTABLE_A4,
+  SCALE_CHECK_HEIGHT_MM,
+} from '../../core/document/cards.js'
 import type { Grade } from '../../core/model/index.js'
 import { verifyBingoCards } from '../../core/verify/index.js'
 import { bingoDocument, CARD_SIDE_MM } from './document.js'
@@ -161,10 +168,12 @@ describe('rozvržení na papír', () => {
 
   it('mřížka i s patičkou se vejde do tisknutelné plochy A4', () => {
     const layout = planCardLayout({ cardWidthMm: CARD_SIDE_MM, cardHeightMm: CARD_SIDE_MM })!
-    expect(layout.columns * CARD_SIDE_MM).toBeLessThanOrEqual(PRINTABLE_A4.widthMm)
-    expect(layout.rows * CARD_SIDE_MM + SCALE_CHECK_HEIGHT_MM).toBeLessThanOrEqual(
-      PRINTABLE_A4.heightMm,
-    )
+    // Do rozpočtu patří i střihový rám mřížky a mezera nad patičkou. Bez nich
+    // vycházela stránka na milimetr přesně a při tisku 20. 8. 2026 přetekla.
+    expect(layout.columns * CARD_SIDE_MM + CUT_LINE_MM).toBeLessThanOrEqual(PRINTABLE_A4.widthMm)
+    expect(
+      layout.rows * CARD_SIDE_MM + CUT_LINE_MM + CARD_GRID_GAP_MM + SCALE_CHECK_HEIGHT_MM,
+    ).toBeLessThanOrEqual(PRINTABLE_A4.heightMm)
   })
 
   it('dvanáct karet jsou dva plné listy a žádná se neztratí', () => {

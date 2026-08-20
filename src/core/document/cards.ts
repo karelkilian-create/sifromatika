@@ -24,12 +24,31 @@ export const PRINTABLE_A4 = { widthMm: 210 - 2 * 14, heightMm: 297 - 2 * 15 } as
 /**
  * Kolik svislého místa si vezme patička s kontrolní úsečkou.
  *
- * Změřeno na vykresleném listu (12,7 mm: úsečka 3 mm a pod ní dvouřádkový
- * popisek), zaokrouhleno nahoru. Kdyby tahle hodnota byla nižší než skutečnost,
- * vešla by se sem řada kartiček, která na papíře přeteče — a zjistilo by se to
- * až u nůžek.
+ * Úsečka a popisek stojí VEDLE sebe (viz `.print-scale-check` v sheet.css),
+ * takže blok je vysoký jako popisek: 6,8 mm při dvou řádcích osmibodového
+ * písma. Devět milimetrů je to se zaokrouhlením a rezervou.
+ *
+ * ⚠ Kdyby tahle hodnota byla nižší než skutečnost, vešla by se sem řada
+ *   kartiček, která na papíře přeteče — a zjistilo by se to až u nůžek.
  */
-export const SCALE_CHECK_HEIGHT_MM = 14
+export const SCALE_CHECK_HEIGHT_MM = 9
+
+/**
+ * Mezera mezi mřížkou kartiček a patičkou (`margin-bottom` u `.card-grid`).
+ *
+ * Patří do rozpočtu stránky, i když je malá. Do zkušebního tisku 20. 8. 2026
+ * tady nebyla a stránka vycházela na milimetr přesně — patička pak přetekla
+ * na další papír a k listu kartiček přibyl list s jednou čárou.
+ */
+export const CARD_GRID_GAP_MM = 2
+
+/**
+ * Střihový rám mřížky (`--cut-line` v sheet.css, 3 px ≈ 0,79 mm).
+ *
+ * Mřížka kreslí horní a levou linku SVÝM okrajem, tedy vně kartiček. Kdyby
+ * se do rozpočtu nezapočítal, poslední sloupec by o tuhle šířku přetekl.
+ */
+export const CUT_LINE_MM = 0.8
 
 export interface CardSpec {
   cardWidthMm: number
@@ -53,8 +72,10 @@ export interface CardLayout {
  * co dítě dostane do ruky.
  */
 export function planCardLayout(spec: CardSpec): CardLayout | null {
-  const width = spec.areaWidthMm ?? PRINTABLE_A4.widthMm
-  const height = spec.areaHeightMm ?? PRINTABLE_A4.heightMm - SCALE_CHECK_HEIGHT_MM
+  const width = spec.areaWidthMm ?? PRINTABLE_A4.widthMm - CUT_LINE_MM
+  const height =
+    spec.areaHeightMm ??
+    PRINTABLE_A4.heightMm - CUT_LINE_MM - CARD_GRID_GAP_MM - SCALE_CHECK_HEIGHT_MM
 
   if (spec.cardWidthMm <= 0 || spec.cardHeightMm <= 0) return null
 

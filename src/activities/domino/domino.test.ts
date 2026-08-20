@@ -8,7 +8,14 @@
 
 import { describe, expect, it } from 'vitest'
 import { TILE_COUNT_LIMITS } from '../../core/constraints/index.js'
-import { chunkCards, planCardLayout, PRINTABLE_A4, SCALE_CHECK_HEIGHT_MM } from '../../core/document/cards.js'
+import {
+  CARD_GRID_GAP_MM,
+  CUT_LINE_MM,
+  chunkCards,
+  planCardLayout,
+  PRINTABLE_A4,
+  SCALE_CHECK_HEIGHT_MM,
+} from '../../core/document/cards.js'
 import type { Grade } from '../../core/model/index.js'
 import { verifyChain } from '../../core/verify/index.js'
 import { dominoDocument, TILE_HEIGHT_MM, TILE_WIDTH_MM } from './document.js'
@@ -168,10 +175,12 @@ describe('rozvržení na papír', () => {
 
   it('mřížka i s patičkou se vejde do tisknutelné plochy A4', () => {
     const layout = planCardLayout({ cardWidthMm: TILE_WIDTH_MM, cardHeightMm: TILE_HEIGHT_MM })!
-    expect(layout.columns * TILE_WIDTH_MM).toBeLessThanOrEqual(PRINTABLE_A4.widthMm)
-    expect(layout.rows * TILE_HEIGHT_MM + SCALE_CHECK_HEIGHT_MM).toBeLessThanOrEqual(
-      PRINTABLE_A4.heightMm,
-    )
+    // Do rozpočtu patří i střihový rám mřížky a mezera nad patičkou. Bez nich
+    // vycházela stránka na milimetr přesně a při tisku 20. 8. 2026 přetekla.
+    expect(layout.columns * TILE_WIDTH_MM + CUT_LINE_MM).toBeLessThanOrEqual(PRINTABLE_A4.widthMm)
+    expect(
+      layout.rows * TILE_HEIGHT_MM + CUT_LINE_MM + CARD_GRID_GAP_MM + SCALE_CHECK_HEIGHT_MM,
+    ).toBeLessThanOrEqual(PRINTABLE_A4.heightMm)
   })
 
   it('osmnáct kamenů se rozdělí na dvě stránky a žádný se neztratí', () => {

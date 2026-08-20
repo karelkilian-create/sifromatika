@@ -208,9 +208,11 @@ function PrintScaleCheck({ lengthMm }: { lengthMm: number }) {
   return (
     <div className="print-scale-check">
       <div className="print-scale-check__ruler" style={{ width: `${lengthMm}mm` }} />
+      {/* Krátce schválně: popisek stojí VEDLE úsečky, takže na něj zbývá
+          osmdesát milimetrů. Delší text se zalomí a patička zase naroste. */}
       <p className="print-scale-check__note">
-        Kontrolní úsečka {lengthMm} mm. Než začneš stříhat, přilož pravítko — pokud neměří{' '}
-        {lengthMm} mm, tiskne se se zmenšením a v dialogu je potřeba nastavit měřítko 100 %.
+        Než začneš stříhat, přilož pravítko: úsečka musí měřit {lengthMm}&nbsp;mm. Když neměří,
+        nastav v dialogu tisku měřítko 100&nbsp;%.
       </p>
     </div>
   )
