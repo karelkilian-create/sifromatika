@@ -556,3 +556,40 @@ a.button {
 .guide code {
   font-size: 0.9em;
 }
+
+/* ── Tisk ─────────────────────────────────────────────────────────── */
+
+/*
+ * V tisku po obalu nesmí zbýt ani milimetr.
+ *
+ * Odsazení výš je pro obrazovku. Na papíře se sčítá s okraji z `@page`:
+ * nahoře posunulo první stránku o 11,7 mm níž než ty další a dole zůstaly
+ * čtyři remy viset za posledním listem. Plocha za koncem obsahu je pořád
+ * plocha, takže z tiskárny vyjel prázdný papír navíc — zkušební tisk
+ * 20. 8. 2026 dal 4 listy místo 3.
+ *
+ * ⚠ Patří to SEM a na KONEC souboru. `@media print` nepřidává specificitu,
+ *   takže tenhle blok přebije jen to, co stojí nad ním — a `.app__preview`
+ *   se definuje uprostřed souboru. Ze stejného důvodu to nesmí být
+ *   v `render/print/print.css`: ten se v App.tsx importuje dřív než
+ *   `app.css`, takže by ho tenhle soubor přebil a oprava by mlčky
+ *   nefungovala. Navíc `.app` je třída aplikační vrstvy a `render` o ní
+ *   nemá vědět.
+ *
+ * ⚠ Nestačí `padding-bottom`: `gap` sloupcového flexu se počítá taky a při
+ *   čtyřech stránkách kartiček by se nasčítal do dalšího papíru.
+ */
+@media print {
+  .app {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .app__preview {
+    display: block;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+  }
+}
