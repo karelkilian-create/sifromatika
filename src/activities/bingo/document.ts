@@ -1,8 +1,8 @@
 /**
  * Bingo jako `DocumentModel`: stránky karet a k nim list pro učitele.
  *
- * Papír je zděděný po pexesu a dominu — mřížka, střihové linky i kontrolní
- * úsečka jsou tytéž. Nová je jen mřížka UVNITŘ karty, a tu řeší renderer
+ * Papír je zděděný po pexesu a dominu — mřížka i střihové linky jsou tytéž.
+ * Nová je jen mřížka UVNITŘ karty, a tu řeší renderer
  * podle tvaru `CardFace`.
  */
 
@@ -25,9 +25,6 @@ import { worksheetTitle, type BingoSheet } from './index.js'
  * váží víc než ty dva a půl milimetru.
  */
 export const CARD_SIDE_MM = 82
-
-/** Délka kontrolní úsečky. Kulaté číslo, které se dobře měří pravítkem. */
-const SCALE_CHECK_MM = 100
 
 const INSTRUCTIONS =
   'Karty rozstříhej podle linek — vedou přes celý list, takže stačí pár rovných řezů.' +
@@ -54,9 +51,6 @@ function cardPages(sheet: BingoSheet): DocumentPage[] {
         cardWidthMm: CARD_SIDE_MM,
         cardHeightMm: CARD_SIDE_MM,
       },
-      // Patička s kontrolní úsečkou je na KAŽDÉ stránce karet — měřítko se může
-      // mezi stránkami lišit, když se tisknou na dvakrát.
-      { kind: 'print-scale-check', lengthMm: SCALE_CHECK_MM },
     ],
   }))
 }

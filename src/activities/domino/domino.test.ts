@@ -9,12 +9,11 @@
 import { describe, expect, it } from 'vitest'
 import { TILE_COUNT_LIMITS } from '../../core/constraints/index.js'
 import {
-  CARD_GRID_GAP_MM,
   CUT_LINE_MM,
   chunkCards,
   planCardLayout,
   PRINTABLE_A4,
-  SCALE_CHECK_HEIGHT_MM,
+  PRINTER_MARGIN_RESERVE_MM,
 } from '../../core/document/cards.js'
 import type { Grade } from '../../core/model/index.js'
 import { verifyChain } from '../../core/verify/index.js'
@@ -173,13 +172,14 @@ describe('rozvržení na papír', () => {
     expect(layout).toEqual({ columns: 2, rows: 6, perPage: 12 })
   })
 
-  it('mřížka i s patičkou se vejde do tisknutelné plochy A4', () => {
+  it('mřížka se vejde do tisknutelné plochy A4 i s rezervou na tiskárnu', () => {
     const layout = planCardLayout({ cardWidthMm: TILE_WIDTH_MM, cardHeightMm: TILE_HEIGHT_MM })!
-    // Do rozpočtu patří i střihový rám mřížky a mezera nad patičkou. Bez nich
-    // vycházela stránka na milimetr přesně a při tisku 20. 8. 2026 přetekla.
+    // Do rozpočtu patří střihový rám mřížky a rezerva na netisknutelný okraj
+    // tiskárny: jmenovitá plocha A4 je větší než ta, kterou tiskárna
+    // doopravdy potiskne, a tisk 20. 8. 2026 na tom přetekl.
     expect(layout.columns * TILE_WIDTH_MM + CUT_LINE_MM).toBeLessThanOrEqual(PRINTABLE_A4.widthMm)
     expect(
-      layout.rows * TILE_HEIGHT_MM + CUT_LINE_MM + CARD_GRID_GAP_MM + SCALE_CHECK_HEIGHT_MM,
+      layout.rows * TILE_HEIGHT_MM + CUT_LINE_MM + PRINTER_MARGIN_RESERVE_MM,
     ).toBeLessThanOrEqual(PRINTABLE_A4.heightMm)
   })
 
@@ -207,11 +207,14 @@ describe('dokument', () => {
     }
   })
 
-  it('každá stránka kamenů nese kontrolní úsečku', () => {
-    // Měřítko se může mezi stránkami lišit, když se tisknou na dvakrát.
-    const document = dominoDocument(build(7, 'usecka', 18))
+  it('na stránce kamenů nestojí nic pod mřížkou', () => {
+    // Regrese po tisku 20. 8. 2026. Pod mřížkou stála patička s kontrolní
+    // úsečkou, stránka vycházela na osm milimetrů rezervy a patička —
+    // nedělitelná kvůli `break-inside: avoid` — odešla celá na další papír.
+    // Prázdný list navíc ke každé sadě. Mřížka je teď jediný blok stránky.
+    const document = dominoDocument(build(7, 'paticka', 18))
     for (const page of document.pages.filter((p) => p.label.startsWith('Kameny'))) {
-      expect(page.blocks.some((block) => block.kind === 'print-scale-check')).toBe(true)
+      expect(page.blocks.map((block) => block.kind)).toEqual(['card-grid'])
     }
   })
 

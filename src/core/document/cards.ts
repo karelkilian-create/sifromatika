@@ -22,25 +22,21 @@
 export const PRINTABLE_A4 = { widthMm: 210 - 2 * 14, heightMm: 297 - 2 * 15 } as const
 
 /**
- * Kolik svislého místa si vezme patička s kontrolní úsečkou.
+ * Rezerva na to, oč je skutečná tisknutelná plocha menší než jmenovitá.
  *
- * Úsečka a popisek stojí VEDLE sebe (viz `.print-scale-check` v sheet.css),
- * takže blok je vysoký jako popisek: 6,8 mm při dvou řádcích osmibodového
- * písma. Devět milimetrů je to se zaokrouhlením a rezervou.
+ * `PRINTABLE_A4` je počítané z rozměru papíru a okrajů v `@page`. Tiskárna
+ * má ale ještě vlastní netisknutelný okraj, který si prohlížeč do rozvržení
+ * promítne, a v dialogu se k tomu přidává záhlaví se zápatím. Zkušební tisk
+ * 20. 8. 2026 ukázal, že rozdíl je řádově jednotky milimetrů: stránka
+ * vypočítaná na osm milimetrů rezervy přetekla, přestože formát byl A4
+ * a záhlaví vypnuté.
  *
- * ⚠ Kdyby tahle hodnota byla nižší než skutečnost, vešla by se sem řada
- *   kartiček, která na papíře přeteče — a zjistilo by se to až u nůžek.
+ * ⚠ Rezerva NESMÍ klesnout pod skutečný okraj tiskárny — vešla by se sem
+ *   řada kartiček, která na papíře přeteče, a zjistilo by se to až u nůžek.
+ *   Při dnešních rozměrech kartiček žádnou řadu nestojí: pexeso má 4 řady,
+ *   domino 6 a bingo 3 s rezervou i bez ní.
  */
-export const SCALE_CHECK_HEIGHT_MM = 9
-
-/**
- * Mezera mezi mřížkou kartiček a patičkou (`margin-bottom` u `.card-grid`).
- *
- * Patří do rozpočtu stránky, i když je malá. Do zkušebního tisku 20. 8. 2026
- * tady nebyla a stránka vycházela na milimetr přesně — patička pak přetekla
- * na další papír a k listu kartiček přibyl list s jednou čárou.
- */
-export const CARD_GRID_GAP_MM = 2
+export const PRINTER_MARGIN_RESERVE_MM = 8
 
 /**
  * Střihový rám mřížky (`--cut-line` v sheet.css, 3 px ≈ 0,79 mm).
@@ -53,7 +49,7 @@ export const CUT_LINE_MM = 0.8
 export interface CardSpec {
   cardWidthMm: number
   cardHeightMm: number
-  /** Plocha pro kartičky. Výchozí = A4 bez patičky s kontrolní úsečkou. */
+  /** Plocha pro kartičky. Výchozí = A4 bez rezervy na okraj tiskárny. */
   areaWidthMm?: number
   areaHeightMm?: number
 }
@@ -74,8 +70,7 @@ export interface CardLayout {
 export function planCardLayout(spec: CardSpec): CardLayout | null {
   const width = spec.areaWidthMm ?? PRINTABLE_A4.widthMm - CUT_LINE_MM
   const height =
-    spec.areaHeightMm ??
-    PRINTABLE_A4.heightMm - CUT_LINE_MM - CARD_GRID_GAP_MM - SCALE_CHECK_HEIGHT_MM
+    spec.areaHeightMm ?? PRINTABLE_A4.heightMm - CUT_LINE_MM - PRINTER_MARGIN_RESERVE_MM
 
   if (spec.cardWidthMm <= 0 || spec.cardHeightMm <= 0) return null
 

@@ -240,6 +240,15 @@ body {
   gap: 0.75rem;
 }
 
+/* Instrukce k tiskovému dialogu. Stojí pod tlačítky, ne na papíře — viz
+   komentář u `isCards` v EditorPanel. */
+.editor__print-hint {
+  margin: 0.6rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: #5c5c66;
+}
+
 .editor__advanced {
   margin-top: 1rem;
   border-top: 1px solid var(--ui-border);

@@ -45,8 +45,8 @@ export function QuickGuide() {
           Kartičky, kameny a karty se dotýkají, takže se stříhají pár rovnými řezy přes celý list.
         </li>
         <li>
-          Na každé takové stránce je <strong>kontrolní úsečka 100 mm</strong>. Než začneš stříhat,
-          přilož pravítko — pokud neměří 100 mm, nastav v tiskovém dialogu měřítko 100 %.
+          V tiskovém dialogu nech <strong>měřítko 100 %</strong> a vypni záhlaví a zápatí.
+          Při „Přizpůsobit stránce" se kartičky vytisknou menší, než mají být.
         </li>
         <li>
           Výsledek každého příkladu je vždy kladné celé číslo. Desetinná čísla a procenta proto

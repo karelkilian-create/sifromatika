@@ -105,9 +105,6 @@ function BlockView({ block }: { block: DocumentBlock }) {
           heightMm={block.cardHeightMm}
         />
       )
-
-    case 'print-scale-check':
-      return <PrintScaleCheck lengthMm={block.lengthMm} />
   }
 }
 
@@ -200,20 +197,6 @@ function CardFaceView({ card }: { card: CardFace }) {
           </span>
         )),
       )}
-    </div>
-  )
-}
-
-function PrintScaleCheck({ lengthMm }: { lengthMm: number }) {
-  return (
-    <div className="print-scale-check">
-      <div className="print-scale-check__ruler" style={{ width: `${lengthMm}mm` }} />
-      {/* Krátce schválně: popisek stojí VEDLE úsečky, takže na něj zbývá
-          osmdesát milimetrů. Delší text se zalomí a patička zase naroste. */}
-      <p className="print-scale-check__note">
-        Než začneš stříhat, přilož pravítko: úsečka musí měřit {lengthMm}&nbsp;mm. Když neměří,
-        nastav v dialogu tisku měřítko 100&nbsp;%.
-      </p>
     </div>
   )
 }

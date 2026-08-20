@@ -336,9 +336,7 @@
   display: grid;
   gap: 0;
   width: max-content;
-  /* Mezera pod mřížkou je zároveň jediná rezerva stránky — patička s
-     kontrolní úsečkou stojí hned pod ní. Viz CARD_GRID_GAP_MM v cards.ts. */
-  margin: 0 auto 2mm;
+  margin: 0 auto;
   border-top: var(--cut-line) solid var(--sheet-ink);
   border-left: var(--cut-line) solid var(--sheet-ink);
 }
@@ -448,40 +446,3 @@
   border-left: var(--inner-line) solid var(--sheet-ink);
 }
 
-/* ── Kontrola měřítka tisku ───────────────────────────────────────── */
-
-/*
- * Úsečka a popisek vedle sebe, ne pod sebou.
- *
- * Zkušební tisk 20. 8. 2026: patička stála pod mřížkou na milimetr přesně
- * a přetekla — na jednom listu zůstala úsečka a popisek odjel na další
- * papír, jinde odjela celá patička a vyrobila stránku navíc. Vedle sebe je
- * blok o dvě třetiny nižší a `break-inside: avoid` zaručí, že se úsečka od
- * svého popisku už neodtrhne.
- */
-.print-scale-check {
-  display: flex;
-  gap: 3mm;
-  align-items: center;
-  break-inside: avoid;
-}
-
-/*
- * ⚠ `box-sizing: border-box` je tu měřicí, ne kosmetické: pravítko se
- *   přikládá k VNĚJŠÍM koncům úsečky, takže těch 100 mm musí být včetně
- *   svislých patek. Bez toho měřila o šířku obou patek víc.
- */
-.print-scale-check__ruler {
-  box-sizing: border-box;
-  flex: none;
-  height: 2.5mm;
-  border: 1px solid var(--sheet-ink);
-  border-top: none;
-}
-
-.print-scale-check__note {
-  margin: 0;
-  font-size: 8pt;
-  line-height: 1.2;
-  color: #444;
-}

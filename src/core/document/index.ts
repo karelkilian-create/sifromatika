@@ -119,15 +119,6 @@ export type DocumentBlock =
       cardWidthMm: number
       cardHeightMm: number
     }
-  /**
-   * Kontrolní úsečka na ověření měřítka tisku.
-   *
-   * Chrome, Firefox a Safari sázejí `@page` různě a učitel má v dialogu
-   * přednastavené „Přizpůsobit stránce". Zabránit tomu z kódu nejde; jde
-   * udělat to, co projekt dělá u relaxačního logu i kontrolního součtu —
-   * udělat z tiché vady viditelnou. Učitel přiloží pravítko dřív, než stříhá.
-   */
-  | { kind: 'print-scale-check'; lengthMm: number }
 
 /**
  * Jedna stránka.

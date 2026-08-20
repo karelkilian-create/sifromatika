@@ -20,9 +20,6 @@ import { worksheetTitle, type PexesoSheet } from './index.js'
 export const CARD_WIDTH_MM = 60
 export const CARD_HEIGHT_MM = 60
 
-/** Délka kontrolní úsečky. Kulaté číslo, které se dobře měří pravítkem. */
-const SCALE_CHECK_MM = 100
-
 const INSTRUCTIONS =
   'Kartičky rozstříhej podle linek — vedou přes celý list, takže stačí pár rovných řezů.' +
   ' Pak je zamíchej a rozlož lícem dolů. Hráč otočí dvě: patří k sobě, když je na jedné' +
@@ -46,9 +43,6 @@ function cardPages(sheet: PexesoSheet): DocumentPage[] {
         cardWidthMm: CARD_WIDTH_MM,
         cardHeightMm: CARD_HEIGHT_MM,
       },
-      // Patička s kontrolní úsečkou je na KAŽDÉ stránce kartiček — měřítko se
-      // může mezi stránkami lišit, když se tisknou na dvakrát.
-      { kind: 'print-scale-check', lengthMm: SCALE_CHECK_MM },
     ],
   }))
 }

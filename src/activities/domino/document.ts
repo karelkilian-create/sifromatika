@@ -1,8 +1,8 @@
 /**
  * Domino jako `DocumentModel`: stránky kamenů a k nim učitelský list.
  *
- * Papír je zděděný po pexesu — mřížka, střihové linky i kontrolní úsečka jsou
- * tytéž. Nový je jen tvar kamene a dělicí čára uprostřed, a obojí řeší
+ * Papír je zděděný po pexesu — mřížka i střihové linky jsou tytéž.
+ * Nový je jen tvar kamene a dělicí čára uprostřed, a obojí řeší
  * renderer podle tvaru `CardFace`. Stránkování si počítá aktivita a vydává
  * jeden `card-grid` na stránku; viz komentář v `core/document/cards.ts`.
  */
@@ -23,9 +23,6 @@ import { worksheetTitle, type DominoSheet } from './index.js'
  */
 export const TILE_WIDTH_MM = 84
 export const TILE_HEIGHT_MM = 42
-
-/** Délka kontrolní úsečky. Kulaté číslo, které se dobře měří pravítkem. */
-const SCALE_CHECK_MM = 100
 
 const INSTRUCTIONS =
   'Kameny rozstříhej podle linek — vedou přes celý list, takže stačí pár rovných řezů.' +
@@ -55,9 +52,6 @@ function tilePages(sheet: DominoSheet): DocumentPage[] {
         cardWidthMm: TILE_WIDTH_MM,
         cardHeightMm: TILE_HEIGHT_MM,
       },
-      // Patička s kontrolní úsečkou je na KAŽDÉ stránce kamenů — měřítko se
-      // může mezi stránkami lišit, když se tisknou na dvakrát.
-      { kind: 'print-scale-check', lengthMm: SCALE_CHECK_MM },
     ],
   }))
 }

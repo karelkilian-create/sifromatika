@@ -292,6 +292,19 @@ export function EditorPanel({
         </div>
       </div>
 
+      {/* Jen u kartičkových aktivit, a schválně tady, ne na papíře.
+          Do 20. 8. 2026 stála na každé stránce kartiček kontrolní úsečka
+          s touhle instrukcí — jenže kdo ji čte, čte ji až po tisku, a devět
+          milimetrů, které si brala z rozpočtu stránky, stačilo na to, aby
+          patička odešla na prázdný list navíc. Věta patří tam, kde učitel
+          v tu chvíli je: vedle tlačítka, těsně před dialogem tisku. */}
+      {isCards && (
+        <p className="editor__print-hint">
+          V dialogu tisku nech měřítko na 100 % a vypni záhlaví a zápatí. Při „Přizpůsobit
+          stránce" se vytiskne menší to, co dítě dostane do ruky.
+        </p>
+      )}
+
       <details className="editor__advanced">
         <summary>Pokročilé nastavení</summary>
 

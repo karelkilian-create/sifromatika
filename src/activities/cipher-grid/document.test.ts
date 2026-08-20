@@ -50,8 +50,6 @@ function textOfBlock(block: DocumentBlock): string[] {
         if ('left' in card) return [card.left, card.right]
         return card.grid.flatMap((row) => [...row])
       })
-    case 'print-scale-check':
-      return []
   }
 }
 
