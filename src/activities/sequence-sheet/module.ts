@@ -39,7 +39,7 @@ export const sequenceSheetModule = {
   info: {
     id: 'sequence-sheet',
     label: 'Číselné řady',
-    tagline: 'Co bude následovat?',
+    tagline: 'Doplň posloupnost',
     available: true,
   },
 

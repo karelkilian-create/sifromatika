@@ -36,7 +36,15 @@ export type CatalogId = ActivityId
 export interface ActivityInfo {
   id: CatalogId
   label: string
-  /** Jedna věta, co učitel dostane. Zobrazuje se pod názvem. */
+  /**
+   * Co má žák udělat, aby úkol vyřešil — rozkazovacím způsobem a ve dvou
+   * až třech slovech („Najdi tajenku", „Vypočti a škrtni").
+   *
+   * Není to popis pro dítě ani slogan: v katalogu stojí pět taglinů vedle
+   * sebe a učitel je čte jako jeden seznam. Jakmile jeden z nich přejde do
+   * jiného stylu — otázka, podstatné jméno, celá věta o tabulce — vypadne
+   * z řady a katalog se rozpadne na pět nesouvisejících nápisů.
+   */
   tagline: string
   /** `false` = v katalogu je vidět, ale vybrat ji nejde. */
   available: boolean

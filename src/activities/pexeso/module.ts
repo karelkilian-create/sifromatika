@@ -52,7 +52,7 @@ export const pexesoModule = {
   info: {
     id: 'pexeso',
     label: 'Pexeso',
-    tagline: 'Najdi příklad a jeho výsledek',
+    tagline: 'Hledej dvojice',
     available: true,
   },
 

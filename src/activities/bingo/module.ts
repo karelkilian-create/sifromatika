@@ -49,7 +49,7 @@ export const bingoModule = {
   info: {
     id: 'bingo',
     label: 'Bingo',
-    tagline: 'Škrtej výsledky, které učitel vyvolá',
+    tagline: 'Vypočti a škrtni',
     available: true,
   },
 

@@ -51,7 +51,7 @@ export const dominoModule = {
   info: {
     id: 'domino',
     label: 'Domino',
-    tagline: 'Navazuj výsledek na příklad',
+    tagline: 'Navazuj úlohy',
     available: true,
   },
 

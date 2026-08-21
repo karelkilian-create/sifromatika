@@ -28,8 +28,14 @@ import type {
   VerificationFailure,
   VerificationReport,
 } from '../../core/model/index.js'
+import { formatValue } from '../../core/number/index.js'
 import { createRng } from '../../core/rng/index.js'
-import { verifyChain, verifyDistinctValues, verifyTasks } from '../../core/verify/index.js'
+import {
+  ALLOW_DECIMAL_RESULTS,
+  verifyChain,
+  verifyDistinctValues,
+  verifyTasks,
+} from '../../core/verify/index.js'
 import { pickGenerator } from '../../tasks/mix.js'
 import { taskGenerators } from '../../tasks/registry.js'
 import { APP_VERSION, GENERATOR_VERSION } from '../../version.js'
@@ -231,6 +237,9 @@ function generateOnce(config: DominoProject): DominoOutcome {
             declaredValue: task.value,
             kind: task.prompt.kind,
           })),
+          // Celý výsledek je požadavek ŠIFRY (kód políčka v mřížce), ne
+          // tohohle listu. Viz `TaskRules` v `core/verify`.
+          ALLOW_DECIMAL_RESULTS,
         ),
         verifyDistinctValues(tasks),
         // Z konstrukce výš to vyjít má; ověřuje se to stejně. Verifikace je
@@ -257,11 +266,6 @@ function generateOnce(config: DominoProject): DominoOutcome {
  */
 function promptKindOf(tasks: readonly Task[], text: string): Task['prompt']['kind'] {
   return tasks.find((task) => task.prompt.text === text)?.prompt.kind ?? 'expr'
-}
-
-/** Desetinná čárka, ne tečka — na českém listu se píše `2,5`. */
-function formatValue(value: number): string {
-  return Number.isInteger(value) ? String(value) : String(value).replace('.', ',')
 }
 
 function combine(...reports: VerificationReport[]): VerificationReport {

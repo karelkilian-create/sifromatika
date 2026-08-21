@@ -1,13 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import fc from 'fast-check'
 import type { CipherTable } from '../model/index.js'
+import type { Task } from '../model/index.js'
 import {
+  ALLOW_DECIMAL_RESULTS,
   ExpressionError,
   buildCodeIndex,
   decode,
   evaluateExpression,
   hasAdjacentOperators,
+  verifyChain,
+  verifyDistinctValues,
   verifySheet,
+  verifyTasks,
   type VerifiableSheet,
 } from './index.js'
 
@@ -373,5 +378,80 @@ describe('výsledek musí zůstat celé číslo', () => {
     expect(report.ok).toBe(false)
     if (report.ok) return
     expect(report.failures[0]?.code).toBe('task-value-mismatch')
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Celý výsledek je pravidlo šifry, ne projektu
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('pravidla listu', () => {
+  it('výchozí přísnost platí i tam, kde se pravidla nepředají', () => {
+    // Zapomenuté volací místo musí zůstat na dnešním chování. Uvolnit se
+    // smí jen vědomě — obráceně by tichá změna prošla až na papír.
+    const report = verifyTasks([{ taskText: '7 : 2', declaredValue: 3.5 }])
+    expect(report.ok).toBe(false)
+    if (report.ok) return
+    expect(report.failures[0]?.code).toBe('non-integer-result')
+  })
+
+  it('hra pustí 7 : 2 = 3,5 — žádný kód políčka tu není', () => {
+    expect(
+      verifyTasks([{ taskText: '7 : 2', declaredValue: 3.5 }], ALLOW_DECIMAL_RESULTS),
+    ).toEqual({ ok: true })
+  })
+
+  it('uvolněné pravidlo nepřestane hlídat samotný přepočet', () => {
+    const report = verifyTasks(
+      [{ taskText: '7 : 2', declaredValue: 3.6 }],
+      ALLOW_DECIMAL_RESULTS,
+    )
+    expect(report.ok).toBe(false)
+    if (report.ok) return
+    expect(report.failures[0]?.code).toBe('task-value-mismatch')
+  })
+
+  it('nevytisknutelná hodnota je vada listu i ve hře', () => {
+    // `1 : 3` vytištěné jako `0,33` by dítě sečetlo a nedopočítalo se.
+    const report = verifyTasks(
+      [{ taskText: '1 : 3', declaredValue: 1 / 3 }],
+      ALLOW_DECIMAL_RESULTS,
+    )
+    expect(report.ok).toBe(false)
+    if (report.ok) return
+    expect(report.failures[0]?.code).toBe('unprintable-value')
+  })
+})
+
+describe('porovnává se vytištěná podoba, ne číslo', () => {
+  function task(text: string, value: number): Task {
+    return {
+      id: text,
+      generatorId: 'test',
+      value,
+      prompt: { kind: 'expr', text },
+      solutionSteps: [],
+      didactic: { grade: 5, difficulty: 1, effort: 1, operations: ['add'], skills: [] },
+    }
+  }
+
+  it('dvě hodnoty různé v posledním bitu jsou na papíře táž hodnota', () => {
+    // Jako čísla se 0.1 + 0.2 a 0.3 nerovnají. Na kartičce je obojí „0,3“
+    // a dítě by mělo dvě zadání k jednomu výsledku.
+    const report = verifyDistinctValues([task('0,1 + 0,2', 0.1 + 0.2), task('0,15 · 2', 0.3)])
+    expect(report.ok).toBe(false)
+    if (report.ok) return
+    expect(report.failures[0]?.code).toBe('ambiguous-pairing')
+  })
+
+  it('řetěz domina se nepřetrhne o poslední bit plovoucí čárky', () => {
+    // Kámen nese vytištěné „0,3“, výpočet dá 0.30000000000000004. Hledání
+    // podle čísla by následníka nenašlo a domino by spadlo na `broken-chain`.
+    expect(
+      verifyChain([
+        { left: '0,3', right: '0,2 + 0,3' },
+        { left: '0,5', right: '0,1 + 0,2' },
+      ]),
+    ).toEqual({ ok: true })
   })
 })

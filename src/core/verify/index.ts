@@ -17,6 +17,7 @@ import type {
   VerificationFailure,
   VerificationReport,
 } from '../model/index.js'
+import { formatValue, isPrintable, isWholeNumber } from '../number/index.js'
 import { inferMissing, parseSequence, SequenceError } from '../sequence/index.js'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -237,11 +238,6 @@ function nearlyEqual(a: number, b: number): boolean {
   return Math.abs(a - b) < EPSILON
 }
 
-/** Je to celé číslo, nebo aspoň nerozeznatelně blízko? */
-function isWholeNumber(value: number): boolean {
-  return nearlyEqual(value, Math.round(value))
-}
-
 /**
  * Spočítá hodnotu aritmetického výrazu.
  *
@@ -400,6 +396,33 @@ export function decode(table: CipherTable, values: readonly number[]): string {
 // Verifikace listu
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Pravidla, která má úloha na tomhle listu splnit.
+ *
+ * Vzniklo to proto, že „výsledek musí být celé číslo" nikdy nebylo pravidlo
+ * projektu, ale pravidlo ŠIFRY: výsledek je kód políčka v mřížce. Verifikaci
+ * ale sdílejí všechny aktivity, takže to platilo plošně — a v pexesu proto
+ * vyšlo `3,5 · 4 = 14`, ale nikdy `= 2,5`.
+ */
+export interface TaskRules {
+  /**
+   * Musí být výsledek celé číslo?
+   *
+   * ⚠ Pro šifru je to i tak nadbytečné: `verifySheet` má druhý zámek —
+   *   každá potřebná hodnota musí být dohledatelná v tabulce, a kódy jsou
+   *   celá čísla. `0,25` by tedy spadlo i bez tohohle pravidla, jen s kódem
+   *   `value-not-in-table`. Zůstává proto, že hláška o celém výsledku
+   *   pojmenuje příčinu, kdežto ta druhá popisuje následek.
+   */
+  wholeResults: boolean
+}
+
+/** Šifra: výsledek je kód políčka, tedy celé číslo. */
+export const REQUIRE_WHOLE_RESULTS: TaskRules = { wholeResults: true }
+
+/** Hry: kód políčka tu žádný není, takže `2,5` je legitimní výsledek. */
+export const ALLOW_DECIMAL_RESULTS: TaskRules = { wholeResults: false }
+
 export interface SheetSlot {
   /** Text tak, jak bude vytištěn na listu. Parsuje se znovu, od nuly. */
   taskText: string
@@ -416,7 +439,11 @@ export interface SheetSlot {
 }
 
 /** Přepočet jedné úlohy. Vrací prázdné pole, když je všechno v pořádku. */
-function verifySlot(slot: SheetSlot, index: number): VerificationFailure[] {
+function verifySlot(
+  slot: SheetSlot,
+  index: number,
+  rules: TaskRules = REQUIRE_WHOLE_RESULTS,
+): VerificationFailure[] {
   const label = `Úloha č. ${index + 1} (${slot.taskText})`
 
   if (slot.kind === 'sequence') {
@@ -475,15 +502,25 @@ function verifySlot(slot: SheetSlot, index: number): VerificationFailure[] {
     ]
   }
 
-  // Výsledek musí být celé číslo — je to kód políčka v mřížce. Do 0.1 to
-  // platilo samo, protože celé bylo všechno. S desetinnými operandy je tohle
-  // to jediné místo, kde se pravidlo vynutí: `0,3 · 7` je matematicky správně
-  // a jako kód políčka nepoužitelné.
-  if (!isWholeNumber(computed)) {
+  // Celý výsledek chce ŠIFRA, ne matematika — je to kód políčka v mřížce.
+  // Hry si o něj neříkají, takže je to parametr. Viz `TaskRules`.
+  if (rules.wholeResults && !isWholeNumber(computed)) {
     return [
       {
         code: 'non-integer-result',
-        message: `${label} dává ${computed}, což není celé číslo. Desetinná čísla smí být jen v zadání, ne ve výsledku.`,
+        message: `${label} dává ${formatValue(computed)}, což není celé číslo. Na tomhle listu slouží výsledek jako kód políčka, takže desetinné číslo smí být jen v zadání.`,
+      },
+    ]
+  }
+
+  // Hodnota, která se nedá vytisknout beze ztráty, je vada listu, ne důvod
+  // k tichému zaokrouhlení: `1 : 3` vytištěné jako `0,33` dítě sečte
+  // a nedopočítá se. Radši spadnout a vygenerovat list znovu.
+  if (!isPrintable(computed)) {
+    return [
+      {
+        code: 'unprintable-value',
+        message: `${label} dává ${computed}, což se nedá vytisknout na dvě desetinná místa beze ztráty.`,
       },
     ]
   }
@@ -505,10 +542,13 @@ function verifySlot(slot: SheetSlot, index: number): VerificationFailure[] {
  * kontrola „úloha dává, co generátor tvrdí" pro ně platí úplně stejně —
  * a u řad k ní patří i to, že řešení existuje právě jedno.
  */
-export function verifyTasks(slots: readonly SheetSlot[]): VerificationReport {
+export function verifyTasks(
+  slots: readonly SheetSlot[],
+  rules: TaskRules = REQUIRE_WHOLE_RESULTS,
+): VerificationReport {
   const failures: VerificationFailure[] = []
   slots.forEach((slot, index) => {
-    failures.push(...verifySlot(slot, index))
+    failures.push(...verifySlot(slot, index, rules))
   })
   return failures.length === 0 ? { ok: true } : { ok: false, failures }
 }
@@ -525,11 +565,16 @@ export function verifyTasks(slots: readonly SheetSlot[]): VerificationReport {
  * `56` s tím druhým, bude mít pravdu a hra mu nevyjde.
  */
 export function verifyDistinctValues(tasks: readonly Task[]): VerificationReport {
-  const byValue = new Map<number, string[]>()
+  // Klíčem je VYTIŠTĚNÁ podoba, ne číslo. Otázka totiž nezní „mají tyhle
+  // úlohy stejnou hodnotu", ale „vypadají na papíře stejně" — a dvě hodnoty
+  // lišící se v posledním bitu plovoucí čárky projdou jako různá čísla,
+  // přestože se obě vytisknou jako `2,5`. Pro celá čísla je to totéž co dřív.
+  const byValue = new Map<string, string[]>()
   for (const task of tasks) {
-    const texts = byValue.get(task.value) ?? []
+    const printed = formatValue(task.value)
+    const texts = byValue.get(printed) ?? []
     texts.push(task.prompt.text)
-    byValue.set(task.value, texts)
+    byValue.set(printed, texts)
   }
 
   const failures: VerificationFailure[] = []
@@ -609,9 +654,15 @@ export function verifyChain(tiles: readonly ChainTile[]): VerificationReport {
 
   // Kam který kámen ukazuje levou půlkou. Dvě stejné hodnoty vlevo znamenají,
   // že na jedno zadání pasují dva kameny a řetěz se větví.
-  const byLeft = new Map<number, number>()
+  //
+  // Klíčem je vytištěná podoba, ne číslo: `Map` hledá `number` na přesnou
+  // shodu, takže by `0,1 + 0,2` (tedy 0.30000000000000004) netrefilo kámen
+  // s půlkou `0,3` a domino by ohlásilo přetržený řetěz, který přetržený
+  // není. U celých čísel se nic nemění.
+  const byLeft = new Map<string, number>()
   tiles.forEach((tile, index) => {
-    const value = readPrintedValue(tile.left)
+    const parsed = readPrintedValue(tile.left)
+    const value = parsed === null ? null : formatValue(parsed)
     if (value === null) {
       failures.push({
         code: 'broken-chain',
@@ -637,7 +688,7 @@ export function verifyChain(tiles: readonly ChainTile[]): VerificationReport {
     if (computed === null) {
       return fail(`Zadání na kameni č. ${index + 1} („${tile.right}") nejde vyhodnotit.`)
     }
-    const successor = byLeft.get(computed)
+    const successor = byLeft.get(formatValue(computed))
     if (successor === undefined) {
       return fail(
         `Na kámen č. ${index + 1} („${tile.right}" = ${computed}) nenavazuje žádný další — řetěz se přetrhne.`,

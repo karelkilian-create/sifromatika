@@ -443,8 +443,20 @@ export interface VerificationFailure {
     /**
      * Výsledek není celé číslo, takže nemůže sloužit jako kód políčka.
      * Týká se úloh s desetinnými operandy: `0,3 · 7` dává 2,1.
+     *
+     * ⚠ Hlásí se jen tam, kde se celý výsledek opravdu vyžaduje — tedy
+     *   u šifry. Ve hrách je `2,5` legitimní výsledek; viz `TaskRules`
+     *   v `core/verify`.
      */
     | 'non-integer-result'
+    /**
+     * Výsledek se nedá vytisknout beze ztráty na dvě desetinná místa.
+     *
+     * Například `1 : 3`. Vytištěné `0,33` by dítě sečetlo s dalším číslem
+     * a nedopočítalo by se — a nepoznalo by, že chyba není jeho. Proto je
+     * to vada listu, ne důvod k tichému zaokrouhlení.
+     */
+    | 'unprintable-value'
     /**
      * Dvě zadání se stejným výsledkem. U párovacích her (pexeso, domino) vada:
      * dítě spáruje špatně a bude mít pravdu. U šifry naopak v pořádku.

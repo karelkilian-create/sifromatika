@@ -35,8 +35,14 @@ import type {
   VerificationFailure,
   VerificationReport,
 } from '../../core/model/index.js'
+import { formatValue } from '../../core/number/index.js'
 import { createRng } from '../../core/rng/index.js'
-import { verifyBingoCards, verifyDistinctValues, verifyTasks } from '../../core/verify/index.js'
+import {
+  ALLOW_DECIMAL_RESULTS,
+  verifyBingoCards,
+  verifyDistinctValues,
+  verifyTasks,
+} from '../../core/verify/index.js'
 import { pickGenerator } from '../../tasks/mix.js'
 import { taskGenerators } from '../../tasks/registry.js'
 import { APP_VERSION, GENERATOR_VERSION } from '../../version.js'
@@ -215,6 +221,9 @@ function generateOnce(config: BingoProject): BingoOutcome {
             declaredValue: task.value,
             kind: task.prompt.kind,
           })),
+          // Celý výsledek je požadavek ŠIFRY (kód políčka v mřížce), ne
+          // tohohle listu. Viz `TaskRules` v `core/verify`.
+          ALLOW_DECIMAL_RESULTS,
         ),
         // Dva příklady s týmž výsledkem by znamenaly dvě škrtnutí téhož
         // políčka — a jedno z nich nadarmo.
@@ -268,11 +277,6 @@ function toGrid(values: readonly string[]): BingoCard {
     rows.push([...values.slice(row * BINGO_SIDE, (row + 1) * BINGO_SIDE)])
   }
   return rows
-}
-
-/** Desetinná čárka, ne tečka — na českém listu se píše `2,5`. */
-function formatValue(value: number): string {
-  return Number.isInteger(value) ? String(value) : String(value).replace('.', ',')
 }
 
 function combine(...reports: VerificationReport[]): VerificationReport {

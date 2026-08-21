@@ -50,7 +50,7 @@ export const cipherGridModule = {
   info: {
     id: 'cipher-grid',
     label: 'Šifra',
-    tagline: 'Tajenka schovaná v tabulce',
+    tagline: 'Najdi tajenku',
     available: true,
   },
 

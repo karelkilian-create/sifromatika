@@ -23,8 +23,13 @@ import type {
   VerificationFailure,
   VerificationReport,
 } from '../../core/model/index.js'
+import { formatValue } from '../../core/number/index.js'
 import { createRng } from '../../core/rng/index.js'
-import { verifyDistinctValues, verifyTasks } from '../../core/verify/index.js'
+import {
+  ALLOW_DECIMAL_RESULTS,
+  verifyDistinctValues,
+  verifyTasks,
+} from '../../core/verify/index.js'
 import { pickGenerator } from '../../tasks/mix.js'
 import { taskGenerators } from '../../tasks/registry.js'
 import { APP_VERSION, GENERATOR_VERSION } from '../../version.js'
@@ -217,6 +222,9 @@ function generateOnce(config: PexesoProject): PexesoOutcome {
             declaredValue: task.value,
             kind: task.prompt.kind,
           })),
+          // Celý výsledek je požadavek ŠIFRY (kód políčka v mřížce), ne
+          // tohohle listu. Viz `TaskRules` v `core/verify`.
+          ALLOW_DECIMAL_RESULTS,
         ),
         // Bez téhle kontroly je hra vadná, i když je každá úloha spočítaná
         // správně. Proto je součástí verifikace, ne jen přáním generátoru.
@@ -224,11 +232,6 @@ function generateOnce(config: PexesoProject): PexesoOutcome {
       ),
     },
   }
-}
-
-/** Desetinná čárka, ne tečka — na českém listu se píše `2,5`. */
-function formatValue(value: number): string {
-  return Number.isInteger(value) ? String(value) : String(value).replace('.', ',')
 }
 
 function combine(...reports: VerificationReport[]): VerificationReport {
