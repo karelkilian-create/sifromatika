@@ -20,6 +20,7 @@ import type {
   Task,
   VerificationReport,
 } from '../../core/model/index.js'
+import { REQUIRE_WHOLE_RESULTS } from '../../core/model/index.js'
 import { createRng } from '../../core/rng/index.js'
 import { verifyTasks } from '../../core/verify/index.js'
 import { findTaskGenerator } from '../../tasks/registry.js'
@@ -115,7 +116,9 @@ function generateOnce(config: SequenceSheetProject): SequenceSheetOutcome {
 
   // Hodnoty, které umí generátor řad vyrobit. Na rozdíl od šifry si je tady
   // nikdo nediktuje — list není na nic navázaný, takže se prostě vyberou.
-  const pool = rng.shuffle([...generator.reachableValues(payload.difficulty, payload.taskMix)])
+  const pool = rng.shuffle([
+    ...generator.reachableValues(payload.difficulty, payload.taskMix, REQUIRE_WHOLE_RESULTS),
+  ])
   if (pool.length === 0) {
     return {
       ok: false,
@@ -131,7 +134,12 @@ function generateOnce(config: SequenceSheetProject): SequenceSheetOutcome {
     if (tasks.length >= payload.taskCount) break
     const task = generator.generateForValue(
       target,
-      { profile: payload.difficulty, mix: payload.taskMix, usedExpressions },
+      {
+        profile: payload.difficulty,
+        mix: payload.taskMix,
+        usedExpressions,
+        rules: REQUIRE_WHOLE_RESULTS,
+      },
       rng,
     )
     if (task !== null) tasks.push(task)

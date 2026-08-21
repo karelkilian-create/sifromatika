@@ -386,6 +386,47 @@ export interface RelaxationLog {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
+ * Jaký výsledek smí na tomhle listu vyjít.
+ *
+ * Není to vlastnost ročníku, ale LISTU — proto to nesedí v
+ * `DifficultyProfile`. Sedmák umí `2,25`, ale na kartičce pexesa se
+ * `2,25` páruje očima přes celý stůl hůř než `2,5`.
+ *
+ * Ptá se na to generátor i verifikace, a musí dostat tutéž odpověď: kdyby
+ * pravidlo znala jen verifikace, list by se generoval a zahazoval dokola.
+ */
+export interface TaskRules {
+  /**
+   * Nejvyšší počet desetinných míst VÝSLEDKU. `0` = celé číslo.
+   *
+   * Zadání se to netýká — to řídí `DifficultyProfile.decimals`. Klidně tedy
+   * platí `2,25 + 0,25 = 2,5`: dvě místa vlevo, jedno vpravo.
+   */
+  maxResultPlaces: 0 | 1 | 2
+}
+
+/**
+ * Šifra: výsledek je kód políčka v mřížce, tedy celé číslo.
+ *
+ * ⚠ Pro šifru je to i tak nadbytečné — `verifySheet` má druhý zámek: každá
+ *   potřebná hodnota musí být dohledatelná v tabulce, a kódy jsou celá
+ *   čísla. `0,25` by spadlo i bez tohohle pravidla, jen s kódem
+ *   `value-not-in-table`. Zůstává proto, že hláška o celém výsledku
+ *   pojmenuje příčinu, kdežto ta druhá popisuje následek.
+ */
+export const REQUIRE_WHOLE_RESULTS: TaskRules = { maxResultPlaces: 0 }
+
+/**
+ * Hry: kód políčka tu žádný není, takže `2,5` je legitimní výsledek.
+ *
+ * Jedno místo, ne dvě — rozhodnuto 21. 8. 2026. Není to strop projektu, ale
+ * dnešní nastavení: až přijde kruh v 8. ročníku, `3,14 · 7² = 153,86` si
+ * dvě místa vyžádá a zvedne se to buď tady, nebo jen pro to téma. Právě
+ * proto je to parametr, a ne konstanta zadrátovaná ve verifikaci.
+ */
+export const ALLOW_DECIMAL_RESULTS: TaskRules = { maxResultPlaces: 1 }
+
+/**
  * Kontext jednoho generování. `usedExpressions` brání tomu, aby na listu
  * byla pětkrát tatáž úloha — naivní výběr to dělá překvapivě často.
  */
@@ -394,6 +435,8 @@ export interface GenContext {
   /** Váhy povolených operací. Prázdné = všechny se stejnou vahou. */
   mix: Partial<Record<OperationTag, number>>
   usedExpressions: Set<string>
+  /** Co smí vyjít. Generátor to musí ctít, jinak list neprojde verifikací. */
+  rules: TaskRules
 }
 
 /**
@@ -421,6 +464,7 @@ export interface TaskGenerator {
   reachableValues(
     profile: DifficultyProfile,
     mix: Partial<Record<OperationTag, number>>,
+    rules: TaskRules,
   ): Set<number>
   /** `null` = tuhle hodnotu neumím (nebo ne bez opakování už použitého výrazu). */
   generateForValue(target: number, ctx: GenContext, rng: import('../rng/index.js').Rng): Task | null
@@ -445,10 +489,16 @@ export interface VerificationFailure {
      * Týká se úloh s desetinnými operandy: `0,3 · 7` dává 2,1.
      *
      * ⚠ Hlásí se jen tam, kde se celý výsledek opravdu vyžaduje — tedy
-     *   u šifry. Ve hrách je `2,5` legitimní výsledek; viz `TaskRules`
-     *   v `core/verify`.
+     *   u šifry (`maxResultPlaces: 0`). Ve hrách je `2,5` legitimní
+     *   výsledek; viz `TaskRules`.
      */
     | 'non-integer-result'
+    /**
+     * Výsledek má víc desetinných míst, než list dovoluje: `2,25` tam, kde
+     * se smí jen `2,5`. Na rozdíl od `non-integer-result` to není o celých
+     * číslech, ale o tom, kolik se toho na kartičce dá přečíst naráz.
+     */
+    | 'result-too-precise'
     /**
      * Výsledek se nedá vytisknout beze ztráty na dvě desetinná místa.
      *

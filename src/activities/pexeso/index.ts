@@ -23,10 +23,10 @@ import type {
   VerificationFailure,
   VerificationReport,
 } from '../../core/model/index.js'
+import { ALLOW_DECIMAL_RESULTS } from '../../core/model/index.js'
 import { formatValue } from '../../core/number/index.js'
 import { createRng } from '../../core/rng/index.js'
 import {
-  ALLOW_DECIMAL_RESULTS,
   verifyDistinctValues,
   verifyTasks,
 } from '../../core/verify/index.js'
@@ -147,7 +147,9 @@ function generateOnce(config: PexesoProject): PexesoOutcome {
   for (const generator of generators) {
     pools.set(
       generator.id,
-      rng.shuffle([...generator.reachableValues(payload.difficulty, payload.taskMix)]),
+      rng.shuffle([
+        ...generator.reachableValues(payload.difficulty, payload.taskMix, ALLOW_DECIMAL_RESULTS),
+      ]),
     )
   }
 
@@ -155,7 +157,12 @@ function generateOnce(config: PexesoProject): PexesoOutcome {
   const tasks: Task[] = []
   // Klíčové místo celé aktivity: každá hodnota nejvýš jednou.
   const usedValues = new Set<number>()
-  const context = { profile: payload.difficulty, mix: payload.taskMix, usedExpressions }
+  const context = {
+    profile: payload.difficulty,
+    mix: payload.taskMix,
+    usedExpressions,
+    rules: ALLOW_DECIMAL_RESULTS,
+  }
 
   // Strop pokusů: každé kolo spotřebuje jednu hodnotu ze zásoby vylosovaného
   // tématu, takže bez něj by se cyklilo jen do vyčerpání — ale to je u velkých
@@ -223,7 +230,7 @@ function generateOnce(config: PexesoProject): PexesoOutcome {
             kind: task.prompt.kind,
           })),
           // Celý výsledek je požadavek ŠIFRY (kód políčka v mřížce), ne
-          // tohohle listu. Viz `TaskRules` v `core/verify`.
+          // tohohle listu. Viz `TaskRules` v `core/model`.
           ALLOW_DECIMAL_RESULTS,
         ),
         // Bez téhle kontroly je hra vadná, i když je každá úloha spočítaná

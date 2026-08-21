@@ -1,9 +1,10 @@
 /**
  * Generátor úloh s desetinnými čísly.
  *
- * Desetinné číslo smí být jen v ZADÁNÍ. Výsledek zůstává kladné celé číslo,
- * protože slouží jako kód políčka v mřížce — `0,3 · 7` je matematicky správně
- * a jako úloha do šifry nepoužitelné.
+ * Co smí VYJÍT, si diktuje list, ne tenhle modul: šifra chce celé číslo (je to
+ * kód políčka v mřížce), hry snesou jedno desetinné místo. Modul se na to ptá
+ * přes `TaskRules` a podle toho nabídne jinou zásobu cílů — `0,3 · 7 = 2,1` je
+ * v pexesu úloha jako každá jiná a do šifry se nehodí.
  *
  * ⚠ Všechno se počítá v SETINÁCH jako celá čísla, teprve sazba dělá z 350
  *   text „3,5". Není to puntičkářství: `1,1 + 2,2` vyjde v plovoucí čárce jako
@@ -22,7 +23,9 @@ import type {
   SkillTag,
   Task,
   TaskGenerator,
+  TaskRules,
 } from '../../core/model/index.js'
+import { formatValue } from '../../core/number/index.js'
 import type { Rng } from '../../core/rng/index.js'
 import { evaluateExpression } from '../../core/verify/index.js'
 
@@ -57,6 +60,17 @@ export function formatDecimal(cents: number): string {
   return `${sign}${whole},${String(rest).padStart(2, '0')}`
 }
 
+/**
+ * Cíl v setinách, ve kterých počítá celý modul.
+ *
+ * ⚠ Zaokrouhlení není opatrnictví: `2,3 * 100` dá v plovoucí čárce
+ *   229.99999999999997 a `Number.isInteger` na tom pak selže. Dokud byly cíle
+ *   celá čísla, nemohlo se to stát.
+ */
+function toCents(target: number): number {
+  return Math.round(target * CENTS)
+}
+
 /** Vejde se hodnota do povoleného počtu desetinných míst? */
 function fitsPlaces(cents: number, places: DifficultyProfile['decimals']): boolean {
   if (cents % CENTS === 0) return false // celé číslo není desetinná úloha
@@ -88,10 +102,11 @@ function fractionsFor(places: DifficultyProfile['decimals']): number[] {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * `3,5 · 4` — desetinné číslo krát celé, součin celý.
+ * `3,5 · 4` — desetinné číslo krát celé.
  *
  * Konstrukce jde pozpátku od výsledku: hledá se činitel, po dělení kterým
- * zbude číslo s povoleným počtem desetinných míst.
+ * zbude číslo s povoleným počtem desetinných míst. Cíl přitom celý být nemusí:
+ * `2,5` vyjde z `0,5 · 5`.
  */
 function decimalTimesWhole(target: number, profile: DifficultyProfile, rng: Rng): string | null {
   const factors = rng.shuffle(
@@ -99,7 +114,7 @@ function decimalTimesWhole(target: number, profile: DifficultyProfile, rng: Rng)
   )
 
   for (const factor of factors) {
-    const cents = (target * CENTS) / factor
+    const cents = toCents(target) / factor
     if (!Number.isInteger(cents)) continue
     if (!fitsPlaces(cents, profile.decimals)) continue
     if (!inRange(cents, profile)) continue
@@ -109,7 +124,7 @@ function decimalTimesWhole(target: number, profile: DifficultyProfile, rng: Rng)
 }
 
 /**
- * `2,5 + 3,5` — dva desetinné sčítance, součet celý.
+ * `2,5 + 3,5` — dva desetinné sčítance.
  *
  * Celá část prvního sčítance se losuje ze středních dvou třetin, ne z celého
  * rozsahu. Bez toho vzniká `0,2 + 45,8`: matematicky správně, ale na listu to
@@ -117,7 +132,7 @@ function decimalTimesWhole(target: number, profile: DifficultyProfile, rng: Rng)
  * přečte. Je to stejné pravidlo, jaké u odčítání hlídá `subtractionCeiling`.
  */
 function decimalPlusDecimal(target: number, profile: DifficultyProfile, rng: Rng): string | null {
-  const totalCents = target * CENTS
+  const totalCents = toCents(target)
   const fractions = fractionsFor(profile.decimals)
   if (fractions.length === 0 || target < 2) return null
 
@@ -183,9 +198,19 @@ export const decimalGenerator: TaskGenerator = {
 
   supports: (profile: DifficultyProfile) => profile.decimals > 0,
 
+  /**
+   * ⚠ Zásoba je s desetinnými cíli ZÁMĚRNĚ nevyvážená: na každé celé číslo
+   *   připadá devět desetin, takže z pexesa na desetinná čísla vyjdou
+   *   převážně desetinné výsledky. Je to v pořádku — téma si učitel zaškrtl
+   *   a hra na jedno téma je legitimní zadání (viz poznámka u zaškrtávátek
+   *   v `EditorPanel`). Kdyby se to mělo míchat v daném poměru, patří to
+   *   sem, ne do aktivit: ty už jednou tuhle lekci dostaly, když poměr témat
+   *   na kartičkách určovala velikost zásoby (`GENERATOR_VERSION` 5).
+   */
   reachableValues(
     profile: DifficultyProfile,
     mix: Partial<Record<OperationTag, number>>,
+    rules: TaskRules,
   ): Set<number> {
     const values = new Set<number>()
     if (profile.decimals === 0) return values
@@ -197,7 +222,13 @@ export const decimalGenerator: TaskGenerator = {
     const hasAddition = shapes.some((shape) => shape.requires === 'add')
     const fractions = fractionsFor(profile.decimals)
 
-    for (let target = 1; target <= profile.numberRange.max; target++) {
+    // Krok v setinách: 100 pro celé výsledky (šifra), 10 pro desetiny (hry).
+    // Přesnost výsledku nesouvisí s přesností operandů — `2,25 + 0,25 = 2,5`
+    // má dvě místa vlevo a jedno vpravo.
+    const step = CENTS / 10 ** rules.maxResultPlaces
+
+    for (let cents = CENTS; cents <= profile.numberRange.max * CENTS; cents += step) {
+      const target = cents / CENTS
       if (hasMultiplication && reachableByProduct(target, profile)) {
         values.add(target)
         continue
@@ -236,7 +267,9 @@ export const decimalGenerator: TaskGenerator = {
         generatorId: 'decimal',
         value: target,
         prompt: { kind: 'expr', text },
-        solutionSteps: [{ kind: 'expr', text: `${text} = ${target}` }],
+        // `formatValue`, ne `${target}`: dokud byly výsledky celé, byl v tom
+        // rozdíl žádný — u desetinného by `String` vytiskl tečku.
+        solutionSteps: [{ kind: 'expr', text: `${text} = ${formatValue(target)}` }],
         didactic: {
           grade: ctx.profile.grade,
           difficulty: Math.min(5, Math.max(1, shape.effort)) as DidacticMeta['difficulty'],
@@ -253,7 +286,7 @@ export const decimalGenerator: TaskGenerator = {
 /** Existuje činitel, po dělení kterým zbude povolené desetinné číslo? */
 function reachableByProduct(target: number, profile: DifficultyProfile): boolean {
   for (let factor = MIN_FACTOR; factor <= MAX_FACTOR; factor++) {
-    const cents = (target * CENTS) / factor
+    const cents = toCents(target) / factor
     if (!Number.isInteger(cents)) continue
     if (fitsPlaces(cents, profile.decimals) && inRange(cents, profile)) return true
   }

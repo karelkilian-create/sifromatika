@@ -28,10 +28,10 @@ import type {
   VerificationFailure,
   VerificationReport,
 } from '../../core/model/index.js'
+import { ALLOW_DECIMAL_RESULTS } from '../../core/model/index.js'
 import { formatValue } from '../../core/number/index.js'
 import { createRng } from '../../core/rng/index.js'
 import {
-  ALLOW_DECIMAL_RESULTS,
   verifyChain,
   verifyDistinctValues,
   verifyTasks,
@@ -152,7 +152,9 @@ function generateOnce(config: DominoProject): DominoOutcome {
   for (const generator of generators) {
     pools.set(
       generator.id,
-      rng.shuffle([...generator.reachableValues(payload.difficulty, payload.taskMix)]),
+      rng.shuffle([
+        ...generator.reachableValues(payload.difficulty, payload.taskMix, ALLOW_DECIMAL_RESULTS),
+      ]),
     )
   }
 
@@ -161,7 +163,12 @@ function generateOnce(config: DominoProject): DominoOutcome {
   // Hodnoty musí být různé i tady, a je to podmínka kruhu: kdyby dvě zadání
   // dávala 56, pasovaly by na jedno místo dva kameny a řetěz by se rozvětvil.
   const usedValues = new Set<number>()
-  const context = { profile: payload.difficulty, mix: payload.taskMix, usedExpressions }
+  const context = {
+    profile: payload.difficulty,
+    mix: payload.taskMix,
+    usedExpressions,
+    rules: ALLOW_DECIMAL_RESULTS,
+  }
 
   const maxAttempts = payload.tileCount * 20
   for (let attempt = 0; tasks.length < payload.tileCount && attempt < maxAttempts; attempt++) {
@@ -238,7 +245,7 @@ function generateOnce(config: DominoProject): DominoOutcome {
             kind: task.prompt.kind,
           })),
           // Celý výsledek je požadavek ŠIFRY (kód políčka v mřížce), ne
-          // tohohle listu. Viz `TaskRules` v `core/verify`.
+          // tohohle listu. Viz `TaskRules` v `core/model`.
           ALLOW_DECIMAL_RESULTS,
         ),
         verifyDistinctValues(tasks),

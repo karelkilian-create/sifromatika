@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import fc from 'fast-check'
 import { gradeProfile } from '../../core/constraints/index.js'
 import type { GenContext, OperationTag } from '../../core/model/index.js'
+import { REQUIRE_WHOLE_RESULTS } from '../../core/model/index.js'
 import { createRng } from '../../core/rng/index.js'
 import { evaluateExpression } from '../../core/verify/index.js'
 import { arithmeticGenerator } from './index.js'
@@ -11,6 +12,7 @@ function context(overrides: Partial<GenContext> = {}): GenContext {
     profile: gradeProfile(4),
     mix: { add: 1, sub: 1, mul: 1, div: 1 },
     usedExpressions: new Set(),
+    rules: REQUIRE_WHOLE_RESULTS,
     ...overrides,
   }
 }
@@ -114,7 +116,7 @@ describe('arithmeticGenerator — profil obtížnosti', () => {
       fc.property(fc.constantFrom(3, 4, 5), fc.integer({ min: 1, max: 300 }), (grade, target) => {
         const profile = gradeProfile(grade as 3 | 4 | 5)
         const mix = { add: 1, sub: 1, mul: 1, div: 1 }
-        const reachable = arithmeticGenerator.reachableValues(profile, mix)
+        const reachable = arithmeticGenerator.reachableValues(profile, mix, REQUIRE_WHOLE_RESULTS)
         const task = arithmeticGenerator.generateForValue(target, context({ profile }), createRng(`s${target}`))
         // Klíčový invariant: co slíbím v reachableValues, to musím umět vyrobit.
         if (reachable.has(target)) expect(task).not.toBeNull()
@@ -126,8 +128,8 @@ describe('arithmeticGenerator — profil obtížnosti', () => {
 
   it('reachableValues zohledňuje zaškrtnuté operace', () => {
     const profile = gradeProfile(4)
-    const vse = arithmeticGenerator.reachableValues(profile, { add: 1, sub: 1, mul: 1, div: 1 })
-    const jenNasobeni = arithmeticGenerator.reachableValues(profile, { mul: 1 })
+    const vse = arithmeticGenerator.reachableValues(profile, { add: 1, sub: 1, mul: 1, div: 1 }, REQUIRE_WHOLE_RESULTS)
+    const jenNasobeni = arithmeticGenerator.reachableValues(profile, { mul: 1 }, REQUIRE_WHOLE_RESULTS)
 
     // 37 je prvočíslo mimo malou násobilku — sčítáním ano, násobením ne.
     expect(vse.has(37)).toBe(true)
@@ -261,7 +263,7 @@ describe('arithmeticGenerator — strop menšence', () => {
     for (const grade of [5, 6, 7] as const) {
       const profile = gradeProfile(grade)
       const mix: Partial<Record<OperationTag, number>> = { sub: 1 }
-      const reachable = [...arithmeticGenerator.reachableValues(profile, mix)]
+      const reachable = [...arithmeticGenerator.reachableValues(profile, mix, REQUIRE_WHOLE_RESULTS)]
       expect(reachable.length).toBeGreaterThan(10)
 
       for (const target of reachable.slice(0, 60)) {

@@ -36,6 +36,13 @@
  *      deset tisíc a mocniny sto, takže zaškrtnutí mocnin vedle počítání se
  *      neprojevilo prakticky nikdy. Mění kartičky ve všech ročnících;
  *      odvozený seed posune i šifru a list řad.
+ *  6 — ve hrách smí výsledek mít jedno desetinné místo. Do verze 5 platilo
+ *      plošně „výsledek je celé číslo", ačkoli ten důvod má jen šifra (je to
+ *      kód políčka v mřížce), takže v pexesu vyšlo `3,5 · 4 = 14`, ale nikdy
+ *      `= 2,5`. Zásoba cílů desetinného tématu se tím rozšíří desetinásobně,
+ *      takže se mění kartičky, kameny i bingo všude, kde má učitel zaškrtnutá
+ *      desetinná čísla — od 5. ročníku výš. Šifra a list řad zůstávají beze
+ *      změny: ty si celý výsledek vyžádají dál a dostanou tutéž zásobu.
  */
-export const GENERATOR_VERSION = 5
+export const GENERATOR_VERSION = 6
 export const APP_VERSION = '0.1.0-dev'

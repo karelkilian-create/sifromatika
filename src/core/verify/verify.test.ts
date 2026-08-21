@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import fc from 'fast-check'
 import type { CipherTable } from '../model/index.js'
 import type { Task } from '../model/index.js'
+import { ALLOW_DECIMAL_RESULTS } from '../model/index.js'
 import {
-  ALLOW_DECIMAL_RESULTS,
   ExpressionError,
   buildCodeIndex,
   decode,
@@ -409,6 +409,27 @@ describe('pravidla listu', () => {
     expect(report.ok).toBe(false)
     if (report.ok) return
     expect(report.failures[0]?.code).toBe('task-value-mismatch')
+  })
+
+  it('hra nepustí 2,25 — jedno desetinné místo, ne dvě', () => {
+    // Sedmák setiny umí; na kartičce se ale `2,25` páruje přes stůl hůř než
+    // `2,5`, a to je pravidlo LISTU, ne ročníku.
+    const report = verifyTasks(
+      [{ taskText: '1,5 + 0,75', declaredValue: 2.25 }],
+      ALLOW_DECIMAL_RESULTS,
+    )
+    expect(report.ok).toBe(false)
+    if (report.ok) return
+    expect(report.failures[0]?.code).toBe('result-too-precise')
+    expect(report.failures[0]?.message).toContain('2,25')
+  })
+
+  it('dvě místa projdou tam, kde si je list vyžádá', () => {
+    // Zatím to nikdo nepoužívá; až přijde kruh (`3,14 · 7² = 153,86`), zvedne
+    // se `maxResultPlaces` na 2 a verifikace to musí pustit beze změny.
+    expect(
+      verifyTasks([{ taskText: '1,5 + 0,75', declaredValue: 2.25 }], { maxResultPlaces: 2 }),
+    ).toEqual({ ok: true })
   })
 
   it('nevytisknutelná hodnota je vada listu i ve hře', () => {

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import fc from 'fast-check'
 import { gradeProfile } from '../../core/constraints/index.js'
 import type { Grade, OperationTag } from '../../core/model/index.js'
+import { REQUIRE_WHOLE_RESULTS } from '../../core/model/index.js'
 import { createRng } from '../../core/rng/index.js'
 import { evaluateExpression } from '../../core/verify/index.js'
 import { powersGenerator } from './index.js'
@@ -9,7 +10,12 @@ import { powersGenerator } from './index.js'
 const ALL: Partial<Record<OperationTag, number>> = { add: 1, sub: 1, mul: 1, div: 1 }
 
 function context(grade: Grade, mix = ALL) {
-  return { profile: gradeProfile(grade), mix, usedExpressions: new Set<string>() }
+  return {
+    profile: gradeProfile(grade),
+    mix,
+    usedExpressions: new Set<string>(),
+    rules: REQUIRE_WHOLE_RESULTS,
+  }
 }
 
 describe('powersGenerator', () => {
@@ -23,7 +29,7 @@ describe('powersGenerator', () => {
   it('v nižších ročnících nevyrobí nic, ani když ho o to někdo požádá', () => {
     const rng = createRng('powers-nizsi')
     expect(powersGenerator.generateForValue(49, context(6), rng)).toBeNull()
-    expect(powersGenerator.reachableValues(gradeProfile(6), ALL).size).toBe(0)
+    expect(powersGenerator.reachableValues(gradeProfile(6), ALL, REQUIRE_WHOLE_RESULTS).size).toBe(0)
   })
 
   it('vyrobí úlohu, jejíž text dává právě zadaný cíl', () => {
@@ -78,7 +84,7 @@ describe('powersGenerator', () => {
     }
     expect(texts.size).toBeGreaterThan(0)
     for (const text of texts) expect(evaluateExpression(text)).toBe(0)
-    expect(powersGenerator.reachableValues(gradeProfile(8), ALL).has(0)).toBe(true)
+    expect(powersGenerator.reachableValues(gradeProfile(8), ALL, REQUIRE_WHOLE_RESULTS).has(0)).toBe(true)
   })
 
   it('druhý člen zůstává krátký — kartička se má přečíst na pohled', () => {
@@ -110,7 +116,7 @@ describe('powersGenerator', () => {
   it('co slíbí v reachableValues, to i vyrobí', () => {
     const rng = createRng('powers-slib')
     for (const mix of [ALL, { add: 1 }, { sub: 1 }, { div: 1 }, { mul: 1, add: 1 }]) {
-      const values = powersGenerator.reachableValues(gradeProfile(8), mix)
+      const values = powersGenerator.reachableValues(gradeProfile(8), mix, REQUIRE_WHOLE_RESULTS)
       expect(values.size, JSON.stringify(mix)).toBeGreaterThan(0)
       for (const value of values) {
         const task = powersGenerator.generateForValue(value, context(8, mix), rng)
@@ -121,7 +127,7 @@ describe('powersGenerator', () => {
 
   it('žádná hodnota mimo slib — každý vyrobený cíl je v reachableValues', () => {
     const rng = createRng('powers-mimo')
-    const values = powersGenerator.reachableValues(gradeProfile(8), ALL)
+    const values = powersGenerator.reachableValues(gradeProfile(8), ALL, REQUIRE_WHOLE_RESULTS)
     for (let target = 0; target <= 600; target++) {
       const task = powersGenerator.generateForValue(target, context(8), rng)
       if (task === null) continue

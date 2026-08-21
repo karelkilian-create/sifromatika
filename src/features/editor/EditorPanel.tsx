@@ -418,6 +418,13 @@ export function EditorPanel({
                   celé {isBingo ? 'bingo' : isDomino ? 'domino' : 'pexeso'} — třeba samé mocniny
                   („7²“, „√81“, „2³ − 8“). Operace platí zároveň, ale holé mocniny se objeví
                   i bez nich.
+                  {profile.decimals > 0 && (
+                    <>
+                      {' '}
+                      Tady smí desetinné číslo i vyjít („0,5 · 5 = 2,5“) — na rozdíl od šifry, kde
+                      je výsledek kód políčka, a tedy vždy celý.
+                    </>
+                  )}
                 </p>
               </>
             ) : (

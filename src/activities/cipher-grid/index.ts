@@ -11,6 +11,7 @@
 import { hashString } from '../../core/checksum/index.js'
 import { gradeProfile, relaxation } from '../../core/constraints/index.js'
 import { ALL_OPERATIONS } from '../../core/model/index.js'
+import { REQUIRE_WHOLE_RESULTS } from '../../core/model/index.js'
 import type {
   CipherGridProject,
   CipherTable,
@@ -232,7 +233,12 @@ function generateOnce(config: CipherGridProject): CipherGridOutcome {
   // o matematice dozví.
   const reachable = new Set<number>()
   for (const generator of generators) {
-    for (const value of generator.reachableValues(payload.difficulty, payload.taskMix)) {
+    const values = generator.reachableValues(
+      payload.difficulty,
+      payload.taskMix,
+      REQUIRE_WHOLE_RESULTS,
+    )
+    for (const value of values) {
       reachable.add(value)
     }
   }
@@ -245,7 +251,12 @@ function generateOnce(config: CipherGridProject): CipherGridOutcome {
     (operation) => {
       const pool = new Set<number>()
       for (const generator of generators) {
-        for (const value of generator.reachableValues(payload.difficulty, { [operation]: 1 })) {
+        const forOperation = generator.reachableValues(
+          payload.difficulty,
+          { [operation]: 1 },
+          REQUIRE_WHOLE_RESULTS,
+        )
+        for (const value of forOperation) {
           pool.add(value)
         }
       }
@@ -270,7 +281,12 @@ function generateOnce(config: CipherGridProject): CipherGridOutcome {
   const slots: CipherGridSlot[] = []
 
   for (const code of cipher.artifact.requiredValues) {
-    const context = { profile: payload.difficulty, mix: payload.taskMix, usedExpressions }
+    const context = {
+    profile: payload.difficulty,
+    mix: payload.taskMix,
+    usedExpressions,
+    rules: REQUIRE_WHOLE_RESULTS,
+  }
     let task = pickGenerator(generators, generatorMix, rng).generateForValue(code, context, rng)
 
     // Nepovedlo se kvůli kolizi s už použitým výrazem? Zkusíme ostatní
@@ -287,7 +303,12 @@ function generateOnce(config: CipherGridProject): CipherGridOutcome {
       // Každý umí jiný obor hodnot — 14 vyrobí aritmetika jako 2 · 7, ale
       // pětičlenná řada se s ním do malého oboru nevejde. Zeptat se jen řad
       // a pak to vzdát by zahodilo hotový list kvůli jediné úloze.
-      const relaxed = { profile: payload.difficulty, mix: payload.taskMix, usedExpressions: new Set<string>() }
+      const relaxed = {
+        profile: payload.difficulty,
+        mix: payload.taskMix,
+        usedExpressions: new Set<string>(),
+        rules: REQUIRE_WHOLE_RESULTS,
+      }
       for (const generator of generators) {
         task = generator.generateForValue(code, relaxed, rng)
         if (task !== null) break

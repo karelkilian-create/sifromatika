@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { gradeProfile } from '../../core/constraints/index.js'
 import type { DifficultyProfile, Grade, OperationTag, Task } from '../../core/model/index.js'
+import { REQUIRE_WHOLE_RESULTS } from '../../core/model/index.js'
 import { createRng } from '../../core/rng/index.js'
 import { inferMissing, parseSequence } from '../../core/sequence/index.js'
 import { sequenceGenerator } from './index.js'
 
 function context(profile: DifficultyProfile, mix: Partial<Record<OperationTag, number>> = {}) {
-  return { profile, mix, usedExpressions: new Set<string>() }
+  return { profile, mix, usedExpressions: new Set<string>(), rules: REQUIRE_WHOLE_RESULTS }
 }
 
 function generate(
@@ -53,7 +54,7 @@ describe('generátor řad — každá vydaná řada je bezvadné zadání', () =
     const profile = gradeProfile(grade)
     let produced = 0
 
-    for (const target of [...sequenceGenerator.reachableValues(profile, {})].slice(0, 120)) {
+    for (const target of [...sequenceGenerator.reachableValues(profile, {}, REQUIRE_WHOLE_RESULTS)].slice(0, 120)) {
       const task = generate(target, grade, `bezvadnost-${grade}-${target}`)
       if (task === null) continue
       produced++
@@ -116,7 +117,7 @@ describe('generátor řad — respektuje nastavení učitele', () => {
 describe('generátor řad — sliby o dosažitelných hodnotách', () => {
   it('co ohlásí jako dosažitelné, to i vyrobí', () => {
     const profile = gradeProfile(3)
-    const reachable = [...sequenceGenerator.reachableValues(profile, {})]
+    const reachable = [...sequenceGenerator.reachableValues(profile, {}, REQUIRE_WHOLE_RESULTS)]
     expect(reachable.length).toBeGreaterThan(50)
 
     const failed = reachable.filter(
@@ -131,7 +132,7 @@ describe('generátor řad — sliby o dosažitelných hodnotách', () => {
       numberRange: { min: 0, max: 8 },
     }
     expect(sequenceGenerator.supports(tiny)).toBe(false)
-    expect(sequenceGenerator.reachableValues(tiny, {}).size).toBe(0)
+    expect(sequenceGenerator.reachableValues(tiny, {}, REQUIRE_WHOLE_RESULTS).size).toBe(0)
   })
 })
 
@@ -143,7 +144,7 @@ describe('délka členů', () => {
    */
   it.each([3, 4, 5, 6, 7, 8] as Grade[])('%i. ročník: žádný člen nemá čtyři cifry', (grade) => {
     const profile = gradeProfile(grade)
-    const values = [...sequenceGenerator.reachableValues(profile, {})]
+    const values = [...sequenceGenerator.reachableValues(profile, {}, REQUIRE_WHOLE_RESULTS)]
     expect(values.length).toBeGreaterThan(0)
 
     for (const value of values.slice(0, 300)) {

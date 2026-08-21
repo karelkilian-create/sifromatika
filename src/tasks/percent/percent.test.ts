@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import fc from 'fast-check'
 import { gradeProfile } from '../../core/constraints/index.js'
 import type { Grade, OperationTag } from '../../core/model/index.js'
+import { REQUIRE_WHOLE_RESULTS } from '../../core/model/index.js'
 import { createRng } from '../../core/rng/index.js'
 import { evaluateExpression } from '../../core/verify/index.js'
 import { percentGenerator } from './index.js'
@@ -9,7 +10,12 @@ import { percentGenerator } from './index.js'
 const ALL: Partial<Record<OperationTag, number>> = { add: 1, sub: 1, mul: 1, div: 1 }
 
 function context(grade: Grade, mix = ALL) {
-  return { profile: gradeProfile(grade), mix, usedExpressions: new Set<string>() }
+  return {
+    profile: gradeProfile(grade),
+    mix,
+    usedExpressions: new Set<string>(),
+    rules: REQUIRE_WHOLE_RESULTS,
+  }
 }
 
 describe('percentGenerator', () => {
@@ -60,11 +66,11 @@ describe('percentGenerator', () => {
     const rng = createRng('percent-mix')
     const withoutMul = context(7, { add: 1, sub: 1 })
     expect(percentGenerator.generateForValue(20, withoutMul, rng)).toBeNull()
-    expect(percentGenerator.reachableValues(gradeProfile(7), { add: 1 }).size).toBe(0)
+    expect(percentGenerator.reachableValues(gradeProfile(7), { add: 1 }, REQUIRE_WHOLE_RESULTS).size).toBe(0)
   })
 
   it('slibuje jen hodnoty, které opravdu vyrobí', () => {
-    const reachable = percentGenerator.reachableValues(gradeProfile(7), ALL)
+    const reachable = percentGenerator.reachableValues(gradeProfile(7), ALL, REQUIRE_WHOLE_RESULTS)
     const rng = createRng('percent-sliby')
     for (const target of [...reachable].slice(0, 60)) {
       const task = percentGenerator.generateForValue(target, context(7), rng)

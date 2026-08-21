@@ -14,10 +14,12 @@ import type {
   CipherTable,
   PromptNode,
   Task,
+  TaskRules,
   VerificationFailure,
   VerificationReport,
 } from '../model/index.js'
-import { formatValue, isPrintable, isWholeNumber } from '../number/index.js'
+import { REQUIRE_WHOLE_RESULTS } from '../model/index.js'
+import { fitsPlaces, formatValue, isPrintable, isWholeNumber } from '../number/index.js'
 import { inferMissing, parseSequence, SequenceError } from '../sequence/index.js'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -396,32 +398,12 @@ export function decode(table: CipherTable, values: readonly number[]): string {
 // Verifikace listu
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Pravidla, která má úloha na tomhle listu splnit.
- *
- * Vzniklo to proto, že „výsledek musí být celé číslo" nikdy nebylo pravidlo
- * projektu, ale pravidlo ŠIFRY: výsledek je kód políčka v mřížce. Verifikaci
- * ale sdílejí všechny aktivity, takže to platilo plošně — a v pexesu proto
- * vyšlo `3,5 · 4 = 14`, ale nikdy `= 2,5`.
+/*
+ * Pravidla listu (`TaskRules`, `REQUIRE_WHOLE_RESULTS`, `ALLOW_DECIMAL_RESULTS`)
+ * bydlí v `core/model`. Ptá se na ně totiž i vrstva úloh — generátor musí
+ * vědět, co smí vyrobit, jinak by se list generoval a zahazoval dokola —
+ * a `tasks` do `verify` nesahá.
  */
-export interface TaskRules {
-  /**
-   * Musí být výsledek celé číslo?
-   *
-   * ⚠ Pro šifru je to i tak nadbytečné: `verifySheet` má druhý zámek —
-   *   každá potřebná hodnota musí být dohledatelná v tabulce, a kódy jsou
-   *   celá čísla. `0,25` by tedy spadlo i bez tohohle pravidla, jen s kódem
-   *   `value-not-in-table`. Zůstává proto, že hláška o celém výsledku
-   *   pojmenuje příčinu, kdežto ta druhá popisuje následek.
-   */
-  wholeResults: boolean
-}
-
-/** Šifra: výsledek je kód políčka, tedy celé číslo. */
-export const REQUIRE_WHOLE_RESULTS: TaskRules = { wholeResults: true }
-
-/** Hry: kód políčka tu žádný není, takže `2,5` je legitimní výsledek. */
-export const ALLOW_DECIMAL_RESULTS: TaskRules = { wholeResults: false }
 
 export interface SheetSlot {
   /** Text tak, jak bude vytištěn na listu. Parsuje se znovu, od nuly. */
@@ -504,7 +486,7 @@ function verifySlot(
 
   // Celý výsledek chce ŠIFRA, ne matematika — je to kód políčka v mřížce.
   // Hry si o něj neříkají, takže je to parametr. Viz `TaskRules`.
-  if (rules.wholeResults && !isWholeNumber(computed)) {
+  if (rules.maxResultPlaces === 0 && !isWholeNumber(computed)) {
     return [
       {
         code: 'non-integer-result',
@@ -521,6 +503,19 @@ function verifySlot(
       {
         code: 'unprintable-value',
         message: `${label} dává ${computed}, což se nedá vytisknout na dvě desetinná místa beze ztráty.`,
+      },
+    ]
+  }
+
+  // Hry desetinný výsledek snesou, ale ne libovolně přesný: `2,5` se na
+  // kartičce přečte na jeden pohled, `2,25` se přes stůl páruje hůř. Že se
+  // to hlídá tady a ne jen v generátoru, je schválně — verifikace je síť na
+  // chyby generátoru, ne jeho ozvěna.
+  if (!fitsPlaces(computed, rules.maxResultPlaces)) {
+    return [
+      {
+        code: 'result-too-precise',
+        message: `${label} dává ${formatValue(computed)}, což má víc než ${rules.maxResultPlaces === 1 ? 'jedno desetinné místo' : `${rules.maxResultPlaces} desetinná místa`}. Na kartičce se takový výsledek páruje hůř, než kolik ta úloha přinese.`,
       },
     ]
   }

@@ -41,6 +41,18 @@ export function roundToPrintable(value: number): number {
 }
 
 /**
+ * Vejde se hodnota do daného počtu desetinných míst?
+ *
+ * Ptá se na to generátor (co smí vyrobit) i verifikace (co smělo vyjít).
+ * Musí to být tatáž odpověď, jinak by se list generoval a zahazoval dokola.
+ */
+export function fitsPlaces(value: number, places: number): boolean {
+  if (!Number.isFinite(value)) return false
+  const scale = 10 ** places
+  return Math.abs(value * scale - Math.round(value * scale)) < EPSILON
+}
+
+/**
  * Dá se hodnota vytisknout beze ztráty?
  *
  * `1 : 3` se nedá — a je to vada listu, ne důvod k tichému zaokrouhlení.
@@ -48,8 +60,7 @@ export function roundToPrintable(value: number): number {
  * otázku odpovídá kódem `unprintable-value`.
  */
 export function isPrintable(value: number): boolean {
-  if (!Number.isFinite(value)) return false
-  return Math.abs(value - roundToPrintable(value)) < EPSILON
+  return fitsPlaces(value, MAX_DECIMAL_PLACES)
 }
 
 /** Je to celé číslo, nebo aspoň nerozeznatelně blízko? */

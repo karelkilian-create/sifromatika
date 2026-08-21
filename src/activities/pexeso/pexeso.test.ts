@@ -226,6 +226,28 @@ describe('témata', () => {
     },
   )
 
+  it('desetinné téma dá i desetinný výsledek, ne jen desetinné zadání', () => {
+    // Do `GENERATOR_VERSION` 5 vyšlo `3,5 · 4 = 14`, ale nikdy `= 2,5`:
+    // pravidlo šifry o celém výsledku platilo plošně. Kdyby se to vrátilo,
+    // pozná se to tady, ne až na kartičkách.
+    let decimalResults = 0
+    for (let i = 0; i < 10; i++) {
+      const sheet = withTopics(5, { decimal: 1 }, `desetinne-vysledky-${i}`)
+      decimalResults += sheet.tasks.filter((task) => !Number.isInteger(task.value)).length
+    }
+    expect(decimalResults).toBeGreaterThan(0)
+  })
+
+  it('výsledek na kartičce nemá víc než jedno desetinné místo', () => {
+    for (let i = 0; i < 10; i++) {
+      const sheet = withTopics(7, { decimal: 1 }, `jedno-misto-${i}`)
+      for (const task of sheet.tasks) {
+        const places = Math.abs(task.value * 10 - Math.round(task.value * 10))
+        expect(places, `${task.prompt.text} = ${task.value}`).toBeLessThan(1e-9)
+      }
+    }
+  })
+
   it('míchání dvou témat sype obojí', () => {
     const generators = new Set<string>()
     for (let i = 0; i < 10; i++) {

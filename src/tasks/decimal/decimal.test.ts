@@ -1,15 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import fc from 'fast-check'
 import { gradeProfile } from '../../core/constraints/index.js'
-import type { Grade, OperationTag } from '../../core/model/index.js'
+import type { Grade, OperationTag, TaskRules } from '../../core/model/index.js'
+import { ALLOW_DECIMAL_RESULTS, REQUIRE_WHOLE_RESULTS } from '../../core/model/index.js'
 import { createRng } from '../../core/rng/index.js'
+import { fitsPlaces } from '../../core/number/index.js'
 import { evaluateExpression } from '../../core/verify/index.js'
 import { decimalGenerator, formatDecimal } from './index.js'
 
 const ALL: Partial<Record<OperationTag, number>> = { add: 1, sub: 1, mul: 1, div: 1 }
 
-function context(grade: Grade, mix = ALL) {
-  return { profile: gradeProfile(grade), mix, usedExpressions: new Set<string>() }
+function context(grade: Grade, mix = ALL, rules: TaskRules = REQUIRE_WHOLE_RESULTS) {
+  return { profile: gradeProfile(grade), mix, usedExpressions: new Set<string>(), rules }
 }
 
 describe('formatDecimal', () => {
@@ -91,7 +93,7 @@ describe('decimalGenerator', () => {
 
   it('slibuje jen hodnoty, které opravdu vyrobí', () => {
     const profile = gradeProfile(6)
-    const reachable = decimalGenerator.reachableValues(profile, ALL)
+    const reachable = decimalGenerator.reachableValues(profile, ALL, REQUIRE_WHOLE_RESULTS)
     const rng = createRng('decimal-sliby')
 
     for (const target of [...reachable].slice(0, 60)) {
@@ -110,6 +112,68 @@ describe('decimalGenerator', () => {
       }),
       { numRuns: 200 },
     )
+  })
+})
+
+describe('decimalGenerator — co smí vyjít, diktuje list', () => {
+  it('šifře nabídne jen celé cíle', () => {
+    const reachable = decimalGenerator.reachableValues(
+      gradeProfile(6),
+      ALL,
+      REQUIRE_WHOLE_RESULTS,
+    )
+    expect([...reachable].every((value) => Number.isInteger(value))).toBe(true)
+  })
+
+  it('hře nabídne i desetiny, ale ne setiny', () => {
+    const reachable = decimalGenerator.reachableValues(
+      gradeProfile(6),
+      ALL,
+      ALLOW_DECIMAL_RESULTS,
+    )
+    // 2,5 ano; 2,25 ne — i když šestá třída setiny v ZADÁNÍ dovoluje.
+    expect(reachable.has(2.5)).toBe(true)
+    expect(reachable.has(2.25)).toBe(false)
+    expect([...reachable].every((value) => fitsPlaces(value, 1))).toBe(true)
+  })
+
+  it('desetinný cíl umí i vyrobit, ne jen slíbit', () => {
+    const rng = createRng('decimal-desetiny')
+    const ctx = context(6, ALL, ALLOW_DECIMAL_RESULTS)
+    const reachable = [...decimalGenerator.reachableValues(
+      gradeProfile(6),
+      ALL,
+      ALLOW_DECIMAL_RESULTS,
+    )].filter((value) => !Number.isInteger(value))
+
+    for (const target of reachable.slice(0, 40)) {
+      const task = decimalGenerator.generateForValue(target, ctx, rng)
+      expect(task, `slíbená hodnota ${target}`).not.toBeNull()
+      if (task === null) continue
+      expect(Math.abs(evaluateExpression(task.prompt.text) - target)).toBeLessThan(1e-9)
+    }
+  })
+
+  it('řešení píše výsledek s čárkou, ne s tečkou', () => {
+    const ctx = context(5, ALL, ALLOW_DECIMAL_RESULTS)
+    const task = decimalGenerator.generateForValue(2.5, ctx, createRng('decimal-carka'))
+    expect(task).not.toBeNull()
+    // `String(2.5)` by na list napsalo „2.5" — na českém listu se píše „2,5".
+    expect(task?.solutionSteps[0]?.text).toContain('= 2,5')
+  })
+
+  it('desetinný cíl v páté třídě nepotřebuje setinový operand', () => {
+    // Pátá třída má `decimals: 1`, takže `1,25 · 2 = 2,5` je mimo její látku.
+    const ctx = context(5, ALL, ALLOW_DECIMAL_RESULTS)
+    const rng = createRng('decimal-pata')
+    for (let attempt = 0; attempt < 30; attempt++) {
+      const task = decimalGenerator.generateForValue(2.5, ctx, rng)
+      if (task === null) continue
+      for (const part of task.prompt.text.split(/ [+·] /)) {
+        const decimals = part.includes(',') ? part.split(',')[1]!.length : 0
+        expect(decimals, task.prompt.text).toBeLessThanOrEqual(1)
+      }
+    }
   })
 })
 

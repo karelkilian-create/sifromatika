@@ -35,10 +35,10 @@ import type {
   VerificationFailure,
   VerificationReport,
 } from '../../core/model/index.js'
+import { ALLOW_DECIMAL_RESULTS } from '../../core/model/index.js'
 import { formatValue } from '../../core/number/index.js'
 import { createRng } from '../../core/rng/index.js'
 import {
-  ALLOW_DECIMAL_RESULTS,
   verifyBingoCards,
   verifyDistinctValues,
   verifyTasks,
@@ -148,7 +148,9 @@ function generateOnce(config: BingoProject): BingoOutcome {
   for (const generator of generators) {
     pools.set(
       generator.id,
-      rng.shuffle([...generator.reachableValues(payload.difficulty, payload.taskMix)]),
+      rng.shuffle([
+        ...generator.reachableValues(payload.difficulty, payload.taskMix, ALLOW_DECIMAL_RESULTS),
+      ]),
     )
   }
 
@@ -159,7 +161,12 @@ function generateOnce(config: BingoProject): BingoOutcome {
   const usedExpressions = new Set<string>()
   const tasks: Task[] = []
   const usedValues = new Set<number>()
-  const context = { profile: payload.difficulty, mix: payload.taskMix, usedExpressions }
+  const context = {
+    profile: payload.difficulty,
+    mix: payload.taskMix,
+    usedExpressions,
+    rules: ALLOW_DECIMAL_RESULTS,
+  }
 
   const maxAttempts = wantedValues * 20
   for (let attempt = 0; tasks.length < wantedValues && attempt < maxAttempts; attempt++) {
@@ -222,7 +229,7 @@ function generateOnce(config: BingoProject): BingoOutcome {
             kind: task.prompt.kind,
           })),
           // Celý výsledek je požadavek ŠIFRY (kód políčka v mřížce), ne
-          // tohohle listu. Viz `TaskRules` v `core/verify`.
+          // tohohle listu. Viz `TaskRules` v `core/model`.
           ALLOW_DECIMAL_RESULTS,
         ),
         // Dva příklady s týmž výsledkem by znamenaly dvě škrtnutí téhož
