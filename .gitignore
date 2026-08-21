@@ -24,5 +24,17 @@ dist-ssr
 *.sw?
 
 # Pracovní podklady (návrhy, exporty, ukázkové výstupy)
+#
+# Do kořene repozitáře padá, co si Karel stáhne z ChatGPT, z fotky nebo
+# z tiskárny. Vzory jsou schválně kotvené lomítkem na kořen: obrázky, které
+# do repozitáře patří, bydlí v `docs/img` a `public/` a těch se to netýká.
 ChatGPT_návrh.odt
 ChatGPT_návrh.zip
+/rozsireni_projektu/
+/*.zip
+/*.docx
+/*.jpg
+/*.jpeg
+/*.png
+/*.sifra
+Screenshot_*
