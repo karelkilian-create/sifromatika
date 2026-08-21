@@ -232,7 +232,7 @@ describe('témata', () => {
     // pozná se to tady, ne až na kartičkách.
     let decimalResults = 0
     for (let i = 0; i < 10; i++) {
-      const sheet = withTopics(5, { decimal: 1 }, `desetinne-vysledky-${i}`)
+      const sheet = withTopics(6, { decimal: 1 }, `desetinne-vysledky-${i}`)
       decimalResults += sheet.tasks.filter((task) => !Number.isInteger(task.value)).length
     }
     expect(decimalResults).toBeGreaterThan(0)
@@ -322,6 +322,18 @@ describe('formulář → konfigurace', () => {
 
     const outcome = generatePexeso(config)
     expect(outcome.ok).toBe(true)
+  })
+
+  // Pátá třída desetinná čísla nemá od 21. 8. 2026 — a zaškrtnutí, které
+  // z formuláře zmizelo, se nesmí propsat do konfigurace. Jinak by učitelka
+  // po přepnutí ročníku dostala list s `3,5 · 4`, aniž by měla čím to vypnout.
+  it('pátá třída desetinná čísla nedostane, ani když v nastavení zůstala', () => {
+    const decimalsOnly = { ...topics, powers: false, decimals: true }
+    const patka = pexesoModule.toConfig(decimalsOnly, { ...shared, grade: 5 }, 'desetiny-v-patce')
+    expect(patka.payload.generatorMix).toEqual({ arithmetic: 1 })
+
+    const sestka = pexesoModule.toConfig(decimalsOnly, { ...shared, grade: 6 }, 'desetiny-v-sestce')
+    expect(sestka.payload.generatorMix).toEqual({ decimal: 1 })
   })
 
   it('konfigurace → formulář vrátí tatáž zaškrtnutí', () => {

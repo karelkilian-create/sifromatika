@@ -54,8 +54,16 @@ export function gradeProfile(grade: Grade): DifficultyProfile {
         divisionExactOnly: true,
         maxOperands: 2,
         powers: false,
-        // Desetinná čísla se v páté třídě zavádějí — zatím jen desetiny.
-        decimals: 1,
+        /*
+         * Desetinná čísla až od šesté třídy — rozhodnuto 21. 8. 2026.
+         *
+         * RVP je zavádí už v páté, ale na prvním stupni je to čerstvá látka
+         * z konce roku a učitelka, které se na listu pro pátou třídu objeví
+         * „3,5 · 4", si spíš řekne, že Šifromatika neumí ročníky, než že si
+         * něco zaškrtla. Šestka je bezpečnější výchozí stav: kdo chce
+         * desetinná čísla dřív, přepne ročník.
+         */
+        decimals: 0,
         percents: false,
       }
     case 6:

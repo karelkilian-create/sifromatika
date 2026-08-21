@@ -36,7 +36,15 @@
  *      deset tisíc a mocniny sto, takže zaškrtnutí mocnin vedle počítání se
  *      neprojevilo prakticky nikdy. Mění kartičky ve všech ročnících;
  *      odvozený seed posune i šifru a list řad.
- *  6 — ve hrách smí výsledek mít jedno desetinné místo. Do verze 5 platilo
+ *  6 — desetinná čísla až od 6. ročníku a ve hrách smí výsledek mít jedno
+ *      desetinné místo.
+ *
+ *      Pátá třída o téma přišla: RVP ho tam zavádí, ale na listu pro první
+ *      stupeň mate učitele víc, než kolik přinese (rozhodnuto 21. 8. 2026).
+ *      Mění to jen listy, kde měl pátý ročník zaškrtnutá desetinná čísla —
+ *      nově z nich vypadnou.
+ *
+ *      Zbytek: do verze 5 platilo
  *      plošně „výsledek je celé číslo", ačkoli ten důvod má jen šifra (je to
  *      kód políčka v mřížce), takže v pexesu vyšlo `3,5 · 4 = 14`, ale nikdy
  *      `= 2,5`. Zásoba cílů desetinného tématu se tím rozšíří desetinásobně,

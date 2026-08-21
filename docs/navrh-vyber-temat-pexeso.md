@@ -91,7 +91,7 @@ Ve „Pokročilém nastavení" pexesa přibude sada zaškrtávátek:
 > **Z čeho složit kartičky**
 > - ☑ Počítání — `7 · 8`
 > - ☐ Číselné řady — `4 10 16 22 ?`
-> - ☐ Desetinná čísla — `3,5 · 4`  *(od 5. ročníku)*
+> - ☐ Desetinná čísla — `3,5 · 4`  *(od 6. ročníku; do 21. 8. 2026 od 5.)*
 > - ☐ Procenta — `25 % z 80`  *(od 7. ročníku)*
 > - ☐ Mocniny a odmocniny — `7²`, `√81`  *(8. ročník)*
 >

@@ -32,9 +32,12 @@ describe('formatDecimal', () => {
 })
 
 describe('decimalGenerator', () => {
-  it('do páté třídy se nenabízí, od páté ano', () => {
+  it('na prvním stupni se nenabízí vůbec, od šesté třídy ano', () => {
+    // Pátá třída schválně ne: RVP desetinná čísla zavádí, ale na listu pro
+    // první stupeň mate učitele víc, než kolik přinese. Viz `gradeProfile`.
     expect(decimalGenerator.supports(gradeProfile(4))).toBe(false)
-    expect(decimalGenerator.supports(gradeProfile(5))).toBe(true)
+    expect(decimalGenerator.supports(gradeProfile(5))).toBe(false)
+    expect(decimalGenerator.supports(gradeProfile(6))).toBe(true)
     expect(decimalGenerator.supports(gradeProfile(7))).toBe(true)
   })
 
@@ -57,9 +60,11 @@ describe('decimalGenerator', () => {
     }
   })
 
-  it('pátá třída dostane jen desetiny, ne setiny', () => {
+  it('profil s jedním desetinným místem dostane desetiny, ne setiny', () => {
+    // Žádný ročník dnes `decimals: 1` nemá — pátá třída ho měla do 21. 8.
+    // 2026. Pravidlo ale zůstává v platnosti pro profil, který si ho zvolí.
     const rng = createRng('decimal-patka')
-    const ctx = context(5)
+    const ctx = { ...context(6), profile: { ...gradeProfile(6), decimals: 1 as const } }
     for (let target = 2; target <= 40; target++) {
       const task = decimalGenerator.generateForValue(target, ctx, rng)
       if (task === null) continue
@@ -155,16 +160,19 @@ describe('decimalGenerator — co smí vyjít, diktuje list', () => {
   })
 
   it('řešení píše výsledek s čárkou, ne s tečkou', () => {
-    const ctx = context(5, ALL, ALLOW_DECIMAL_RESULTS)
+    const ctx = context(6, ALL, ALLOW_DECIMAL_RESULTS)
     const task = decimalGenerator.generateForValue(2.5, ctx, createRng('decimal-carka'))
     expect(task).not.toBeNull()
     // `String(2.5)` by na list napsalo „2.5" — na českém listu se píše „2,5".
     expect(task?.solutionSteps[0]?.text).toContain('= 2,5')
   })
 
-  it('desetinný cíl v páté třídě nepotřebuje setinový operand', () => {
-    // Pátá třída má `decimals: 1`, takže `1,25 · 2 = 2,5` je mimo její látku.
-    const ctx = context(5, ALL, ALLOW_DECIMAL_RESULTS)
+  it('desetinný cíl si nevynutí přesnější operand, než profil dovoluje', () => {
+    // S `decimals: 1` je `1,25 · 2 = 2,5` mimo látku, i když cíl sedí.
+    const ctx = {
+      ...context(6, ALL, ALLOW_DECIMAL_RESULTS),
+      profile: { ...gradeProfile(6), decimals: 1 as const },
+    }
     const rng = createRng('decimal-pata')
     for (let attempt = 0; attempt < 30; attempt++) {
       const task = decimalGenerator.generateForValue(2.5, ctx, rng)

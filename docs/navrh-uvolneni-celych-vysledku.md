@@ -203,8 +203,27 @@ neměnil, tenhle ano — a protože se ze semínka odvozuje seed, posunuly se
 i listy, kterých se desetinná čísla netýkají. Každý dosavadní odkaz a soubor
 `.sifra` proto ohlásí neshodu kontrolního součtu. Přesně na to ta hláška je.
 
-**Zůstává otevřené: obor čísel her.** Páté třídě vyjde `489,9 + 344,2 = 834,1`.
+**Zůstává otevřené: obor čísel her.** Šesté třídě vyjde `1545,1 + 1342,4`.
 Není to vada tohohle kroku — hry berou cíle z celého `numberRange`, takže
-`489 + 344` tam bylo i předtím — ale s desetinnou čárkou je na kartičce vidět,
-že to není počítání z hlavy. Je to samostatné rozhodnutí o oboru čísel ve
-hrách a mění výstup všech aktivit, takže do tohohle kroku nepatří.
+`1545 + 1342` tam bylo i předtím — ale s desetinnou čárkou je na kartičce
+vidět, že to není počítání z hlavy. **A přesun desetinných čísel na šestý
+ročník to zhoršil:** pátá třída měla obor do 1000, šestá má do 10 000, takže
+nejmenší ročník s desetinnými čísly je nově ten s nejširším oborem. Je to
+samostatné rozhodnutí o oboru čísel ve hrách a mění výstup všech aktivit,
+takže do tohohle kroku nepatří.
+
+
+## 4. Dodatek: desetinná čísla začínají šestou třídou (21. 8. 2026)
+
+Karel rozhodl, že se desetinná čísla na prvním stupni nemají nabízet vůbec:
+`gradeProfile(5).decimals` je nově `0`. RVP je v páté třídě zavádí, jenže je
+to čerstvá látka z konce roku — a kolegyně, které se na listu pro pátou třídu
+objeví `3,5 · 4`, si spíš řekne, že Šifromatika neumí ročníky, než že si něco
+zaškrtla. Kdo je chce dřív, přepne ročník.
+
+Padá tím jediný ročník s `decimals: 1`; šestka a výš mají dvě místa. Hodnota
+`1` v profilu zůstává platná a testovaná — jen ji dnes žádný ročník nemá.
+
+Šifra ani hry se jinak nemění: `usableTopics` téma, které ročník neumí,
+zahazuje už při skládání konfigurace, a šifra má vždycky aritmetiku, takže
+zaškrtnutá-ale-neproveditelná desetinná čísla nikoho nezablokují.
