@@ -141,9 +141,17 @@ describe('kameny', () => {
   it('jsou zamíchané — pořadí tisku není pořadí řetězu', () => {
     // Bez zamíchání by stačilo kameny rozstříhat a domino by bylo složené
     // ještě před rozdáním.
-    const sheet = build(5, 'michani', 18)
-    const inOrder = sheet.tiles.filter((tile, index) => tile.chainIndex === index)
-    expect(inOrder.length).toBeLessThan(3)
+    //
+    // Měří se přes víc seedů a s volnějším stropem, než by odpovídalo jednomu
+    // listu: kamenů, které náhoda nechá na svém místě, je v zamíchané
+    // osmnáctce průměrně jeden, ale tři nejsou nic zvláštního. Test s pevným
+    // stropem u jediného seedu proto padal po každém posunu
+    // `GENERATOR_VERSION`, aniž by se na míchání cokoli změnilo.
+    for (const seed of ['michani', 'michani-2', 'michani-3', 'michani-4', 'michani-5']) {
+      const sheet = build(5, seed, 18)
+      const inOrder = sheet.tiles.filter((tile, index) => tile.chainIndex === index)
+      expect(inOrder.length, seed).toBeLessThan(sheet.tiles.length / 3)
+    }
   })
 
   it('zamíchání je součástí listu, ne sazby — dvě volání dají totéž', () => {

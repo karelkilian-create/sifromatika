@@ -204,8 +204,9 @@ i listy, kterých se desetinná čísla netýkají. Každý dosavadní odkaz a s
 `.sifra` proto ohlásí neshodu kontrolního součtu. Přesně na to ta hláška je.
 
 **Zůstává otevřené: obor čísel her.** Šesté třídě vyjde `1545,1 + 1342,4`.
-Není to vada tohohle kroku — hry berou cíle z celého `numberRange`, takže
-`1545 + 1342` tam bylo i předtím — ale s desetinnou čárkou je na kartičce
+**Vyřešeno 21. 8. 2026, viz `navrh-obor-cisel-ve-hrach.md`.** Nebyla to vada
+tohohle kroku — hry braly cíle z celého `numberRange`, takže `1545 + 1342`
+tam bylo i předtím — ale s desetinnou čárkou je na kartičce
 vidět, že to není počítání z hlavy. **A přesun desetinných čísel na šestý
 ročník to zhoršil:** pátá třída měla obor do 1000, šestá má do 10 000, takže
 nejmenší ročník s desetinnými čísly je nově ten s nejširším oborem. Je to

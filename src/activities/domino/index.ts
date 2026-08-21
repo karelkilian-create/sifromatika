@@ -19,7 +19,7 @@
  */
 
 import { hashString } from '../../core/checksum/index.js'
-import { TILE_COUNT_LIMITS, gradeProfile } from '../../core/constraints/index.js'
+import { TILE_COUNT_LIMITS, cardGameProfile, gradeProfile } from '../../core/constraints/index.js'
 import type {
   DominoProject,
   Grade,
@@ -133,9 +133,20 @@ function generateOnce(config: DominoProject): DominoOutcome {
   const payload = config.payload
   const relaxations: RelaxationLog[] = []
 
+  /*
+   * Obor čísel oříznutý na kartičku. Profil ročníku je psaný pro pracovní
+   * list — dítě u něj má tužku a papír — kdežto tady drží dvanáct kartiček
+   * v ruce a páruje je očima. Bez tohohle řádku vycházelo šesťákovi
+   * `9678 − 4658 = 5020`. Viz `cardGameProfile`.
+   *
+   * Nedělá se to už v konfiguraci: `payload.difficulty` má dál poctivě
+   * říkat, jaký ročník si učitel zvolil. Jak s ním hra naloží, je věc hry.
+   */
+  const difficulty = cardGameProfile(payload.difficulty)
+
   const generatorMix = payload.generatorMix ?? { arithmetic: 1 }
   const generators = taskGenerators.filter(
-    (generator) => generator.supports(payload.difficulty) && (generatorMix[generator.id] ?? 0) > 0,
+    (generator) => generator.supports(difficulty) && (generatorMix[generator.id] ?? 0) > 0,
   )
   if (generators.length === 0) {
     return {
@@ -153,7 +164,7 @@ function generateOnce(config: DominoProject): DominoOutcome {
     pools.set(
       generator.id,
       rng.shuffle([
-        ...generator.reachableValues(payload.difficulty, payload.taskMix, ALLOW_DECIMAL_RESULTS),
+        ...generator.reachableValues(difficulty, payload.taskMix, ALLOW_DECIMAL_RESULTS),
       ]),
     )
   }
@@ -164,7 +175,7 @@ function generateOnce(config: DominoProject): DominoOutcome {
   // dávala 56, pasovaly by na jedno místo dva kameny a řetěz by se rozvětvil.
   const usedValues = new Set<number>()
   const context = {
-    profile: payload.difficulty,
+    profile: difficulty,
     mix: payload.taskMix,
     usedExpressions,
     rules: ALLOW_DECIMAL_RESULTS,

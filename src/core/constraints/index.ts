@@ -10,6 +10,36 @@
 import type { DifficultyProfile, Grade, RelaxationLog } from '../model/index.js'
 
 /**
+ * Kolik nejvýš smí být na kartičce, aby to dítě spočítalo z hlavy.
+ *
+ * Obor čísel v profilu je psaný pro PRACOVNÍ LIST, kde má dítě tužku, papír
+ * a jeden příklad pod druhým. Šifra se do něj nikdy neopřela — její cíle jsou
+ * kódy políček, tedy nanejvýš dvojciferná čísla. Hry ano, a nikdo to
+ * nerozhodl: braly cíle z celého oboru, takže šesťák dostal na pexesu
+ * `9678 − 4658 = 5020` a měl to spárovat mezi dvanácti kartičkami.
+ *
+ * Tisíc je hranice, kde ještě jde odečíst z hlavy a přitom se ročníky
+ * neslijí — šestka se od páté třídy neliší velikostí čísel, ale stavbou
+ * úlohy: tři členy, závorky, pořadí operací.
+ */
+export const CARD_VALUE_MAX = 1000
+
+/**
+ * Profil oříznutý na to, co se dá spočítat u stolu s kartičkami v ruce.
+ *
+ * Mění jen obor čísel, nic jiného: ročník, povolené operace ani počet členů
+ * zůstávají. Ročníky s oborem do tisíce (3., 4., 5. a 7.) tím neprojdou
+ * změnou vůbec.
+ */
+export function cardGameProfile(profile: DifficultyProfile): DifficultyProfile {
+  if (profile.numberRange.max <= CARD_VALUE_MAX) return profile
+  return {
+    ...profile,
+    numberRange: { ...profile.numberRange, max: CARD_VALUE_MAX },
+  }
+}
+
+/**
  * Výchozí profil pro ročník.
  *
  * Hodnoty odpovídají běžnému postupu na české ZŠ. Jsou to defaulty, ne dogma —

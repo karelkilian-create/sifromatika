@@ -14,7 +14,7 @@
  */
 
 import { hashString } from '../../core/checksum/index.js'
-import { PAIR_COUNT_LIMITS, gradeProfile } from '../../core/constraints/index.js'
+import { PAIR_COUNT_LIMITS, cardGameProfile, gradeProfile } from '../../core/constraints/index.js'
 import type {
   Grade,
   PexesoProject,
@@ -122,9 +122,20 @@ function generateOnce(config: PexesoProject): PexesoOutcome {
   const payload = config.payload
   const relaxations: RelaxationLog[] = []
 
+  /*
+   * Obor čísel oříznutý na kartičku. Profil ročníku je psaný pro pracovní
+   * list — dítě u něj má tužku a papír — kdežto tady drží dvanáct kartiček
+   * v ruce a páruje je očima. Bez tohohle řádku vycházelo šesťákovi
+   * `9678 − 4658 = 5020`. Viz `cardGameProfile`.
+   *
+   * Nedělá se to už v konfiguraci: `payload.difficulty` má dál poctivě
+   * říkat, jaký ročník si učitel zvolil. Jak s ním hra naloží, je věc hry.
+   */
+  const difficulty = cardGameProfile(payload.difficulty)
+
   const generatorMix = payload.generatorMix ?? { arithmetic: 1 }
   const generators = taskGenerators.filter(
-    (generator) => generator.supports(payload.difficulty) && (generatorMix[generator.id] ?? 0) > 0,
+    (generator) => generator.supports(difficulty) && (generatorMix[generator.id] ?? 0) > 0,
   )
   if (generators.length === 0) {
     return {
@@ -148,7 +159,7 @@ function generateOnce(config: PexesoProject): PexesoOutcome {
     pools.set(
       generator.id,
       rng.shuffle([
-        ...generator.reachableValues(payload.difficulty, payload.taskMix, ALLOW_DECIMAL_RESULTS),
+        ...generator.reachableValues(difficulty, payload.taskMix, ALLOW_DECIMAL_RESULTS),
       ]),
     )
   }
@@ -158,7 +169,7 @@ function generateOnce(config: PexesoProject): PexesoOutcome {
   // Klíčové místo celé aktivity: každá hodnota nejvýš jednou.
   const usedValues = new Set<number>()
   const context = {
-    profile: payload.difficulty,
+    profile: difficulty,
     mix: payload.taskMix,
     usedExpressions,
     rules: ALLOW_DECIMAL_RESULTS,

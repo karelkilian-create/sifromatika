@@ -51,6 +51,12 @@
  *      takže se mění kartičky, kameny i bingo všude, kde má učitel zaškrtnutá
  *      desetinná čísla — od 5. ročníku výš. Šifra a list řad zůstávají beze
  *      změny: ty si celý výsledek vyžádají dál a dostanou tutéž zásobu.
+ *  7 — hry berou čísla nanejvýš do tisíce. Obor v profilu je psaný pro
+ *      pracovní list, kde má dítě tužku a papír; kartičky se párují očima,
+ *      a šesťák přesto dostal `9678 − 4658 = 5020`. Ročníky s oborem do
+ *      tisíce (3., 4., 5. a 7.) se nemění, u 6., 8. a 9. se mění kartičky,
+ *      kameny i bingo. Šifra a list řad zůstávají — ty si obor nikdy nebraly
+ *      z profilu naplno, protože jejich cíle jsou kódy políček.
  */
-export const GENERATOR_VERSION = 6
+export const GENERATOR_VERSION = 7
 export const APP_VERSION = '0.1.0-dev'

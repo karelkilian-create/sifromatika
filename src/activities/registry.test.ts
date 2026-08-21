@@ -11,9 +11,10 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import type { ActivityId } from '../core/model/index.js'
+import { CARD_VALUE_MAX } from '../core/constraints/index.js'
+import type { ActivityId, Grade, Task } from '../core/model/index.js'
 import { parseSifra, serializeSifra } from '../storage/sifra.js'
-import type { SharedEditorState } from './contract.js'
+import type { ActivitySheet, SharedEditorState } from './contract.js'
 import {
   activityCatalog,
   activityModules,
@@ -92,6 +93,45 @@ describe('kontrakt aktivity', () => {
       last.blocks.some((block) => block.kind === 'table'),
       `poslední stránka „${last.label}" nemá tabulku s výsledky`,
     ).toBe(true)
+  })
+
+  /*
+   * Kartičková hra se počítá z hlavy u stolu, ne tužkou na papíře. Profil
+   * ročníku je psaný pro pracovní list — šestka, osmička i devítka mají obor
+   * do deseti tisíc — takže bez `cardGameProfile` vycházelo šesťákovi na
+   * pexesu `9678 − 4658 = 5020`. Hlídá se to i tady, ne jen ve snímku:
+   * snímek chytí změnu jednoho seedu, tohle to pravidlo.
+   */
+  it.each([
+    ['pexeso', 6],
+    ['pexeso', 8],
+    ['domino', 6],
+    ['domino', 9],
+    ['bingo', 6],
+    ['bingo', 8],
+  ] as [ActivityId, Grade][])('%s v %i. ročníku nepřeleze na kartičce tisícovku', (id, grade) => {
+    for (let seed = 0; seed < 5; seed++) {
+      const run = runActivity(id, initialActivityStates(), { ...shared, grade }, `obor-${id}-${seed}`)
+      expect(run.outcome.ok).toBe(true)
+      if (!run.outcome.ok) return
+
+      // Úlohy nejsou v `ActivitySheet` — šifra je má ve `slots` s kódem
+      // políčka, hry v `tasks`. Zúžení je tu proto schválně: kontrakt kvůli
+      // testu rozšiřovat nechci, tenhle test se ptá jen her.
+      const { tasks } = run.outcome.sheet as ActivitySheet & { tasks: readonly Task[] }
+      expect(tasks.length).toBeGreaterThan(0)
+
+      for (const task of tasks) {
+        expect(Math.abs(task.value), `${task.prompt.text} = ${task.value}`).toBeLessThanOrEqual(
+          CARD_VALUE_MAX,
+        )
+        // Nejen výsledek: `9678 − 8678 = 1000` je pro kartičku stejně mimo.
+        for (const number of task.prompt.text.matchAll(/\d+(?:,\d+)?/gu)) {
+          const value = Number(number[0]!.replace(',', '.'))
+          expect(value, task.prompt.text).toBeLessThanOrEqual(CARD_VALUE_MAX)
+        }
+      }
+    }
   })
 
   it('učitelská stránka není mezi tím, co se rozdává dětem', () => {
