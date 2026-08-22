@@ -53,11 +53,19 @@ interface InitialApp {
 /** Odkud se list obnovil. Liší se tím, co se učiteli hlásí. */
 type RestoreSource = 'link' | 'last'
 
-const MISMATCH: Record<RestoreSource, (version: string) => string> = {
-  link: (version) =>
-    `Tenhle odkaz vznikl ve verzi ${version}. Aktuální verze z něj vytvoří jiný list — vytištěné řešení kolegy už nemusí sedět.`,
-  last: (version) =>
-    `Zapamatované nastavení je z verze ${version}. Aktuální verze z něj vytvoří jiný list — co jsi vytiskl dřív, už nemusí sedět.`,
+/**
+ * Neshoda součtu: konfigurace sedí, ale dnešní generátor z ní počítá jiný list.
+ *
+ * ⚠ Číslo verze ve větě NENÍ, a schválně. Stálo v ní `appVersion`, které se
+ *   mění jen s vydáním aplikace, kdežto neshodu působí `GENERATOR_VERSION` —
+ *   takže učitel po jeho inkrementu četl „je z verze 0.1.0-dev" ve verzi
+ *   0.1.0-dev a hláška vypadala jako chyba aplikace. Nahradit jedno číslo
+ *   druhým by nepomohlo: „z verze 7" mu neřekne o nic víc. Podstatné je, co
+ *   má udělat, a to ve větě zůstalo.
+ */
+const MISMATCH: Record<RestoreSource, string> = {
+  link: 'Tenhle odkaz vznikl ve starší verzi Šifromatiky. Dnešní z něj vytvoří jiný list — vytištěné řešení kolegy už nemusí sedět.',
+  last: 'Zapamatované nastavení je ze starší verze Šifromatiky. Dnešní z něj vytvoří jiný list — co jsi vytiskl dřív, už nemusí sedět.',
 }
 
 /**
@@ -79,7 +87,7 @@ function restore(file: SifraFile, source: RestoreSource): InitialApp {
     return {
       ...restored,
       fromLink,
-      notice: { level: 'error', message: MISMATCH[source](file.config.appVersion) },
+      notice: { level: 'error', message: MISMATCH[source] },
     }
   }
 
@@ -336,7 +344,8 @@ export function App() {
     if (checksum !== null && checksum !== parsed.file.checksum) {
       setFileNotice({
         level: 'error',
-        message: `Tato aktivita byla uložena ve verzi ${parsed.file.config.appVersion}. Aktuální verze pro ni vytvoří jiný list — dřív vytištěné řešení už nemusí sedět.`,
+        message:
+          'Tato aktivita byla uložena ve starší verzi Šifromatiky. Dnešní pro ni vytvoří jiný list — dřív vytištěné řešení už nemusí sedět.',
       })
       return
     }
