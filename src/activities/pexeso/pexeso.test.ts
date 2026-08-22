@@ -70,7 +70,12 @@ describe('kartičky', () => {
     const adjacent = sheet.cards.filter(
       (card, index) => index > 0 && sheet.cards[index - 1]!.pairIndex === card.pairIndex,
     )
-    expect(adjacent.length).toBeLessThan(3)
+    // Mez je statistická, ne přesná: ze 36 kartiček vyjde v dobře zamíchaném
+    // balíčku průměrně jedno takové sousedství a tři nejsou nic zvláštního.
+    // Do verze 8 tu stály dvě a stačil inkrement `GENERATOR_VERSION`, aby
+    // test spadl na zamíchání, které bylo v pořádku. Nemíchaný balíček by
+    // jich měl osmnáct, takže i tahle mez ho pozná.
+    expect(adjacent.length).toBeLessThan(5)
   })
 
   it('zamíchání je součástí listu, ne sazby — dvě volání dají totéž', () => {

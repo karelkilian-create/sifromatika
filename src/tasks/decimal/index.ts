@@ -71,14 +71,6 @@ function toCents(target: number): number {
   return Math.round(target * CENTS)
 }
 
-/** Vejde se hodnota do povoleného počtu desetinných míst? */
-function fitsPlaces(cents: number, places: DifficultyProfile['decimals']): boolean {
-  if (cents % CENTS === 0) return false // celé číslo není desetinná úloha
-  if (places === 0) return false
-  if (places === 1) return cents % 10 === 0
-  return true
-}
-
 /** Je operand v oboru čísel, který profil dovoluje? */
 function inRange(cents: number, profile: DifficultyProfile): boolean {
   const value = cents / CENTS
@@ -89,12 +81,56 @@ function inRange(cents: number, profile: DifficultyProfile): boolean {
  * Zlomkové části, ze kterých se skládají sčítanci.
  *
  * Vybrané, ne losované ze všech setin: `2,5 + 3,5` je úloha, `2,37 + 3,63`
- * je počítání na papíře. Pro desetiny zbydou jen násobky deseti.
+ * je počítání na papíře. Přes `isUsableOperand` se z nich pak ještě vybírá
+ * podle celé části — nad stem projdou jen desetiny.
  */
 const NICE_FRACTIONS = [5, 10, 20, 25, 40, 50, 60, 75, 80, 90]
 
 function fractionsFor(places: DifficultyProfile['decimals']): number[] {
   return places === 1 ? NICE_FRACTIONS.filter((value) => value % 10 === 0) : NICE_FRACTIONS
+}
+
+/**
+ * Setinové části z téhož seznamu: dvacetiny a čtvrtiny.
+ *
+ * Odvozené, ne vypsané. Kdyby to byly dva seznamy, rozešly by se — a poznalo
+ * by se to tím, že by součet uměl setinu, kterou součin odmítne.
+ */
+const NICE_CENTS = NICE_FRACTIONS.filter((value) => value % 10 !== 0)
+
+/**
+ * Nejvyšší číslo, které smí mít dvě desetinná místa.
+ *
+ * Sto je mez, kde se láme způsob počítání: `54,05 + 45,25` se sečte po
+ * složkách z hlavy, kdežto u `103,25 + 58,55` už dítě přenáší desítky
+ * i setiny zároveň a sáhne po tužce. Nad stem proto zbývají desetiny.
+ *
+ * ⚠ Je to konstanta, ne parametr v `TaskRules`, a schválně. Na rozdíl od
+ *   `maxResultPlaces` se tahle mez pro pracovní list a pro kartičku neliší —
+ *   je to tvrzení o počítání z hlavy, ne o tom, co se dá spárovat očima. A na
+ *   ročníku taky nezávisí: osmák počítá `103,25 + 58,55` stejně nerad jako
+ *   šesťák, jen si to spíš odbude písemně. Až přijde π v kruhu, kvůli kterému
+ *   je `maxResultPlaces` parametr, půjde o VÝSLEDEK a `3,14` je pod stem.
+ */
+const TWO_PLACE_CEILING = 100
+
+/**
+ * Smí tohle číslo stát v zadání?
+ *
+ * Ptá se na dvě různé věci najednou, protože obě mluví o témž čísle: kolik
+ * desetinných míst dovoluje profil ročníku, a jestli je číslo se dvěma místy
+ * ještě počitatelné z hlavy. Druhá otázka je ta, kvůli které vzniklo
+ * `156,92 · 5` — obor čísel na ni neodpoví, `156,92` je hluboko pod tisícem.
+ */
+function isUsableOperand(cents: number, places: DifficultyProfile['decimals']): boolean {
+  if (cents % CENTS === 0) return false // celé číslo není desetinná úloha
+  if (places === 0) return false
+
+  const fraction = cents % CENTS
+  if (fraction % 10 === 0) return true // desetina se počítá z hlavy vždycky
+  if (places < 2) return false
+  if (cents > TWO_PLACE_CEILING * CENTS) return false
+  return NICE_CENTS.includes(fraction)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -105,8 +141,11 @@ function fractionsFor(places: DifficultyProfile['decimals']): number[] {
  * `3,5 · 4` — desetinné číslo krát celé.
  *
  * Konstrukce jde pozpátku od výsledku: hledá se činitel, po dělení kterým
- * zbude číslo s povoleným počtem desetinných míst. Cíl přitom celý být nemusí:
- * `2,5` vyjde z `0,5 · 5`.
+ * zbude použitelné číslo. Cíl přitom celý být nemusí: `2,5` vyjde z `0,5 · 5`.
+ *
+ * ⚠ Na rozdíl od součtu se tu zlomková část NELOSUJE, ale dopočítá z cíle —
+ *   dělení vrátí, co vrátí. Bez `isUsableOperand` odsud vycházelo
+ *   `30,02 · 5 = 150,1`: v oboru, v počtu míst, a stejně na tužku a papír.
  */
 function decimalTimesWhole(target: number, profile: DifficultyProfile, rng: Rng): string | null {
   const factors = rng.shuffle(
@@ -116,7 +155,7 @@ function decimalTimesWhole(target: number, profile: DifficultyProfile, rng: Rng)
   for (const factor of factors) {
     const cents = toCents(target) / factor
     if (!Number.isInteger(cents)) continue
-    if (!fitsPlaces(cents, profile.decimals)) continue
+    if (!isUsableOperand(cents, profile.decimals)) continue
     if (!inRange(cents, profile)) continue
     return `${formatDecimal(cents)} ${SYMBOL.mul} ${factor}`
   }
@@ -141,14 +180,19 @@ function decimalPlusDecimal(target: number, profile: DifficultyProfile, rng: Rng
   const highest = Math.max(lowest, Math.ceil((target * 2) / 3) - 1)
 
   for (let attempt = 0; attempt < 8; attempt++) {
-    const fraction = rng.pick(fractions)
     const wholePart = rng.int(lowest, highest)
-    const firstCents = wholePart * CENTS + fraction
+    // Zlomková část se vybírá až podle celé — nad stem projdou jen desetiny,
+    // takže losovat ze všech a pokus zahodit by jen ubíralo z osmi pokusů.
+    const usable = fractions.filter((value) =>
+      isUsableOperand(wholePart * CENTS + value, profile.decimals),
+    )
+    if (usable.length === 0) continue
+
+    const firstCents = wholePart * CENTS + rng.pick(usable)
     const secondCents = totalCents - firstCents
 
     if (firstCents <= 0 || secondCents <= 0) continue
-    if (!fitsPlaces(firstCents, profile.decimals)) continue
-    if (!fitsPlaces(secondCents, profile.decimals)) continue
+    if (!isUsableOperand(secondCents, profile.decimals)) continue
     if (!inRange(firstCents, profile) || !inRange(secondCents, profile)) continue
 
     return `${formatDecimal(firstCents)} ${SYMBOL.add} ${formatDecimal(secondCents)}`
@@ -288,7 +332,7 @@ function reachableByProduct(target: number, profile: DifficultyProfile): boolean
   for (let factor = MIN_FACTOR; factor <= MAX_FACTOR; factor++) {
     const cents = toCents(target) / factor
     if (!Number.isInteger(cents)) continue
-    if (fitsPlaces(cents, profile.decimals) && inRange(cents, profile)) return true
+    if (isUsableOperand(cents, profile.decimals) && inRange(cents, profile)) return true
   }
   return false
 }

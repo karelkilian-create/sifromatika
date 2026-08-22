@@ -113,7 +113,10 @@ describe('sazba se řídí obsahem, ne rendererem', () => {
   })
 
   it('číselná řada nedostane za otazník rovnítko', () => {
-    const config = defaultConfig('TAJNA STEZKA', 4, 'golden-rady')
+    // Seed jako v golden testu, i s číslem verze: do verze 8 se sem po
+    // přehození losování netrefila ani jedna řada a test tvrdil o sazbě
+    // řad něco, co v listu vůbec nebylo.
+    const config = defaultConfig('TAJNA STEZKA', 4, 'golden-rady-8')
     config.payload.generatorMix = { arithmetic: 3, sequence: 1 }
     const outcome = generateCipherGrid(config)
     if (!outcome.ok) throw new Error(outcome.reason)

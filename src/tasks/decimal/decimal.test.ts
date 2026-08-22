@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import fc from 'fast-check'
-import { gradeProfile } from '../../core/constraints/index.js'
+import { cardGameProfile, gradeProfile } from '../../core/constraints/index.js'
 import type { Grade, OperationTag, TaskRules } from '../../core/model/index.js'
 import { ALLOW_DECIMAL_RESULTS, REQUIRE_WHOLE_RESULTS } from '../../core/model/index.js'
 import { createRng } from '../../core/rng/index.js'
@@ -181,6 +181,85 @@ describe('decimalGenerator — co smí vyjít, diktuje list', () => {
         const decimals = part.includes(',') ? part.split(',')[1]!.length : 0
         expect(decimals, task.prompt.text).toBeLessThanOrEqual(1)
       }
+    }
+  })
+})
+
+describe('decimalGenerator — dvě desetinná místa jen do sta', () => {
+  /** Čísla v zadání i s počtem desetinných míst, tak jak jsou vytištěná. */
+  function operands(text: string): { value: number; places: number }[] {
+    return [...text.matchAll(/(\d+)(?:,(\d+))?/gu)].map((match) => ({
+      value: Number(match[1]) + Number(`0.${match[2] ?? '0'}`),
+      places: match[2]?.length ?? 0,
+    }))
+  }
+
+  it.each([6, 7, 8] as const)('%i. ročník: nad stem nevznikne setina', (grade) => {
+    const ctx = context(grade, ALL, ALLOW_DECIMAL_RESULTS)
+    const rng = createRng(`strop-${grade}`)
+    const reachable = [...decimalGenerator.reachableValues(gradeProfile(grade), ALL, ALLOW_DECIMAL_RESULTS)]
+
+    for (const target of reachable.slice(0, 400)) {
+      const task = decimalGenerator.generateForValue(target, ctx, rng)
+      if (task === null) continue
+      for (const operand of operands(task.prompt.text)) {
+        if (operand.places < 2) continue
+        // `156,92 · 5` bylo v oboru ročníku i v počtu míst profilu. Obor
+        // čísel na tuhle vadu neodpoví — 156,92 je hluboko pod tisícem.
+        expect(operand.value, task.prompt.text).toBeLessThanOrEqual(100)
+      }
+    }
+  })
+
+  it('setina je vždy čtvrtina nebo dvacetina, i u součinu', () => {
+    // Součet losuje zlomkovou část ze seznamu, součin ji dopočítá dělením
+    // cílem — a bez společného síta odtud vycházelo `30,02 · 5 = 150,1`.
+    const ctx = context(6, ALL, ALLOW_DECIMAL_RESULTS)
+    const rng = createRng('setiny')
+    const reachable = [...decimalGenerator.reachableValues(gradeProfile(6), ALL, ALLOW_DECIMAL_RESULTS)]
+
+    for (const target of reachable.slice(0, 400)) {
+      const task = decimalGenerator.generateForValue(target, ctx, rng)
+      if (task === null) continue
+      for (const operand of operands(task.prompt.text)) {
+        if (operand.places < 2) continue
+        const cents = Math.round(operand.value * 100) % 100
+        expect([5, 25, 75], task.prompt.text).toContain(cents)
+      }
+    }
+  })
+
+  it('desetina zůstává volná — `0,3 · 7` je úloha jako každá jiná', () => {
+    // Strop mluví o setinách. Kdyby se do něj zamotaly i desetiny, zmizela
+    // by z listu třetina desetinných čísel bez jakéhokoli důvodu.
+    const ctx = context(6, { mul: 1 }, ALLOW_DECIMAL_RESULTS)
+    const task = decimalGenerator.generateForValue(2.1, ctx, createRng('desetina'))
+    // `0,3 · 7` nebo `0,7 · 3` — na pořadí nezáleží, na desetině ano: ani
+    // tři, ani sedm setin ve výčtu povolených setin nejsou.
+    expect(task?.prompt.text).toMatch(/^0,[37] · [37]$/u)
+  })
+
+  it('zásoba cílů tím prakticky nezhubla', () => {
+    // Devět desetin z deseti je pravidlem netknutých; kdyby strop zásobu
+    // rozbil, projevilo by se to tady dřív než prázdným náhledem.
+    const reachable = decimalGenerator.reachableValues(
+      cardGameProfile(gradeProfile(6)),
+      ALL,
+      ALLOW_DECIMAL_RESULTS,
+    )
+    expect(reachable.size).toBeGreaterThan(9900)
+  })
+
+  it('slíbený cíl jde vyrobit i po zúžení zásoby', () => {
+    const profile = cardGameProfile(gradeProfile(6))
+    const reachable = [...decimalGenerator.reachableValues(profile, ALL, ALLOW_DECIMAL_RESULTS)]
+
+    for (const target of reachable.slice(0, 120)) {
+      const ctx = { profile, mix: ALL, usedExpressions: new Set<string>(), rules: ALLOW_DECIMAL_RESULTS }
+      expect(
+        decimalGenerator.generateForValue(target, ctx, createRng(`slib-${target}`)),
+        `slíbená hodnota ${target}`,
+      ).not.toBeNull()
     }
   })
 })

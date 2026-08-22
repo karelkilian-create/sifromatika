@@ -39,6 +39,8 @@ import {
   sheetChecksum as pexesoChecksum,
 } from '../../src/activities/pexeso/index.js'
 import type { PexesoSheet } from '../../src/activities/pexeso/index.js'
+import { generatorMixFromTopics } from '../../src/tasks/mix.js'
+import { gradeProfile } from '../../src/core/constraints/index.js'
 
 function render(sheet: CipherGridSheet): string {
   const rows: string[] = []
@@ -69,51 +71,51 @@ describe('DoD 0.1 bod 7 — zmrazený výstup', () => {
   it('souřadnicová šifra, 4. ročník', () => {
     expect(render(build('POKLAD JE U BAZÉNU', 4, 'golden-1'))).toMatchInlineSnapshot(`
       "mřížka 9×9
-        1 | U P L C Z O O N I
-        2 | L Z V K E I K K T
-        3 | E U F I B D E P N
-        4 | K B U B I J I A P
-        5 | A N O I E D E B T
-        6 | R E S E E A N N N
-        7 | T Z V T E Z N Y Y
-        8 | E O P A E A A E E
-        9 | O A S S I E R A Z
-         1. 2 · 6 = 12
-         2. 7 + 9 = 16
-         3. 4 · 6 = 24
-         4. 28 − 15 = 13
-         5. 61 + 26 = 87
-         6. 43 + 13 = 56
-         7. 92 : 2 = 46
-         8. 5 · 5 = 25
-         9. 96 : 3 = 32
-        10. 88 : 2 = 44
-        11. 36 + 62 = 98
-        12. 12 + 3 = 15
-        13. 78 − 23 = 55
-        14. 3 · 6 = 18
-        15. 4 + 7 = 11
-      součet bc37fe7f"
+        1 | U A A O E J B E V
+        2 | O L S Y O I I A D
+        3 | K V T V U L I D P
+        4 | V V O L E Z R O I
+        5 | R E O N B K N P E
+        6 | O T K T R R D N P
+        7 | O T A D N J E O M
+        8 | D N L V K V T A N
+        9 | E I V S M E L C E
+         1. 9 + 30 = 39
+         2. 88 − 10 = 78
+         3. 7 · 8 = 56
+         4. 88 : 2 = 44
+         5. 60 + 13 = 73
+         6. 9 · 9 = 81
+         7. 22 − 6 = 16
+         8. 25 + 20 = 45
+         9. 24 + 11 = 35
+        10. 69 − 14 = 55
+        11. 28 − 15 = 13
+        12. 16 + 30 = 46
+        13. 100 − 9 = 91
+        14. 9 · 6 = 54
+        15. 6 + 5 = 11
+      součet 024bd88c"
     `)
   })
 
   it('souřadnicová šifra, 3. ročník, krátká tajenka', () => {
     expect(render(build('AHOJ', 3, 'golden-2'))).toMatchInlineSnapshot(`
       "mřížka 9×9
-        1 | Z T O A O K U Z N
-        2 | P D K J P E N E O
-        3 | J L A A T M E M J
-        4 | N E S Z D V N L Z
-        5 | L P Z N I R D N T
-        6 | D I N D U L A H P
-        7 | R M Y T N A U I L
-        8 | E Y S L L M L V R
-        9 | A M L E E V O Y N
-         1. 56 : 4 = 14
-         2. 65 + 3 = 68
-         3. 45 − 30 = 15
-         4. 48 : 2 = 24
-      součet 355e12c5"
+        1 | R E I C N E P S A
+        2 | D E A O A V N O U
+        3 | Y V K V V J A A Z
+        4 | A O N P A O A A D
+        5 | T I H A T H O N O
+        6 | D L S K Z N P C T
+        7 | M Z I O E H T A H
+        8 | P N I K N I L O I
+        9 | E E A O N P S N E
+         1. 67 − 30 = 37
+         2. 92 − 13 = 79
+         3. 22 + 6 = 28
+         4. 9 · 4 = 36
+      součet 16c59931"
     `)
   })
 
@@ -124,32 +126,37 @@ describe('DoD 0.1 bod 7 — zmrazený výstup', () => {
     if (!outcome.ok) throw new Error(outcome.reason)
     expect(render(outcome.sheet)).toMatchInlineSnapshot(`
       "mřížka 9×9
-        1 | Y T E L U S D J A
-        2 | E V P O T P V T Z
-        3 | S N N N I T I O K
-        4 | E D J D M E L E O
-        5 | O A O L O A C R R
-        6 | O T P L E E T S M
-        7 | O L U V P O M Z K
-        8 | E Y L S D K K C O
-        9 | E A I A O A N A G
-         1. 34 + 37 = 71
-         2. 4 · 7 = 28
-         3. 31 − 12 = 19
-         4. 17 − 15 = 2
-         5. 3 · 3 = 9
-         6. 128 − 60 = 68
-         7. 288 : 8 = 36
-         8. 32 : 8 = 4
-         9. 159 − 95 = 64
-        10. 3 + 3 = 6
-        11. 162 − 88 = 74
-      součet 3ca950a1"
+        1 | B A A K T T K J P
+        2 | R P E U W J J P A
+        3 | I T U S I K X A N
+        4 | L O S Z J A C N L
+        5 | K S E T P O C T J
+        6 | E T A D O P T T O
+        7 | U E D I K N P D C
+        8 | M N C V U N E H O
+        9 | T K N S S C I B T
+         1. 45 + 18 = 63
+         2. 9 + 3 = 12
+         3. 97 − 21 = 76
+         4. 18 : 3 = 6
+         5. 6 · 8 = 48
+         6. 129 − 72 = 57
+         7. 34 + 20 = 54
+         8. 4 · 9 = 36
+         9. 105 − 49 = 56
+        10. 198 : 9 = 22
+        11. 52 : 2 = 26
+      součet 87c9b633"
     `)
   })
 
   it('list se zapnutými číselnými řadami, 4. ročník', () => {
-    const config = defaultConfig('TAJNA STEZKA', 4, 'golden-rady')
+    // Seed nese číslo verze, protože se s ní mění: `generatorVersion` je
+    // součástí semínka RNG, takže inkrement přehází losování i tam, kde se
+    // pravidla vůbec nezměnila. Do verze 8 tu stál `golden-rady`, do kterého
+    // se po přehození netrefila ani jedna řada — a bez řady tenhle zámek
+    // nehlídá nic.
+    const config = defaultConfig('TAJNA STEZKA', 4, 'golden-rady-8')
     config.payload.generatorMix = { arithmetic: 3, sequence: 1 }
     const outcome = generateCipherGrid(config)
     if (!outcome.ok) throw new Error(outcome.reason)
@@ -157,27 +164,27 @@ describe('DoD 0.1 bod 7 — zmrazený výstup', () => {
     expect(outcome.sheet.slots.some((slot) => slot.task.prompt.kind === 'sequence')).toBe(true)
     expect(render(outcome.sheet)).toMatchInlineSnapshot(`
       "mřížka 9×9
-        1 | O V M O I N T A Y
-        2 | N S M T V P M K O
-        3 | O E Y I I S E I V
-        4 | N M J K A E B E T
-        5 | D S V P T E E U N
-        6 | N O Y T N E Y O N
-        7 | V Z A K H S E O N
-        8 | A B P L Y S P D Z
-        9 | A A M A P D S V A
-         1. 9 + 8 = 17
-         2. 90 : 2 = 45
-         3. 12 + 31 = 43
-         4. 8 · 2 = 16
-         5. 12 + 6 = 18
-         6. 72 : 2 = 36
-         7. 60 − 36 = 24
-         8. 28 38 ? 58 68 = 48
-         9. 81 − 9 = 72
-        10. 7 · 4 = 28
-        11. 90 − 9 = 81
-      součet 92e4eadf"
+        1 | L K A L T U O I O
+        2 | A A D V N T N C A
+        3 | N E S A J E V N N
+        4 | M N M T E D E K O
+        5 | P T E A J O I J D
+        6 | S E D A M D A N L
+        7 | L N V V B M S U D
+        8 | T E M C K V T O R
+        9 | L Z J J J S S I T
+         1. 75 : 5 = 15
+         2. 4 8 16 32 ? = 64
+         3. 70 : 2 = 35
+         4. 61 52 43 34 ? = 25
+         5. 20 + 9 = 29
+         6. 99 : 3 = 33
+         7. 63 − 19 = 44
+         8. 22 26 29 33 ? = 36
+         9. 68 74 80 86 ? = 92
+        10. 8 · 6 = 48
+        11. 92 − 25 = 67
+      součet d128437a"
     `)
   })
 
@@ -191,23 +198,23 @@ describe('DoD 0.1 bod 7 — zmrazený výstup', () => {
   it('šifra pro 6. ročník — složené výrazy a pořadí operací', () => {
     expect(render(build('ROVNICE', 6, 'golden-6'))).toMatchInlineSnapshot(`
       "mřížka 9×9
-        1 | K D E V O I R E T
-        2 | N A A K V Z E I C
-        3 | O P N K N N C C R
-        4 | U O I V V N N I T
-        5 | B O N I A T I Y K
-        6 | E I T A U D E E O
-        7 | U L I S T E D I C
-        8 | E O E H N A P U I
-        9 | M T B S K K N R N
-         1. 10 · 4 − 23 = 17
-         2. 70 : 10 + 24 = 31
-         3. 23 + 22 = 45
-         4. 9 · 4 = 36
-         5. 96 : 12 + 35 = 43
-         6. 15 + 22 = 37
-         7. 170 − 89 = 81
-      součet b64290a3"
+        1 | E E E B E A M R O
+        2 | E A N N H Z N O A
+        3 | Z I V H N D V N D
+        4 | T N J N R N L D P
+        5 | M O R U O I I P R
+        6 | D K R C O O L N B
+        7 | O A S N S D Z B L
+        8 | C Y H I E N N C J
+        9 | T I R N E R L U V
+         1. 12 · 8 = 96
+         2. 468 : 9 = 52
+         3. (41 − 8) · 3 = 99
+         4. 45 + 2 − 9 = 38
+         5. 320 : 10 = 32
+         6. 156 − 75 = 81
+         7. 63 : 3 = 21
+      součet 903db7de"
     `)
   })
 
@@ -220,28 +227,28 @@ describe('DoD 0.1 bod 7 — zmrazený výstup', () => {
     expect(sheet.slots.some((slot) => slot.task.prompt.text.includes('(−'))).toBe(true)
     expect(render(sheet)).toMatchInlineSnapshot(`
       "mřížka 9×9
-        1 | A I E S E L A C N
-        2 | A A R S I I N R K
-        3 | N P Z N E R L A O
-        4 | L T E C K C E S T
-        5 | N S T E O O E O V
-        6 | E M S S S E O A C
-        7 | P P I L N X P Z S
-        8 | R A D K E O V Z A
-        9 | N I E T C T Z O S
-         1. (8 + 3) · 8 = 88
-         2. 90 : 9 + 79 = 89
-         3. 3 · 3 + 68 = 77
-         4. 980 : 10 = 98
-         5. 60 − 32 = 28
-         6. 48 : 6 + 67 = 75
-         7. −81 + 102 = 21
-         8. (2 + 2) · 11 = 44
-         9. 7 − (−85) = 92
-        10. 19 + 29 = 48
-        11. 74 : 2 = 37
-        12. 203 − 121 = 82
-      součet 7d8886e9"
+        1 | I I N A R E D S A
+        2 | O O H I L S A S S
+        3 | O O A S N S O N M
+        4 | E N K T Z E N O I
+        5 | N T E E I L Z Z O
+        6 | C P I U A A E P H
+        7 | H C A A S P D V L
+        8 | J M A K V A R I O
+        9 | L Y O D Z N O D S
+         1. 627 : 11 = 57
+         2. 3 · 10 + 56 = 86
+         3. 32 + 44 = 76
+         4. 24 : 8 + 28 = 31
+         5. 43 − 28 = 15
+         6. (3 + 14) · 3 = 51
+         7. −9 · (−3) = 27
+         8. 9 · 8 = 72
+         9. 26 − 15 = 11
+        10. −9 · (−2) = 18
+        11. 672 : 12 = 56
+        12. 20 − 6 = 14
+      součet b089e9e9"
     `)
   })
 
@@ -252,28 +259,28 @@ describe('DoD 0.1 bod 7 — zmrazený výstup', () => {
     expect(sheet.slots.some((slot) => /[²³√]/u.test(slot.task.prompt.text))).toBe(true)
     expect(render(sheet)).toMatchInlineSnapshot(`
       "mřížka 9×9
-        1 | V A S C E Z T M P
-        2 | A C L I I A L D K
-        3 | N N C I O J O C J
-        4 | V V P N U R V D A
-        5 | P B H L S I I T I
-        6 | L Z O E H I I O N
-        7 | E Z D C J K O A T
-        8 | R N C M E O S L L
-        9 | Y V A I T R U V R
-         1. 59 + 14 = 73
-         2. √196 + 67 = 81
-         3. 66 : 11 + 39 = 45
-         4. √9 + 50 = 53
-         5. (20 − 7) · 2 = 26
-         6. 6 · 3 = 18
-         7. 42 : 7 + 29 = 35
-         8. 50 : 5 + 23 = 33
-         9. √225 + 16 = 31
-        10. 79 − 22 = 57
-        11. 4 · 11 = 44
-        12. 2 · 6 = 12
-      součet 2efb95bd"
+        1 | A C T Z U H I O C
+        2 | N S N M A R A O E
+        3 | U D Y E V H I N Z
+        4 | A U E K V T S E E
+        5 | E R U L R E I Y H
+        6 | D T C L T R E S A
+        7 | O A T K U D I P T
+        8 | E Z D B N A S M C
+        9 | S E K D K O O K O
+         1. √64 + 53 = 61
+         2. 6 · 11 = 66
+         3. 9² − 39 = 42
+         4. 160 : 10 = 16
+         5. −34 + 120 = 86
+         6. −41 + 65 = 24
+         7. −86 + 185 = 99
+         8. 16 + 3 = 19
+         9. 39 + 56 − 10 = 85
+        10. 45 + 61 − 29 = 77
+        11. 147 : 7 = 21
+        12. 22 + 5 = 27
+      součet 1e53529f"
     `)
   })
 
@@ -303,15 +310,15 @@ describe('DoD 0.1 bod 7 — zmrazený výstup listu řad', () => {
     expect(outcome.sheet.verification).toEqual({ ok: true })
     expect(renderTasks(outcome.sheet)).toMatchInlineSnapshot(`
       "Číselné řady — 4. třída
-         1. 69 61 53 45 ? → 37   (krok −8: 69 61 53 45 37)
-         2. 26 35 44 53 ? → 62   (krok +9: 26 35 44 53 62)
-         3. 43 38 33 28 ? → 23   (krok −5: 43 38 33 28 23)
-         4. 59 67 75 83 ? → 91   (krok +8: 59 67 75 83 91)
-         5. 46 48 51 55 ? → 60   (krok roste o 1: 46 48 51 55 60)
-         6. 65 68 ? 74 77 → 71   (krok +3: 65 68 71 74 77)
-         7. 84 ? 92 96 100 → 88   (krok +4: 84 88 92 96 100)
-         8. 22 25 30 37 ? → 46   (krok roste o 2: 22 25 30 37 46)
-      součet cb39c0ea"
+         1. 66 68 70 72 ? → 74   (krok +2: 66 68 70 72 74)
+         2. 86 88 91 ? 100 → 95   (krok roste o 1: 86 88 91 95 100)
+         3. 69 71 76 78 ? → 83   (střídavý krok +2 a +5: 69 71 76 78 83)
+         4. 14 12 ? 8 6 → 10   (krok −2: 14 12 10 8 6)
+         5. 30 28 ? 24 22 → 26   (krok −2: 30 28 26 24 22)
+         6. 68 56 44 32 ? → 20   (krok −12: 68 56 44 32 20)
+         7. 96 94 92 ? 88 → 90   (krok −2: 96 94 92 90 88)
+         8. 35 ? 40 47 57 → 36   (krok roste o 3: 35 36 40 47 57)
+      součet ae371ddd"
     `)
   })
 
@@ -321,13 +328,13 @@ describe('DoD 0.1 bod 7 — zmrazený výstup listu řad', () => {
     expect(outcome.sheet.verification).toEqual({ ok: true })
     expect(renderTasks(outcome.sheet)).toMatchInlineSnapshot(`
       "Číselné řady — 3. třída
-         1. 55 53 51 ? 47 → 49   (krok −2: 55 53 51 49 47)
-         2. 91 87 83 79 ? → 75   (krok −4: 91 87 83 79 75)
-         3. 52 49 46 43 ? → 40   (krok −3: 52 49 46 43 40)
-         4. 30 38 46 ? 62 → 54   (krok +8: 30 38 46 54 62)
-         5. 35 44 53 62 ? → 71   (krok +9: 35 44 53 62 71)
-         6. 6 ? 20 27 34 → 13   (krok +7: 6 13 20 27 34)
-      součet a0cef8f9"
+         1. 92 88 84 80 ? → 76   (krok −4: 92 88 84 80 76)
+         2. 31 28 25 ? 19 → 22   (krok −3: 31 28 25 22 19)
+         3. 32 28 24 ? 16 → 20   (krok −4: 32 28 24 20 16)
+         4. 33 ? 17 9 1 → 25   (krok −8: 33 25 17 9 1)
+         5. 20 16 12 8 ? → 4   (krok −4: 20 16 12 8 4)
+         6. 51 43 35 27 ? → 19   (krok −8: 51 43 35 27 19)
+      součet ff0cdba5"
     `)
   })
 })
@@ -356,19 +363,19 @@ describe('DoD 0.1 bod 7 — zmrazené domino', () => {
     expect(outcome.sheet.verification).toEqual({ ok: true })
     expect(renderTiles(outcome.sheet)).toMatchInlineSnapshot(`
       "Domino — 5. třída
-         1. 191 | 963 − 177   (v kruhu 8.)
-         2. 786 | 395 + 15   (v kruhu 9.)
-         3. 429 | 788 − 64   (v kruhu 12.)
-         4. 724 | 448 + 537   (v kruhu 1.)
-         5. 410 | 363 + 126   (v kruhu 10.)
-         6. 936 | 222 − 31   (v kruhu 7.)
-         7. 989 | 536 − 261   (v kruhu 3.)
-         8. 556 | 726 : 6   (v kruhu 5.)
-         9. 275 | 832 − 276   (v kruhu 4.)
-        10. 489 | 309 + 120   (v kruhu 11.)
-        11. 121 | 982 − 46   (v kruhu 6.)
-        12. 985 | 995 − 6   (v kruhu 2.)
-      součet 34dc6041"
+         1. 392 | 705 + 179   (v kruhu 1.)
+         2. 75 | 811 − 285   (v kruhu 6.)
+         3. 888 | 839 − 500   (v kruhu 11.)
+         4. 339 | 784 : 2   (v kruhu 12.)
+         5. 212 | 496 + 62   (v kruhu 8.)
+         6. 125 | 12 : 4   (v kruhu 4.)
+         7. 558 | 972 : 3   (v kruhu 9.)
+         8. 526 | 636 : 3   (v kruhu 7.)
+         9. 3 | 122 − 47   (v kruhu 5.)
+        10. 884 | 284 + 702   (v kruhu 2.)
+        11. 324 | 949 − 61   (v kruhu 10.)
+        12. 986 | 500 : 4   (v kruhu 3.)
+      součet 726621d3"
     `)
   })
 
@@ -380,19 +387,19 @@ describe('DoD 0.1 bod 7 — zmrazené domino', () => {
     expect(outcome.sheet.verification).toEqual({ ok: true })
     expect(renderTiles(outcome.sheet)).toMatchInlineSnapshot(`
       "Domino — 7. třída
-         1. 756 | 90 % z 790   (v kruhu 12.)
-         2. 711 | 25 % z 940   (v kruhu 1.)
-         3. 99 | 65 % z 120   (v kruhu 3.)
-         4. 78 | 70 % z 890   (v kruhu 4.)
-         5. 17 | 50 % z 716   (v kruhu 10.)
-         6. 201 | 50 % z 542   (v kruhu 7.)
-         7. 235 | 30 % z 330   (v kruhu 2.)
-         8. 271 | 40 % z 965   (v kruhu 8.)
-         9. 623 | 75 % z 964   (v kruhu 5.)
-        10. 358 | 90 % z 840   (v kruhu 11.)
-        11. 386 | 10 % z 170   (v kruhu 9.)
-        12. 723 | 25 % z 804   (v kruhu 6.)
-      součet 2da5cbbf"
+         1. 31 | 50 % z 520   (v kruhu 3.)
+         2. 35 | 25 % z 984   (v kruhu 9.)
+         3. 222 | 50 % z 362   (v kruhu 6.)
+         4. 81 | 50 % z 140   (v kruhu 12.)
+         5. 70 | 60 % z 600   (v kruhu 1.)
+         6. 246 | 25 % z 884   (v kruhu 10.)
+         7. 221 | 10 % z 810   (v kruhu 11.)
+         8. 260 | 90 % z 430   (v kruhu 4.)
+         9. 360 | 10 % z 310   (v kruhu 2.)
+        10. 149 | 50 % z 70   (v kruhu 8.)
+        11. 387 | 60 % z 370   (v kruhu 5.)
+        12. 181 | 50 % z 298   (v kruhu 7.)
+      součet 9b516eab"
     `)
   })
 })
@@ -436,19 +443,57 @@ describe('DoD 0.1 bod 7 — zmrazené pexeso', () => {
     expect(outcome.sheet.verification).toEqual({ ok: true })
     expect(renderPairs(outcome.sheet)).toMatchInlineSnapshot(`
       "Pexeso — 6. třída
-         1. 135 : 5 = 27
-         2. (291 − 2) · 3 = 867
-         3. 548 − 62 = 486
-         4. (3 + 231) · 3 = 702
-         5. 42 : 7 + 817 = 823
-         6. 800 : 4 = 200
-         7. 923 − 63 = 860
-         8. (5 + 2) · 3 = 21
-         9. (15 − 7) · 11 = 88
-        10. 60 : 6 + 848 = 858
-        11. (61 + 46) · 7 = 749
-        12. 125 + 265 = 390
-      součet acbf0167"
+         1. 100 : 10 + 784 = 794
+         2. 457 + 116 = 573
+         3. 11 · 9 + 180 = 279
+         4. 314 + 147 − 7 = 454
+         5. 432 + 472 = 904
+         6. 504 + 160 = 664
+         7. 9 · 9 + 255 = 336
+         8. 923 − 114 = 809
+         9. 524 + 114 = 638
+        10. 60 : 12 + 398 = 403
+        11. 849 : 3 = 283
+        12. 756 − 255 = 501
+      součet d87c12d9"
+    `)
+  })
+})
+
+/**
+ * Pexeso ze samých desetinných čísel. Zamrzá tu jediný druh úlohy, který má
+ * v zadání čárku — a je to potřetí táž mezera: do `GENERATOR_VERSION` 8
+ * neobsahoval desetinné číslo ANI JEDEN snímek, takže změna, která přepsala
+ * čtvrtinu desetinné zásoby, prošla všemi 525 testy bez jediného selhání.
+ *
+ * Hlídá tím i `TWO_PLACE_CEILING`: kdyby strop zmizel, vrátí se sem operandy
+ * jako `103,25` a snímek to ukáže.
+ */
+describe('DoD 0.1 bod 7 — zmrazené desetinné pexeso', () => {
+  it('pexeso ze samých desetinných čísel, 6. ročník', () => {
+    const config = defaultPexesoConfig(6, 'golden-pexeso-des', 12)
+    config.payload.generatorMix = generatorMixFromTopics(
+      { arithmetic: false, sequences: false, decimals: true, percents: false, powers: false },
+      gradeProfile(6),
+    )
+    const outcome = generatePexeso(config)
+    if (!outcome.ok) throw new Error(outcome.reason)
+    expect(outcome.sheet.verification).toEqual({ ok: true })
+    expect(renderPairs(outcome.sheet)).toMatchInlineSnapshot(`
+      "Pexeso — 6. třída
+         1. 156,8 · 4 = 627.2
+         2. 496,6 + 369,1 = 865.7
+         3. 236,2 + 360,2 = 596.4
+         4. 309,8 + 577,6 = 887.4
+         5. 136,1 + 227,6 = 363.7
+         6. 124,3 · 7 = 870.1
+         7. 201,2 · 2 = 402.4
+         8. 188,4 + 117,5 = 305.9
+         9. 228,1 · 4 = 912.4
+        10. 31,05 + 49,05 = 80.1
+        11. 95,5 + 88,7 = 184.2
+        12. 9,9 · 6 = 59.4
+      součet 83593e11"
     `)
   })
 })
@@ -460,41 +505,41 @@ describe('DoD 0.1 bod 7 — zmrazené bingo', () => {
     expect(outcome.sheet.verification).toEqual({ ok: true })
     expect(renderBingo(outcome.sheet)).toMatchInlineSnapshot(`
       "Bingo — 5. třída
-         1. 242 + 234 = 476
-         2. 928 − 392 = 536
-         3. 416 : 8 = 52
-         4. 87 + 496 = 583
-         5. 788 : 4 = 197
-         6. 199 + 19 = 218
-         7. 6 + 5 = 11
-         8. 985 − 137 = 848
-         9. 2 · 2 = 4
-        10. 42 + 324 = 366
-        11. 782 : 2 = 391
-        12. 750 − 190 = 560
-        13. 990 − 29 = 961
-        14. 298 + 664 = 962
-        15. 693 : 3 = 231
-        16. 25 + 577 = 602
-        17. 536 : 4 = 134
-        18. 848 : 4 = 212
-        19. 136 + 428 = 564
-        20. 29 + 187 = 216
-        21. 96 : 8 = 12
-        22. 753 + 85 = 838
-        23. 65 + 262 = 327
-        24. 441 + 117 = 558
+         1. 935 − 46 = 889
+         2. 650 : 2 = 325
+         3. 630 : 2 = 315
+         4. 771 − 39 = 732
+         5. 670 : 10 = 67
+         6. 897 − 537 = 360
+         7. 940 : 2 = 470
+         8. 528 : 3 = 176
+         9. 725 + 54 = 779
+        10. 300 − 175 = 125
+        11. 460 + 395 = 855
+        12. 860 − 427 = 433
+        13. 59 + 331 = 390
+        14. 141 − 73 = 68
+        15. 890 − 437 = 453
+        16. 302 + 248 = 550
+        17. 402 : 2 = 201
+        18. 104 − 45 = 59
+        19. 979 − 20 = 959
+        20. 209 + 663 = 872
+        21. 228 + 46 = 274
+        22. 58 − 25 = 33
+        23. 987 − 5 = 982
+        24. 885 − 61 = 824
         karta 1
-          12 476 11 558
-          848 134 536 231
-          327 212 602 197
-          838 961 218 52
+          433 959 125 360
+          779 33 67 274
+          889 325 201 176
+          824 855 550 68
         karta 2
-          4 536 327 602
-          134 838 52 197
-          216 218 961 560
-          962 366 564 391
-      součet f68303c6"
+          33 68 390 59
+          125 176 67 824
+          982 325 315 872
+          779 732 201 889
+      součet 2428bb1f"
     `)
   })
 })

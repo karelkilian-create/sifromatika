@@ -57,6 +57,13 @@
  *      tisíce (3., 4., 5. a 7.) se nemění, u 6., 8. a 9. se mění kartičky,
  *      kameny i bingo. Šifra a list řad zůstávají — ty si obor nikdy nebraly
  *      z profilu naplno, protože jejich cíle jsou kódy políček.
+ *  8 — dvě desetinná místa jen do sta a setiny jen ze čtvrtin a dvacetin.
+ *      `103,25 + 58,55` bylo v oboru i v počtu míst, a přesto se nepočítá
+ *      z hlavy; ve hrách to potkalo zhruba čtvrtinu desetinných úloh. Součin
+ *      k tomu bral zlomkovou část z dělení cílem, tedy libovolnou —
+ *      `30,02 · 5` bylo pod stem, a stejně na tužku a papír. Mění se každý
+ *      list s desetinnými čísly, tedy 6. ročník výš; zásoba dosažitelných
+ *      cílů klesla o čtyři setiny procenta (9991 → 9987).
  */
-export const GENERATOR_VERSION = 7
+export const GENERATOR_VERSION = 8
 export const APP_VERSION = '0.1.0-dev'
