@@ -5,7 +5,9 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   test: {
-    include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],
+    // `.tsx` kvůli sazbě: `MathText` se dá ověřit `renderToStaticMarkup`,
+    // a to i v `node` prostředí — nepotřebuje DOM, jen React.
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'tests/**/*.test.ts'],
     environment: 'node',
   },
 })

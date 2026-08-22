@@ -31,8 +31,21 @@ import type { ReactElement } from 'react'
  */
 const MATH_PATTERN = /√(\d+(?:,\d+)?)|(\d+)\/(\d+)/gu
 
+/**
+ * ⚠ Vrací JEDEN `<span>`, ne fragment, a je to oprava vady z papíru.
+ *
+ * Půlka dominového kamene (`.card__half`) i políčko binga jsou flex
+ * kontejnery. Fragment do nich pustil několik dětí, a co v flexu není
+ * element, obalí prohlížeč anonymní flex položkou — **a té ořízne krajní
+ * mezery**. Na vytištěném kameni proto stálo `9/10z 340` a `√225+ 232`,
+ * kdežto na pexesové kartičce (ta flex není) mezera zůstala. Jeden span je
+ * jediná flex položka, takže se mezery uvnitř chovají jako v běžném textu.
+ *
+ * Text úlohy se tím nemění — mezera v něm byla vždycky, jen ji sazba
+ * zahodila. Do zadání se proto přidávat nesmí: hashuje se a verifikuje.
+ */
 export function MathText({ text }: { text: string }) {
-  return <>{typeset(text)}</>
+  return <span className="math">{typeset(text)}</span>
 }
 
 function typeset(text: string) {
