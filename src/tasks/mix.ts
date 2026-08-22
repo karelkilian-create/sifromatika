@@ -53,6 +53,8 @@ export interface TopicSelection {
   percents: boolean
   /** Mocniny a odmocniny (`7²`, `√81`). Od 8. ročníku. */
   powers: boolean
+  /** Zlomky jako část celku (`3/4 z 80`). Od 7. ročníku. */
+  fractions: boolean
 }
 
 /**
@@ -76,6 +78,7 @@ export function generatorMixFromTopics(
   if (usable.decimals) mix.decimal = 1
   if (usable.percents) mix.percent = 1
   if (usable.powers) mix.powers = 1
+  if (usable.fractions) mix.fractions = 1
   return Object.keys(mix).length > 0 ? mix : { arithmetic: 1 }
 }
 
@@ -94,6 +97,7 @@ export function usableTopics(topics: TopicSelection, profile: DifficultyProfile)
     decimals: topics.decimals && profile.decimals > 0,
     percents: topics.percents && profile.percents,
     powers: topics.powers && profile.powers,
+    fractions: topics.fractions && profile.fractions,
   }
 }
 
@@ -119,5 +123,6 @@ export function topicsFromGeneratorMix(
     decimals: enabled('decimal'),
     percents: enabled('percent'),
     powers: enabled('powers'),
+    fractions: enabled('fractions'),
   }
 }

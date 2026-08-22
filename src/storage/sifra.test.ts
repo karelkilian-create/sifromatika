@@ -82,6 +82,7 @@ describe('.sifra — uložení a načtení', () => {
             sequences: true,
             decimals: true,
             percents: false,
+            fractions: false,
             distinctCellPerOccurrence: false,
             printTitleOnWorksheet: true,
           },
@@ -93,6 +94,7 @@ describe('.sifra — uložení a načtení', () => {
             decimals: false,
             percents: false,
             powers: false,
+            fractions: false,
           },
           domino: {
             tileCount: 12,
@@ -101,6 +103,7 @@ describe('.sifra — uložení a načtení', () => {
             decimals: false,
             percents: false,
             powers: false,
+            fractions: false,
           },
           bingo: {
             cardCount: 12,
@@ -109,6 +112,7 @@ describe('.sifra — uložení a načtení', () => {
             decimals: false,
             percents: false,
             powers: false,
+            fractions: false,
           },
         },
       },

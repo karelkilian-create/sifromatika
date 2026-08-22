@@ -354,11 +354,22 @@ export function EditorPanel({
                     Procenta
                   </label>
                 )}
+                {profile.fractions && (
+                  <label className="checkbox">
+                    <input
+                      type="checkbox"
+                      checked={cipher.fractions}
+                      onChange={() => patchCipher({ fractions: !cipher.fractions })}
+                    />
+                    Zlomky
+                  </label>
+                )}
                 <p className="hint">
-                  Řada („4 10 16 22 ?“), desetinná čísla („3,5 · 4“) i procenta („25 % z 80“) jsou
-                  samostatné volby a s operacemi platí zároveň — řada s podílem i procento se
-                  objeví jen při zapnutém násobení. Výsledek zůstává vždy celé číslo, protože je
-                  to kód políčka v tabulce.
+                  Řada („4 10 16 22 ?“), desetinná čísla („3,5 · 4“), procenta („25 % z 80“)
+                  i zlomky („3/4 z 80“) jsou samostatné volby a s operacemi platí zároveň — řada
+                  s podílem i procento se objeví jen při zapnutém násobení, zlomek při násobení
+                  nebo dělení. Výsledek zůstává vždy celé číslo, protože je to kód políčka
+                  v tabulce.
                 </p>
               </>
             ) : isCards ? (
@@ -411,6 +422,16 @@ export function EditorPanel({
                       onChange={() => toggleTopic('powers')}
                     />
                     Mocniny a odmocniny
+                  </label>
+                )}
+                {profile.fractions && (
+                  <label className="checkbox">
+                    <input
+                      type="checkbox"
+                      checked={topics.fractions}
+                      onChange={() => toggleTopic('fractions')}
+                    />
+                    Zlomky
                   </label>
                 )}
                 <p className="hint">

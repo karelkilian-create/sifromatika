@@ -44,6 +44,7 @@ const initialState: PexesoEditorState = {
   decimals: false,
   percents: false,
   powers: false,
+  fractions: false,
 }
 
 export const pexesoModule = {

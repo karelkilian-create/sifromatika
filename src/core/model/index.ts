@@ -36,6 +36,7 @@ export type SkillTag =
   | 'des.nasobeni-delenim'
   | 'proc.cast-z-celku'
   | 'proc.sleva-navyseni'
+  | 'zlom.cast-z-celku'
   | 'rady.konstantni-krok'
   | 'rady.stridavy-krok'
   | 'rady.rostouci-krok'
@@ -169,6 +170,14 @@ export interface DifficultyProfile {
   decimals: 0 | 1 | 2
   /** Smí se objevit počítání s procenty (`25 % z 80`)? Od 7. ročníku. */
   percents: boolean
+  /**
+   * Smí se objevit zlomek jako část celku (`3/4 z 80`)? Od 7. ročníku.
+   *
+   * Šestá třída zlomky zavádí, ale počítá s nimi až sedmá. Sedí tím na
+   * stejném ročníku jako `percents`, což odpovídá i tomu, že `1/4 z 80`
+   * a `25 % z 80` je táž úloha dvěma zápisy.
+   */
+  fractions: boolean
 }
 
 export interface CipherGridConfig {

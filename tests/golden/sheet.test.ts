@@ -252,6 +252,38 @@ describe('DoD 0.1 bod 7 — zmrazený výstup', () => {
     `)
   })
 
+  /**
+   * Šifra se zlomky. Zamrzá tu jediný tvar úlohy, který má v zadání lomítko —
+   * a platí u něj totéž, co ukázala verze 8 u desetinných čísel: snímek,
+   * který téma neobsahuje, změnu toho tématu neuhlídá.
+   */
+  it('šifra se zlomky, 7. ročník', () => {
+    const config = defaultConfig('ZLOMEK', 7, 'golden-zlomky')
+    config.payload.generatorMix = { fractions: 1 }
+    const outcome = generateCipherGrid(config)
+    if (!outcome.ok) throw new Error(outcome.reason)
+    expect(outcome.sheet.verification).toEqual({ ok: true })
+    expect(render(outcome.sheet)).toMatchInlineSnapshot(`
+      "mřížka 9×9
+        1 | A E D J N K Y P H
+        2 | T E N D F M E M R
+        3 | A R S E R C E P B
+        4 | N M A E L N T A C
+        5 | H P O V N N J L U
+        6 | M A K L C Z S Z A
+        7 | A O L D I E Z O Y
+        8 | A V C O P L A Z L
+        9 | D S A O U E A Y N
+         1. 1/4 z 352 = 88
+         2. 2/5 z 160 = 64
+         3. 2/3 z 108 = 72
+         4. 1/10 z 280 = 28
+         5. 1/4 z 136 = 34
+         6. 2/5 z 40 = 16
+      součet 78ed5074"
+    `)
+  })
+
   it('šifra pro 8. ročník — mocniny a odmocniny', () => {
     // Seed vyměněn s `GENERATOR_VERSION` 7: pod `golden-8` už na listu žádná
     // mocnina není a zámek by hlídal prázdno.

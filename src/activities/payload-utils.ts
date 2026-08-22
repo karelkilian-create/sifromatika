@@ -26,6 +26,28 @@ export function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /**
+ * Váhy generátorů ze souboru, omezené na id, která aktivita zná.
+ *
+ * Seznam si předává každá aktivita sama a je to záměr: šifra nemá pro mocniny
+ * zaškrtávátko, takže by je soubor uměl zapnout, ale formulář by je neuměl
+ * ukázat ani vypnout. Sdílené je jen prosívání, ne to, co se prosívá.
+ *
+ * ⚠ Přidat generátor znamená dopsat ho do seznamu KAŽDÉ aktivity, která pro
+ *   něj má zaškrtávátko. Zlomky na to doplatily: generovaly se, prošly testy
+ *   i náhledem, a ztratily se teprve při otevření z odkazu nebo souboru.
+ *   Ukázal to až zkušební tisk přes sdílecí odkaz — hlídá to `payload.test.ts`.
+ */
+export function parseGeneratorMix(raw: unknown, knownIds: readonly string[]): Record<string, number> {
+  const mix: Record<string, number> = {}
+  if (!isRecord(raw)) return mix
+  for (const id of knownIds) {
+    const weight = raw[id]
+    if (typeof weight === 'number' && weight > 0) mix[id] = weight
+  }
+  return mix
+}
+
+/**
  * Profil obtížnosti z ročníku v souboru.
  *
  * Odvozuje se ZNOVU, uložený profil se ignoruje. Kdyby se přebíral ze

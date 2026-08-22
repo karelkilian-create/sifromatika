@@ -197,6 +197,44 @@
   min-width: 10mm;
 }
 
+/* ── Zlomek ───────────────────────────────────────────────────────── */
+
+/*
+ * Čitatel nad jmenovatelem, mezi nimi čára — tak, jak se zlomek sází na
+ * českém listu. Lomítko `3/4` je zápis pro model, ne pro papír.
+ *
+ * ⚠ Zlomek je dvouřádkový, a to je jeho jediné skutečné riziko: kartičky
+ *   pexesa, domina i binga mají výšku naměřenou tiskem. Proto je písmo menší
+ *   a `line-height` těsný — zlomek pak vystoupí nad řádek jen o vlas, místo
+ *   aby ho zdvojnásobil. Míry jsou v `em`, aby držely stejně na 11pt zadání
+ *   i na 20pt kartičce.
+ *
+ * `vertical-align: middle` posadí zlomek na střed řádku: `3/4 z 80` má mít
+ *   zlomkovou čáru zhruba ve výšce, kde vede příčka písmen.
+ */
+.fraction {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  vertical-align: middle;
+
+  /* Menší stupeň písma, ne `transform`: transformace je kresba a tiskový
+     renderer ji nemusí použít — táž lekce jako u znaku `√`. */
+  font-size: 0.8em;
+  line-height: 1.05;
+}
+
+.fraction__numerator {
+  /* Táž tloušťka jako čára nad odmocninou, ať list nevypadá jako ze dvou
+     různých sazeb. Kopírkou musí projít stejně. */
+  border-bottom: 0.08em solid currentcolor;
+  padding: 0 0.15em;
+}
+
+.fraction__denominator {
+  padding: 0 0.15em;
+}
+
 /* ── Odmocnina ────────────────────────────────────────────────────── */
 
 /*

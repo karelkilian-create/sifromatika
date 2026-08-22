@@ -7,10 +7,10 @@
 
 import { clampCardCount } from '../../core/constraints/index.js'
 import type { BingoConfig } from '../../core/model/index.js'
-import { isRecord, parseDifficulty, parseOutput, parseTaskMix } from '../payload-utils.js'
+import { isRecord, parseDifficulty, parseGeneratorMix, parseOutput, parseTaskMix } from '../payload-utils.js'
 
 /** Témata, která má bingo ve formuláři — tatáž sada jako pexeso a domino. */
-const GENERATORS = ['arithmetic', 'sequence', 'decimal', 'percent', 'powers']
+const GENERATORS = ['arithmetic', 'sequence', 'decimal', 'percent', 'powers', 'fractions']
 
 export function parseBingoPayload(raw: unknown): BingoConfig | null {
   if (!isRecord(raw)) return null
@@ -24,13 +24,7 @@ export function parseBingoPayload(raw: unknown): BingoConfig | null {
   const taskMix = parseTaskMix(raw.taskMix)
   if (taskMix === null) return null
 
-  const generatorMix: Record<string, number> = {}
-  if (isRecord(raw.generatorMix)) {
-    for (const id of GENERATORS) {
-      const weight = raw.generatorMix[id]
-      if (typeof weight === 'number' && weight > 0) generatorMix[id] = weight
-    }
-  }
+  const generatorMix = parseGeneratorMix(raw.generatorMix, GENERATORS)
 
   return {
     cardCount: clampCardCount(raw.cardCount),

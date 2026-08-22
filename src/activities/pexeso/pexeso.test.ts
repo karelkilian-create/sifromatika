@@ -303,6 +303,7 @@ describe('formulář → konfigurace', () => {
     decimals: false,
     percents: false,
     powers: true,
+    fractions: false,
   }
 
   it('zaškrtnuté téma se propíše do vah, a to rovnoměrně', () => {
@@ -355,6 +356,7 @@ describe('formulář → konfigurace', () => {
       decimals: false,
       percents: false,
       powers: false,
+      fractions: false,
     })
   })
 })

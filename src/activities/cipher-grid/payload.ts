@@ -11,6 +11,7 @@ import { truncateToLetters } from '../../core/text/index.js'
 import {
   isRecord,
   parseDifficulty,
+  parseGeneratorMix,
   parseOutput,
   parseTaskMix,
 } from '../payload-utils.js'
@@ -24,7 +25,7 @@ const STRATEGIES: CipherStrategyId[] = ['grid-coord', 'grid-linear']
  * nemá sahat do registru generátorů. Neznámé id ze souboru z novější verze
  * se tiše zahodí; horší je spadnout na souboru, který kolegyně poslala e-mailem.
  */
-const GENERATORS = ['arithmetic', 'sequence', 'decimal', 'percent']
+const GENERATORS = ['arithmetic', 'sequence', 'decimal', 'percent', 'fractions']
 
 export function parseCipherGridPayload(raw: unknown): CipherGridConfig | null {
   if (!isRecord(raw)) return null
@@ -48,13 +49,7 @@ export function parseCipherGridPayload(raw: unknown): CipherGridConfig | null {
   // Chybí-li `generatorMix`, soubor vznikl dřív, než existovaly další
   // generátory. Doplnit sem dnešní default by znamenalo, že se loni uložená
   // aktivita vytiskne jinak — proto výslovně jen aritmetika.
-  const generatorMix: Record<string, number> = {}
-  if (isRecord(raw.generatorMix)) {
-    for (const id of GENERATORS) {
-      const weight = raw.generatorMix[id]
-      if (typeof weight === 'number' && weight > 0) generatorMix[id] = weight
-    }
-  }
+  const generatorMix = parseGeneratorMix(raw.generatorMix, GENERATORS)
 
   return {
     // Ořez i tady, ne jen ve formuláři: soubor mohl vzniknout ve starší verzi

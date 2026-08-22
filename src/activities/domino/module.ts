@@ -43,6 +43,7 @@ const initialState: DominoEditorState = {
   decimals: false,
   percents: false,
   powers: false,
+  fractions: false,
 }
 
 export const dominoModule = {

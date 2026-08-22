@@ -60,6 +60,7 @@ export function gradeProfile(grade: Grade): DifficultyProfile {
         powers: false,
         decimals: 0,
         percents: false,
+        fractions: false,
       }
     case 4:
       return {
@@ -73,6 +74,7 @@ export function gradeProfile(grade: Grade): DifficultyProfile {
         powers: false,
         decimals: 0,
         percents: false,
+        fractions: false,
       }
     case 5:
       return {
@@ -91,10 +93,12 @@ export function gradeProfile(grade: Grade): DifficultyProfile {
          * z konce roku a učitelka, které se na listu pro pátou třídu objeví
          * „3,5 · 4", si spíš řekne, že Šifromatika neumí ročníky, než že si
          * něco zaškrtla. Šestka je bezpečnější výchozí stav: kdo chce
-         * desetinná čísla dřív, přepne ročník.
+         * desetinná čísla dřív, přepne ročník. Zlomky jdou ještě o rok dál,
+         * až k sedmé třídě — viz `fractions` u šestého ročníku.
          */
         decimals: 0,
         percents: false,
+        fractions: false,
       }
     case 6:
       // Šestá třída: obor se rozšiřuje a přichází pořadí operací se závorkami.
@@ -110,6 +114,10 @@ export function gradeProfile(grade: Grade): DifficultyProfile {
         powers: false,
         decimals: 2,
         percents: false,
+        // Zlomky šestá třída zavádí, ale počítá s nimi až sedmá — rozhodnuto
+        // 22. 8. 2026. Jsou tím sourozenci procent i ročníkem, ne jen tvarem
+        // úlohy: `1/4 z 80` a `25 % z 80` je totéž dvěma zápisy.
+        fractions: false,
       }
     case 7:
       // Sedmá třída: celá čísla, tedy poprvé i záporné operandy.
@@ -125,6 +133,7 @@ export function gradeProfile(grade: Grade): DifficultyProfile {
         decimals: 2,
         // Procenta jsou látka sedmého ročníku.
         percents: true,
+        fractions: true,
       }
     case 8:
       // Osmá třída: druhá a třetí mocnina, druhá odmocnina. Obor se rozšiřuje,
@@ -140,6 +149,7 @@ export function gradeProfile(grade: Grade): DifficultyProfile {
         powers: true,
         decimals: 2,
         percents: true,
+        fractions: true,
       }
     default:
       // ⚠ 9. ročník zatím vlastní profil NEMÁ, a proto se v UI nenabízí.

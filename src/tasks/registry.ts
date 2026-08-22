@@ -9,6 +9,7 @@
 import type { TaskGenerator } from '../core/model/index.js'
 import { arithmeticGenerator } from './arithmetic/index.js'
 import { decimalGenerator } from './decimal/index.js'
+import { fractionsGenerator } from './fractions/index.js'
 import { percentGenerator } from './percent/index.js'
 import { powersGenerator } from './powers/index.js'
 import { sequenceGenerator } from './sequence/index.js'
@@ -25,6 +26,7 @@ export const taskGenerators: readonly TaskGenerator[] = [
   decimalGenerator,
   percentGenerator,
   powersGenerator,
+  fractionsGenerator,
 ]
 
 export function findTaskGenerator(id: string): TaskGenerator | undefined {

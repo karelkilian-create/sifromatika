@@ -129,6 +129,47 @@ bude část z celku vytištěná a ověřená.
    které se na listu pro pátou třídu objeví `3/4 z 80`, si spíš řekne, že
    Šifromatika neumí ročníky, než že si něco zaškrtla.
 
-Kde bych se nechal přesvědčit: bod 3. Pokud je `1/2 z 60` pro pátou třídu
-běžná úloha, je to jednořádková změna v profilu — a na rozdíl od desetinných
-čísel tu nejde o nový zápis čísla, jen o nový tvar úlohy.
+**Karel potvrdil 22. 8. 2026: pátý ročník zlomky nedostane.** Bod 3 tím
+platí a v profilu je zapsaný stejně jako u desetinných čísel.
+
+## 8. Co se odchýlilo od návrhu
+
+**Ročník.** Karel v průběhu práce posunul zlomky z šesté třídy na sedmou:
+šestka je zavádí, ale počítá s nimi až sedmá. Sedí tím na stejném ročníku
+jako procenta, což odpovídá i tomu, že `1/4 z 80` a `25 % z 80` je táž úloha
+dvěma zápisy.
+
+**`GENERATOR_VERSION` zůstal 8**, ačkoli §6 sliboval 9. Přidání generátoru
+výstup dosud uložených listů nemění — rozhoduje o něm `generatorMix`
+v konfiguraci a ten zlomky neobsahuje. Ověřeno tím, že se nepřepsal ani jeden
+existující golden snímek; přibyl jen nový. Je to totéž, co platilo u domina.
+
+**Zlomky se cestou přes odkaz a soubor ztrácely.** Každá ze čtyř aktivit má
+vlastní seznam známých id generátorů a nový generátor se do nich nedoplnil,
+takže `parsePayload` váhu zlomků tiše zahodil. Vygenerovaný list byl v pořádku
+a náhled taky — vada se objevila **jen při otevření z odkazu nebo `.sifra`**,
+tedy přesně tam, kde ji učitel potká jako první. Ukázal to teprve zkušební
+tisk přes sdílecí odkaz: na vytištěné šifře nebyl ani jeden zlomek. Opraveno
+ve všech čtyřech aktivitách, prosívání sjednoceno do `parseGeneratorMix`
+(seznamy zůstávají per aktivita — šifra mocniny schválně nezná) a hlídá to
+nový `activities/payload.test.ts`.
+
+**Přibyl strop na mezivýsledek dělení** (`MAX_QUOTIENT` = 100), který návrh
+nepředvídal. První tisk pexesa ukázal na kartičkách `2/3 z 897` a `5/6 z 966`:
+základ v mezích, ale po vydělení jmenovatelem vyjde 299, respektive 161. Sám
+základ je tedy špatná míra náročnosti — `9/10 z 710` je z hlavy a je skoro
+stejně velké. Do her se to dostalo proto, že jejich cíle jdou do tisíce,
+kdežto cíle šifry jsou kódy políček. Zásoba klesla ze 737 cílů na 644
+a **cílů šifry se to nedotklo vůbec**.
+
+**Preference kulatého základu se nepřevzala z procent.** `25 % z 80` ji má,
+zlomky ji mít nesmí: základ desetiny je `cíl · 10`, tedy kulatý vždycky,
+takže by desetina vyhrála skoro každé losování. Naměřeno na cílech šifry:
+s preferencí 51 desetin a 22 pětin z 88 úloh, ale jen tři poloviny a jedna
+čtvrtina. Bez ní je rozdělení rovnoměrné.
+
+**Sazba prošla napoprvé.** Riziko výšky z §4 se nepotvrdilo: dvouřádkový
+zlomek se vejde do řádku pracovního listu i na kartičku pexesa, aniž by
+cokoli přeteklo. Drží to menší stupeň písma (0,8 em) a těsný `line-height`.
+Ověřeno tiskem do PDF přes sdílecí odkaz — šifra dvě stránky, pexeso tři,
+tedy přesně tolik, kolik má listů.
