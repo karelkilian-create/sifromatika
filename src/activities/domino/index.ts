@@ -29,7 +29,7 @@ import type {
   VerificationReport,
 } from '../../core/model/index.js'
 import { ALLOW_DECIMAL_RESULTS } from '../../core/model/index.js'
-import { formatValue } from '../../core/number/index.js'
+import { printedResult } from '../../core/number/index.js'
 import { createRng } from '../../core/rng/index.js'
 import {
   verifyChain,
@@ -229,7 +229,7 @@ function generateOnce(config: DominoProject): DominoOutcome {
   //   kameny.
   const chain = tasks.map(
     (task, index): DominoTile => ({
-      left: formatValue(task.value),
+      left: printedResult(task),
       right: tasks[(index + 1) % tasks.length]!.prompt.text,
       chainIndex: index,
     }),
@@ -254,6 +254,7 @@ function generateOnce(config: DominoProject): DominoOutcome {
             taskText: task.prompt.text,
             declaredValue: task.value,
             kind: task.prompt.kind,
+            printedValue: task.printedValue,
           })),
           // Celý výsledek je požadavek ŠIFRY (kód políčka v mřížce), ne
           // tohohle listu. Viz `TaskRules` v `core/model`.

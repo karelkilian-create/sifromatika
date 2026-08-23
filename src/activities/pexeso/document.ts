@@ -8,6 +8,7 @@
 
 import { chunkCards, planCardLayout } from '../../core/document/cards.js'
 import type { DocumentBlock, DocumentModel, DocumentPage } from '../../core/document/index.js'
+import { printedResult } from '../../core/number/index.js'
 import { worksheetTitle, type PexesoSheet } from './index.js'
 
 /**
@@ -60,7 +61,7 @@ function teacherPage(sheet: PexesoSheet): DocumentBlock[] {
       rows: sheet.tasks.map((task, index) => [
         `${index + 1}.`,
         task.prompt.text,
-        String(task.value),
+        printedResult(task),
       ]),
     },
   ]

@@ -446,6 +446,14 @@ export function EditorPanel({
                       je výsledek kód políčka, a tedy vždy celý.
                     </>
                   )}
+                  {profile.fractions && (
+                    <>
+                      {' '}
+                      Ze zlomků se sem dostane i sčítání a odčítání, kde zlomek vyjde („1/2 + 1/4 =
+                      3/4“). Na šifře najdete jen část z celku („3/4 z 80“), protože zlomek se
+                      do mřížky jako kód políčka nevejde.
+                    </>
+                  )}
                 </p>
               </>
             ) : (

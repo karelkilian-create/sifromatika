@@ -37,7 +37,7 @@ import type {
   VerificationReport,
 } from '../../core/model/index.js'
 import { ALLOW_DECIMAL_RESULTS } from '../../core/model/index.js'
-import { formatValue } from '../../core/number/index.js'
+import { printedResult } from '../../core/number/index.js'
 import { createRng } from '../../core/rng/index.js'
 import {
   verifyBingoCards,
@@ -218,7 +218,7 @@ function generateOnce(config: BingoProject): BingoOutcome {
   // ⚠ Míchá se TADY, při generování, a uloží se do listu — ne až v
   //   `toDocument`. Kdyby míchala sazba, potřebovala by generátor náhody, dvě
   //   volání by dala jiné pořadí a `.sifra` uložená loni by vytiskla jiné karty.
-  const values = tasks.map((task) => formatValue(task.value))
+  const values = tasks.map((task) => printedResult(task))
   const cards = buildCards(values, payload.cardCount, rng)
 
   const titleDerived = config.title === undefined || config.title.trim() === ''
@@ -239,6 +239,7 @@ function generateOnce(config: BingoProject): BingoOutcome {
             taskText: task.prompt.text,
             declaredValue: task.value,
             kind: task.prompt.kind,
+            printedValue: task.printedValue,
           })),
           // Celý výsledek je požadavek ŠIFRY (kód políčka v mřížce), ne
           // tohohle listu. Viz `TaskRules` v `core/model`.

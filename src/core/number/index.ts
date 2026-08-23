@@ -63,6 +63,21 @@ export function isPrintable(value: number): boolean {
   return fitsPlaces(value, MAX_DECIMAL_PLACES)
 }
 
+/**
+ * Co se z výsledku úlohy opravdu vytiskne.
+ *
+ * Skoro vždycky je to číslo. Výjimkou je zlomkový výsledek: `1/2 + 1/4` má
+ * hodnotu 0,75, ale na kartičce musí stát `3/4`, a `1/3` se jako číslo
+ * nevytiskne vůbec.
+ *
+ * Bere strukturu, ne `Task` — tenhle modul o vrstvě úloh nic neví a vědět
+ * nemá. Volají to všechny tři hry a je to jediné místo, kde se ta volba dělá;
+ * čtvrtá aktivita ať si ji neodvozuje znovu.
+ */
+export function printedResult(task: { value: number; printedValue?: string }): string {
+  return task.printedValue ?? formatValue(task.value)
+}
+
 /** Je to celé číslo, nebo aspoň nerozeznatelně blízko? */
 export function isWholeNumber(value: number): boolean {
   return Math.abs(value - Math.round(value)) < EPSILON

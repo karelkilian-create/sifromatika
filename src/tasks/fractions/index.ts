@@ -1,5 +1,5 @@
 /**
- * Generátor úloh se zlomky — zatím jediný tvar: zlomek jako část celku.
+ * Generátor úloh se zlomky: zlomek v zadání i zlomek jako výsledek.
  *
  * Zápis je `3/4 z 80`, tedy lomítko a předložka `z`. Obojí je záměr:
  *
@@ -13,11 +13,19 @@
  * Zlomek a procento jsou tu sourozenci: `25 % z 80` a `1/4 z 80` je táž úloha
  * dvěma zápisy, takže i kostra modulu je stejná jako v `tasks/percent`.
  *
- * ⚠ Výsledek je vždy CELÉ číslo, protože zlomek se tu vyskytuje jen v zadání.
- *   Zlomek jako výsledek (`1/2 + 1/4 = 3/4`) je samostatný krok: `Task.value`
- *   je číslo, `1/3` se do dvou desetinných míst nevejde, a kartička by
- *   ukázala `0,75` tam, kde má dítě párovat zlomek se zlomkem. Rozvaha je
- *   v `docs/navrh-zlomky.md` §5.
+ * Od 23. 8. 2026 umí modul obojí:
+ *
+ *   • **zlomek v ZADÁNÍ** (`3/4 z 80 = 60`) — výsledek je celé číslo, takže
+ *     se tenhle tvar vejde do všech pěti aktivit včetně šifry;
+ *   • **zlomek jako VÝSLEDEK** (`1/2 + 1/4 = 3/4`) — jen tam, kde si o to list
+ *     řekne (`TaskRules.fractionResults`). Šifra ne: její výsledek je kód
+ *     políčka v mřížce a zlomek nemá kam ukázat. Rozvaha je
+ *     v `docs/navrh-zlomkovy-vysledek.md`.
+ *
+ * ⚠ Druhý tvar je jediné místo v projektu, kde se výsledek netiskne jako
+ *   číslo. `Task.value` proto dál nese číslo (0,75) a vedle něj stojí
+ *   `printedValue` s tím, co uvidí dítě (`3/4`) — u `1/3` je to jediná
+ *   možnost, desetinný zápis té hodnoty neexistuje.
  */
 
 import type {
@@ -28,6 +36,7 @@ import type {
   SkillTag,
   Task,
   TaskGenerator,
+  TaskRules,
 } from '../../core/model/index.js'
 import type { Rng } from '../../core/rng/index.js'
 import { evaluateExpression } from '../../core/verify/index.js'
@@ -82,10 +91,153 @@ const FRACTIONS: readonly { numerator: number; denominator: number }[] = DENOMIN
       .map((numerator) => ({ numerator, denominator })),
 )
 
-interface Shape {
+interface Fraction {
+  numerator: number
+  denominator: number
+}
+
+/** Zlomek v základním tvaru. Vstup nemusí být zkrácený, výstup vždycky je. */
+function reduce(numerator: number, denominator: number): Fraction {
+  const divisor = gcd(numerator, denominator)
+  return { numerator: numerator / divisor, denominator: denominator / divisor }
+}
+
+const SYMBOL = { add: '+', sub: '−' } as const // − je U+2212, ne spojovník
+
+/**
+ * Jedna úloha rodiny „zlomek jako výsledek", vyrobená dopředu.
+ *
+ * Zásoba se dá vyjmenovat celá (jmenovatelé jsou ze seznamu a čitatelé menší
+ * než jmenovatel), takže se konstruuje jednou při načtení modulu a pak už se
+ * jen losuje. Tím odpadá hledání pozpátku, které u části z celku dělá
+ * `baseFor` — z hodnoty `3/4` se totiž zpátky k `1/2 + 1/4` dojít nedá
+ * jednoznačně.
+ *
+ * ⚠ `value` se počítá ze ZÁKLADNÍHO tvaru výsledku, ne z operandů. Zní to
+ *   jako detail, ale drží pohromadě celé párování: `5/6 − 1/2` a `1/6 + 1/6`
+ *   dají v plovoucí čárce dvě různá čísla (0.33333333333333337
+ *   a 0.3333333333333333), a kdyby se do zásoby cílů dostala obě, vznikly by
+ *   dvě kartičky s toutéž vytištěnou `1/3`.
+ */
+interface SumCandidate {
+  text: string
+  operation: 'add' | 'sub'
+  /** Výsledek v základním tvaru — přesně tak, jak se vytiskne. */
+  result: Fraction
+  value: number
+}
+
+/**
+ * Sečte nebo odečte dva zlomky. `null` = výsledek se na kartičku nehodí.
+ *
+ * Meze jsou dvě a obě jsou o látce, ne o kódu:
+ *
+ *   • **výsledek musí být menší než jedna.** `3/4 + 3/4` je `6/4`, tedy nepravý
+ *     zlomek nebo smíšené číslo — látka, kterou tenhle krok nedělá.
+ *   • **výsledek nesmí být nula ani celé číslo.** `1/4 + 3/4 = 1` o zlomcích
+ *     neukáže nic a hodnota 1 se navíc sráží se vším ostatním na listu.
+ */
+function combine(left: Fraction, right: Fraction, operation: 'add' | 'sub'): SumCandidate | null {
+  const common = (left.denominator * right.denominator) / gcd(left.denominator, right.denominator)
+  const leftScaled = left.numerator * (common / left.denominator)
+  const rightScaled = right.numerator * (common / right.denominator)
+  const total = operation === 'add' ? leftScaled + rightScaled : leftScaled - rightScaled
+  if (total <= 0 || total >= common) return null
+
+  const result = reduce(total, common)
+  return {
+    text: `${left.numerator}/${left.denominator} ${SYMBOL[operation]} ${right.numerator}/${right.denominator}`,
+    operation,
+    result,
+    value: result.numerator / result.denominator,
+  }
+}
+
+/**
+ * Sčítání a odčítání se stejným jmenovatelem.
+ *
+ * ⚠ Operandy tu NEMUSÍ být v základním tvaru: `2/6 + 1/6` je legitimní zadání,
+ *   přestože `2/6` je `1/3` napsaná složitě. U společného jmenovatele se to
+ *   tak píše i v učebnici a požadavek na základní tvar by tvar skoro vyprázdnil
+ *   — u šestin by zbyly jen `1/6` a `5/6`, a ty dají dohromady celou jedničku.
+ *   Základní tvar se vyžaduje od VÝSLEDKU, kde na něm záleží párování.
+ */
+function buildSameDenominator(): SumCandidate[] {
+  const candidates: SumCandidate[] = []
+  for (const denominator of DENOMINATORS) {
+    for (let left = 1; left < denominator; left++) {
+      for (let right = 1; right < denominator; right++) {
+        for (const operation of ['add', 'sub'] as const) {
+          const candidate = combine({ numerator: left, denominator }, { numerator: right, denominator }, operation)
+          if (candidate !== null) candidates.push(candidate)
+        }
+      }
+    }
+  }
+  return candidates
+}
+
+/**
+ * Dvojice jmenovatelů, kde je jeden násobkem druhého: `1/2 + 1/8`.
+ *
+ * Společný jmenovatel je pak ten větší a najde se rozšířením jednoho zlomku,
+ * bez hledání nejmenšího společného násobku. `1/3 + 1/4` (kde se musí rozšířit
+ * oba) je další krok, ne tenhle.
+ */
+const RELATED_DENOMINATORS: readonly (readonly [number, number])[] = DENOMINATORS.flatMap(
+  (small) =>
+    DENOMINATORS.filter((big) => big > small && big % small === 0).map(
+      (big) => [small, big] as const,
+    ),
+)
+
+/**
+ * Sčítání a odčítání s násobným jmenovatelem.
+ *
+ * Tady operandy v základním tvaru být MUSÍ — `2/4 + 1/8` by dítě nejdřív
+ * zkrátilo a řešilo by jinou úlohu, než která je napsaná. Oba pořádky se
+ * vyrábějí schválně: `1/2 + 1/8` i `1/8 + 1/2` jsou různá zadání a u odčítání
+ * dá kladný výsledek pokaždé jen jedno z nich.
+ */
+function buildRelatedDenominator(): SumCandidate[] {
+  const candidates: SumCandidate[] = []
+  for (const [small, big] of RELATED_DENOMINATORS) {
+    const smaller = FRACTIONS.filter((fraction) => fraction.denominator === small)
+    const bigger = FRACTIONS.filter((fraction) => fraction.denominator === big)
+    for (const left of smaller) {
+      for (const right of bigger) {
+        for (const operation of ['add', 'sub'] as const) {
+          for (const [first, second] of [
+            [left, right],
+            [right, left],
+          ] as const) {
+            const candidate = combine(first, second, operation)
+            if (candidate !== null) candidates.push(candidate)
+          }
+        }
+      }
+    }
+  }
+  return candidates
+}
+
+/**
+ * Tvar úlohy. Dvě rodiny, které spolu sdílejí jen zaškrtávátko „Zlomky":
+ *
+ *   • `part-of-whole` počítá pozpátku z cílové hodnoty (`3/4 z 80`),
+ *   • `sum` losuje z předem vyjmenované zásoby (`1/2 + 1/4`).
+ */
+interface PartShape {
   id: string
   /** Které zlomky tvar používá. */
-  fractions: readonly { numerator: number; denominator: number }[]
+  fractions: readonly Fraction[]
+  skills: SkillTag[]
+  effort: number
+}
+
+interface SumShape {
+  id: string
+  candidates: readonly SumCandidate[]
   skills: SkillTag[]
   effort: number
 }
@@ -94,7 +246,7 @@ interface Shape {
  * Jednotkový zlomek je jeden krok (vyděl), ostatní dva (vyděl a vynásob).
  * Rozdíl je v námaze, ne v látce, takže dovednost je u obou tatáž.
  */
-const SHAPES: readonly Shape[] = [
+const PART_SHAPES: readonly PartShape[] = [
   {
     id: 'unit-fraction',
     fractions: FRACTIONS.filter((fraction) => fraction.numerator === 1),
@@ -106,6 +258,22 @@ const SHAPES: readonly Shape[] = [
     fractions: FRACTIONS.filter((fraction) => fraction.numerator > 1),
     skills: ['zlom.cast-z-celku'],
     effort: 4,
+  },
+]
+
+const SUM_SHAPES: readonly SumShape[] = [
+  {
+    id: 'same-denominator',
+    candidates: buildSameDenominator(),
+    skills: ['zlom.scitani-odcitani'],
+    effort: 4,
+  },
+  {
+    id: 'related-denominator',
+    candidates: buildRelatedDenominator(),
+    // Společný jmenovatel navíc: nejdřív rozšířit, pak teprve sčítat.
+    skills: ['zlom.scitani-odcitani'],
+    effort: 5,
   },
 ]
 
@@ -136,10 +304,31 @@ function baseFor(target: number, numerator: number, denominator: number): number
  * Prázdný mix znamená „všechny operace", stejně jako u aritmetiky.
  */
 function multiplicationOrDivisionAllowed(mix: Partial<Record<OperationTag, number>>): boolean {
-  const chosen = (['add', 'sub', 'mul', 'div'] as OperationTag[]).filter(
+  const chosen = chosenOperations(mix)
+  return chosen.length === 0 || chosen.includes('mul') || chosen.includes('div')
+}
+
+/** Zaškrtnuté operace. Prázdný seznam znamená „všechny", jako u aritmetiky. */
+function chosenOperations(mix: Partial<Record<OperationTag, number>>): OperationTag[] {
+  return (['add', 'sub', 'mul', 'div'] as OperationTag[]).filter(
     (operation) => (mix[operation] ?? 0) > 0,
   )
-  return chosen.length === 0 || chosen.includes('mul') || chosen.includes('div')
+}
+
+function operationAllowed(
+  operation: OperationTag,
+  mix: Partial<Record<OperationTag, number>>,
+): boolean {
+  const chosen = chosenOperations(mix)
+  return chosen.length === 0 || chosen.includes(operation)
+}
+
+/** Úlohy tvaru, které se vejdou do zaškrtnutých operací. */
+function candidatesFor(
+  shape: SumShape,
+  mix: Partial<Record<OperationTag, number>>,
+): readonly SumCandidate[] {
+  return shape.candidates.filter((candidate) => operationAllowed(candidate.operation, mix))
 }
 
 /**
@@ -159,7 +348,7 @@ function multiplicationOrDivisionAllowed(mix: Partial<Record<OperationTag, numbe
  */
 function optionsFor(
   target: number,
-  shape: Shape,
+  shape: PartShape,
   profile: DifficultyProfile,
 ): { numerator: number; denominator: number; base: number }[] {
   const options: { numerator: number; denominator: number; base: number }[] = []
@@ -171,6 +360,9 @@ function optionsFor(
   return options
 }
 
+/**
+ * Zlomek v zadání: `3/4 z 80 = 60`. Umí ho každá aktivita včetně šifry.
+ */
 export const fractionsGenerator: TaskGenerator = {
   id: 'fractions',
 
@@ -185,7 +377,7 @@ export const fractionsGenerator: TaskGenerator = {
 
     const ceiling = Math.min(profile.numberRange.max, MAX_BASE)
     for (let target = 1; target <= ceiling; target++) {
-      for (const shape of SHAPES) {
+      for (const shape of PART_SHAPES) {
         if (optionsFor(target, shape, profile).length > 0) {
           values.add(target)
           break
@@ -199,45 +391,151 @@ export const fractionsGenerator: TaskGenerator = {
     if (!ctx.profile.fractions || !multiplicationOrDivisionAllowed(ctx.mix)) return null
 
     for (let attempt = 0; attempt < 8; attempt++) {
-      const shape = rng.pick(SHAPES)
-      const options = optionsFor(target, shape, ctx.profile)
-      if (options.length === 0) continue
-
-      const { numerator, denominator, base } = rng.pick(options)
-      const text = `${numerator}/${denominator} z ${base}`
-      if (ctx.usedExpressions.has(text)) continue
-
-      // Přepočet z hotového textu — tímtéž kódem, který ho bude verifikovat.
-      // Hodnota vznikla konstrukcí ze základu, tady se čte z toho, co bude
-      // na papíře; rozejít se ty dvě cesty nesmí.
-      let computed: number
-      try {
-        computed = evaluateExpression(text)
-      } catch {
-        continue
-      }
-      if (Math.abs(computed - target) > 1e-9) continue
-
-      ctx.usedExpressions.add(text)
-      return {
-        id: `fractions:${text}`,
-        generatorId: 'fractions',
-        value: target,
-        prompt: { kind: 'expr', text },
-        solutionSteps: [{ kind: 'expr', text: `${text} = ${target}` }],
-        didactic: {
-          grade: ctx.profile.grade,
-          difficulty: Math.min(5, Math.max(1, shape.effort)) as DidacticMeta['difficulty'],
-          effort: shape.effort,
-          // Dělení i násobení: dítě dělí jmenovatelem a násobí čitatelem.
-          // U jednotkového zlomku je ten druhý krok násobení jedničkou, tedy
-          // žádný — ale rozlišovat to v metadatech by znamenalo, že se `1/4`
-          // a `3/4` chovají v poměru operací jinak, aniž by to učitel čekal.
-          operations: ['mul', 'div'],
-          skills: shape.skills,
-        },
-      }
+      const task = partOfWhole(target, rng.pick(PART_SHAPES), ctx, rng)
+      if (task !== null) return task
     }
     return null
   },
+}
+
+/**
+ * Zlomek jako výsledek: `1/2 + 1/4 = 3/4`.
+ *
+ * ⚠ Samostatné id, přestože je to v editoru totéž zaškrtávátko „Zlomky".
+ *   Není to kosmetika, je to jediný způsob, jak udržet poměr obou tvarů:
+ *   zásoba cílů části z celku má pro sedmý ročník přes šest set hodnot,
+ *   kdežto pravých zlomků se dvěma až deseti ve jmenovateli existuje
+ *   devatenáct. V jednom pytli vycházel zlomkový výsledek na jednu kartičku
+ *   z dvanácti — a to je táž vada, kterou u témat opravila
+ *   `GENERATOR_VERSION` 5: poměr nesmí záviset na tom, jak široký obor čísel
+ *   který tvar náhodou pokrývá. Vlastní id znamená vlastní zásobu a vlastní
+ *   váhu při losování, tedy zhruba půl na půl.
+ *
+ * Překlad zaškrtávátka na obě id dělá `generatorMixFromTopics`; šifra tudy
+ * nechodí a zlomkový výsledek nedostane ani omylem.
+ */
+export const fractionSumsGenerator: TaskGenerator = {
+  id: 'fraction-sums',
+
+  supports: (profile: DifficultyProfile) => profile.fractions,
+
+  reachableValues(
+    profile: DifficultyProfile,
+    mix: Partial<Record<OperationTag, number>>,
+    rules: TaskRules,
+  ): Set<number> {
+    const values = new Set<number>()
+    // `supports` na pravidla listu nevidí, takže zákaz padá až sem: šifře
+    // vyjde prázdná zásoba a aktivita ji přeskočí.
+    if (!profile.fractions || !rules.fractionResults) return values
+
+    for (const shape of SUM_SHAPES) {
+      for (const candidate of candidatesFor(shape, mix)) {
+        values.add(candidate.value)
+      }
+    }
+    return values
+  },
+
+  generateForValue(target: number, ctx: GenContext, rng: Rng): Task | null {
+    if (!ctx.profile.fractions || !ctx.rules.fractionResults) return null
+
+    for (let attempt = 0; attempt < 8; attempt++) {
+      const task = fractionSum(target, rng.pick(SUM_SHAPES), ctx, rng)
+      if (task !== null) return task
+    }
+    return null
+  },
+}
+
+/** `3/4 z 80` — zlomek v zadání, celé číslo ve výsledku. */
+function partOfWhole(
+  target: number,
+  shape: PartShape,
+  ctx: GenContext,
+  rng: Rng,
+): Task | null {
+  const options = optionsFor(target, shape, ctx.profile)
+  if (options.length === 0) return null
+
+  const { numerator, denominator, base } = rng.pick(options)
+  const text = `${numerator}/${denominator} z ${base}`
+  if (ctx.usedExpressions.has(text)) return null
+
+  // Přepočet z hotového textu — tímtéž kódem, který ho bude verifikovat.
+  // Hodnota vznikla konstrukcí ze základu, tady se čte z toho, co bude
+  // na papíře; rozejít se ty dvě cesty nesmí.
+  let computed: number
+  try {
+    computed = evaluateExpression(text)
+  } catch {
+    return null
+  }
+  if (Math.abs(computed - target) > 1e-9) return null
+
+  ctx.usedExpressions.add(text)
+  return {
+    id: `fractions:${text}`,
+    generatorId: 'fractions',
+    value: target,
+    prompt: { kind: 'expr', text },
+    solutionSteps: [{ kind: 'expr', text: `${text} = ${target}` }],
+    didactic: {
+      grade: ctx.profile.grade,
+      difficulty: Math.min(5, Math.max(1, shape.effort)) as DidacticMeta['difficulty'],
+      effort: shape.effort,
+      // Dělení i násobení: dítě dělí jmenovatelem a násobí čitatelem.
+      // U jednotkového zlomku je ten druhý krok násobení jedničkou, tedy
+      // žádný — ale rozlišovat to v metadatech by znamenalo, že se `1/4`
+      // a `3/4` chovají v poměru operací jinak, aniž by to učitel čekal.
+      operations: ['mul', 'div'],
+      skills: shape.skills,
+    },
+  }
+}
+
+/** `1/2 + 1/4 = 3/4` — zlomek v zadání i ve výsledku. */
+function fractionSum(
+  target: number,
+  shape: SumShape,
+  ctx: GenContext,
+  rng: Rng,
+): Task | null {
+  const options = candidatesFor(shape, ctx.mix).filter(
+    (candidate) => Math.abs(candidate.value - target) < 1e-9,
+  )
+  if (options.length === 0) return null
+
+  const candidate = rng.pick(options)
+  const { text } = candidate
+  if (ctx.usedExpressions.has(text)) return null
+
+  const printedValue = `${candidate.result.numerator}/${candidate.result.denominator}`
+
+  // Týž nezávislý přepočet jako u části z celku: hodnota vznikla ze
+  // společného jmenovatele, tady se čte z toho, co bude na papíře.
+  let computed: number
+  try {
+    computed = evaluateExpression(text)
+  } catch {
+    return null
+  }
+  if (Math.abs(computed - target) > 1e-9) return null
+
+  ctx.usedExpressions.add(text)
+  return {
+    id: `fraction-sums:${text}`,
+    generatorId: 'fraction-sums',
+    value: candidate.value,
+    printedValue,
+    prompt: { kind: 'expr', text },
+    solutionSteps: [{ kind: 'expr', text: `${text} = ${printedValue}` }],
+    didactic: {
+      grade: ctx.profile.grade,
+      difficulty: Math.min(5, Math.max(1, shape.effort)) as DidacticMeta['difficulty'],
+      effort: shape.effort,
+      operations: [candidate.operation],
+      skills: shape.skills,
+    },
+  }
 }

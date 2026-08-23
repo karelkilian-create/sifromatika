@@ -37,6 +37,7 @@ export type SkillTag =
   | 'proc.cast-z-celku'
   | 'proc.sleva-navyseni'
   | 'zlom.cast-z-celku'
+  | 'zlom.scitani-odcitani'
   | 'rady.konstantni-krok'
   | 'rady.stridavy-krok'
   | 'rady.rostouci-krok'
@@ -93,6 +94,20 @@ export interface Task {
   generatorId: string
   /** Výsledek úlohy. Musí souhlasit s nezávislým přepočtem ve `core/verify`. */
   value: number
+  /**
+   * Vytištěná podoba výsledku, liší-li se od `formatValue(value)`.
+   *
+   * Existuje kvůli zlomkovému výsledku: `1/2 + 1/4` má hodnotu 0,75, ale na
+   * kartičce musí stát `3/4`. U `1/3` je to dokonce jediná možnost — desetinný
+   * zápis té hodnoty neexistuje a `isPrintable` ho po právu zamítá.
+   *
+   * `value` zůstává číslo a nese dál všechno, co se počítá: párování, hledání
+   * v šifrovací tabulce, `usedValues`. Tohle pole je jen to, co uvidí dítě.
+   *
+   * ⚠ Verifikace ho NESMÍ brát jako pravdu. Čte si ho znovu, od nuly, stejně
+   *   jako čte zadání — jinak by ověřovala generátor místo papíru.
+   */
+  printedValue?: string
   prompt: PromptNode
   solutionSteps: PromptNode[]
   didactic: DidacticMeta
@@ -412,6 +427,15 @@ export interface TaskRules {
    * platí `2,25 + 0,25 = 2,5`: dvě místa vlevo, jedno vpravo.
    */
   maxResultPlaces: 0 | 1 | 2
+  /**
+   * Smí být výsledek zlomek (`1/2 + 1/4 = 3/4`)?
+   *
+   * Výslovné pravidlo, NIKOLI odvozené z `maxResultPlaces`. Zlomek není „víc
+   * desetinných míst" — `1/3` se do desetinného zápisu nevejde vůbec, takže
+   * by ho žádný počet míst nepovolil ani nezakázal správně. Je to jiný druh
+   * zápisu a rozlišuje se deklarací, stejně jako `SheetSlot.kind`.
+   */
+  fractionResults: boolean
 }
 
 /**
@@ -423,7 +447,7 @@ export interface TaskRules {
  *   `value-not-in-table`. Zůstává proto, že hláška o celém výsledku
  *   pojmenuje příčinu, kdežto ta druhá popisuje následek.
  */
-export const REQUIRE_WHOLE_RESULTS: TaskRules = { maxResultPlaces: 0 }
+export const REQUIRE_WHOLE_RESULTS: TaskRules = { maxResultPlaces: 0, fractionResults: false }
 
 /**
  * Hry: kód políčka tu žádný není, takže `2,5` je legitimní výsledek.
@@ -433,7 +457,7 @@ export const REQUIRE_WHOLE_RESULTS: TaskRules = { maxResultPlaces: 0 }
  * dvě místa vyžádá a zvedne se to buď tady, nebo jen pro to téma. Právě
  * proto je to parametr, a ne konstanta zadrátovaná ve verifikaci.
  */
-export const ALLOW_DECIMAL_RESULTS: TaskRules = { maxResultPlaces: 1 }
+export const ALLOW_DECIMAL_RESULTS: TaskRules = { maxResultPlaces: 1, fractionResults: true }
 
 /**
  * Kontext jednoho generování. `usedExpressions` brání tomu, aby na listu
@@ -516,6 +540,21 @@ export interface VerificationFailure {
      * to vada listu, ne důvod k tichému zaokrouhlení.
      */
     | 'unprintable-value'
+    /**
+     * Vytištěný zlomkový výsledek není v základním tvaru: `6/8` místo `3/4`.
+     *
+     * Hodnota je správně, a přesto je to vada. Na kartičce má stát tvar, ke
+     * kterému dítě dojde krácením — a dvě kartičky s touž hodnotou v různých
+     * tvarech by rozbily párování.
+     */
+    | 'unreduced-fraction'
+    /**
+     * Zlomkový výsledek na listu, který ho nedovoluje.
+     *
+     * Šifra: výsledek je kód políčka v mřížce, takže `3/4` v ní nemá kam
+     * ukázat. Viz `TaskRules.fractionResults`.
+     */
+    | 'fraction-result-not-allowed'
     /**
      * Dvě zadání se stejným výsledkem. U párovacích her (pexeso, domino) vada:
      * dítě spáruje špatně a bude mít pravdu. U šifry naopak v pořádku.

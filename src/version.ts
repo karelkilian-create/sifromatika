@@ -64,6 +64,19 @@
  *      `30,02 · 5` bylo pod stem, a stejně na tužku a papír. Mění se každý
  *      list s desetinnými čísly, tedy 6. ročník výš; zásoba dosažitelných
  *      cílů klesla o čtyři setiny procenta (9991 → 9987).
+ *  9 — zlomek smí být i VÝSLEDEK (`1/2 + 1/4 = 3/4`), a to jen ve hrách:
+ *      šifra má výsledek jako kód políčka v mřížce, kam zlomek nemá jak
+ *      ukázat (`TaskRules.fractionResults`).
+ *
+ *      Generátor zlomků tím dostal dva nové tvary a losuje se ze čtyř místo
+ *      ze dvou, takže se mění každé pexeso, domino a bingo se zaškrtnutými
+ *      zlomky — tedy 7. ročník výš. **Šifra a list řad se nemění**: tvary se
+ *      filtrují podle pravidel listu PŘED losováním, takže šifře zbydou
+ *      přesně ty dva, které měla, ve stejném pořadí.
+ *
+ *      Druhá změna téhož čísla: zaškrtnuté „jen sčítání" dosud zlomky
+ *      z listu vyhodilo úplně (část z celku je dělení a násobení). Nově
+ *      dostane sčítání zlomků, protože ten tvar sčítání opravdu je.
  */
-export const GENERATOR_VERSION = 8
+export const GENERATOR_VERSION = 9
 export const APP_VERSION = '0.1.0-dev'

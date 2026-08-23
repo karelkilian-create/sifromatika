@@ -418,6 +418,103 @@ export interface SheetSlot {
    * později — u prvního typu úlohy, který se do žádného vzorku netrefí.
    */
   kind?: PromptNode['kind']
+  /**
+   * Vytištěná podoba výsledku, tvrdí-li generátor jinou než desetinnou.
+   *
+   * Chybí-li, platí dosavadní pravidlo: výsledek se tiskne jako číslo, takže
+   * se musí do desetinného zápisu vejít. Je-li vyplněná, ptá se verifikace
+   * jinak — viz `verifyPrintedValue`.
+   */
+  printedValue?: string
+}
+
+/** Zlomek tak, jak smí být vytištěn: dvě celá čísla a lomítko, nic víc. */
+const PRINTED_FRACTION = /^(\d+)\/(\d+)$/u
+
+/** Největší společný dělitel. Počítá si ho verifikace sama, viz `isReduced`. */
+function gcd(a: number, b: number): number {
+  return b === 0 ? a : gcd(b, a % b)
+}
+
+/**
+ * Kontrola úlohy, jejíž výsledek se netiskne jako číslo.
+ *
+ * Dosavadní `isPrintable` se ptá „vejde se hodnota na dvě desetinná místa".
+ * Ta otázka je ale položená o krok vedle — ve skutečnosti jde o to, jestli se
+ * vytištěný výsledek dá **přečíst zpátky beze ztráty**. Pro `0,33` je odpověď
+ * ne, pro `1/3` napsané zlomkem ano. Proto se u vytištěné podoby kontroly
+ * desetinných míst neptají: žádný desetinný zápis se netiskne.
+ *
+ * ⚠ Hodnota se čte ZNOVU z vytištěného textu (`evaluateExpression`), ne
+ *   z čitatele a jmenovatele odchycených regulárním výrazem. Ten je tu na
+ *   TVAR (základní tvar), ne na hodnotu — jinak by dvě různé chyby generátoru
+ *   splynuly v jednu kontrolu.
+ */
+function verifyPrintedValue(
+  printed: string,
+  label: string,
+  computed: number,
+  rules: TaskRules,
+): VerificationFailure[] {
+  const match = PRINTED_FRACTION.exec(printed.trim())
+  if (match === null) {
+    return [
+      {
+        code: 'task-value-mismatch',
+        message: `${label} má vytištěný výsledek „${printed}", a to není zlomek. Jiný nečíselný zápis výsledku list neumí.`,
+      },
+    ]
+  }
+
+  if (!rules.fractionResults) {
+    return [
+      {
+        code: 'fraction-result-not-allowed',
+        message: `${label} dává ${printed}, ale na tomhle listu slouží výsledek jako kód políčka — zlomek nemá v mřížce kam ukázat.`,
+      },
+    ]
+  }
+
+  const numerator = Number(match[1])
+  const denominator = Number(match[2])
+  if (denominator === 0) {
+    return [
+      {
+        code: 'task-value-mismatch',
+        message: `${label} má vytištěný výsledek „${printed}" se jmenovatelem nula.`,
+      },
+    ]
+  }
+  if (gcd(numerator, denominator) !== 1) {
+    return [
+      {
+        code: 'unreduced-fraction',
+        message: `${label} má vytištěný výsledek ${printed}, který není v základním tvaru. Dítě, které zkrátí, by na stole svou kartičku nenašlo.`,
+      },
+    ]
+  }
+
+  let read: number
+  try {
+    read = evaluateExpression(printed)
+  } catch (error) {
+    return [
+      {
+        code: 'task-value-mismatch',
+        message: `${label} má vytištěný výsledek „${printed}", který nejde přečíst: ${error instanceof Error ? error.message : String(error)}`,
+      },
+    ]
+  }
+  if (!nearlyEqual(read, computed)) {
+    return [
+      {
+        code: 'task-value-mismatch',
+        message: `${label} dává ${computed}, ale vytištěno je ${printed}.`,
+      },
+    ]
+  }
+
+  return []
 }
 
 /** Přepočet jedné úlohy. Vrací prázdné pole, když je všechno v pořádku. */
@@ -482,6 +579,22 @@ function verifySlot(
         message: `${label} má dva operátory vedle sebe. Záporné číslo za operátorem patří do závorky: −7 · (−2), nikoli −7 · −2.`,
       },
     ]
+  }
+
+  // Výsledek, který se netiskne jako číslo (zlomek), se ptá jinak: ne kolik
+  // má desetinných míst, ale jestli se dá přečíst zpátky. Zbylé kontroly
+  // v téhle funkci mluví o desetinném zápisu, a ten tu žádný není.
+  if (slot.printedValue !== undefined) {
+    const failures = verifyPrintedValue(slot.printedValue, label, computed, rules)
+    if (failures.length > 0) return failures
+    return nearlyEqual(computed, slot.declaredValue)
+      ? []
+      : [
+          {
+            code: 'task-value-mismatch',
+            message: `${label} dává ${computed}, generátor tvrdí ${slot.declaredValue}.`,
+          },
+        ]
   }
 
   // Celý výsledek chce ŠIFRA, ne matematika — je to kód políčka v mřížce.
@@ -560,10 +673,19 @@ export function verifyTasks(
  * `56` s tím druhým, bude mít pravdu a hra mu nevyjde.
  */
 export function verifyDistinctValues(tasks: readonly Task[]): VerificationReport {
-  // Klíčem je VYTIŠTĚNÁ podoba, ne číslo. Otázka totiž nezní „mají tyhle
-  // úlohy stejnou hodnotu", ale „vypadají na papíře stejně" — a dvě hodnoty
-  // lišící se v posledním bitu plovoucí čárky projdou jako různá čísla,
-  // přestože se obě vytisknou jako `2,5`. Pro celá čísla je to totéž co dřív.
+  // Klíčem je HODNOTA, jen zapsaná desetinně, aby se dvě čísla lišící se
+  // v posledním bitu plovoucí čárky nepovažovala za různá (obě se vytisknou
+  // jako `2,5`). Pro celá čísla je to totéž co dřív.
+  //
+  // ⚠ NIKOLI vytištěná podoba výsledku — od zlomkového výsledku to jsou dvě
+  //   různé věci. `1/4 + 1/4` a `0,25 + 0,25` vypadají na kartičkách jinak
+  //   a jsou to tytéž tři čtvrtiny… tedy táž polovina: dítě by spárovalo
+  //   správně a hra by mu stejně nevyšla. Klíčovat zápisem by takový list
+  //   propustilo.
+  //
+  //   Že zaokrouhlení na dvě místa dva různé zlomky neslije, není náhoda:
+  //   nejtěsnější dvojice z povolených jmenovatelů (`1/10` a `1/8`, `3/8`
+  //   a `2/5`) se liší o 1/40 = 0,025.
   const byValue = new Map<string, string[]>()
   for (const task of tasks) {
     const printed = formatValue(task.value)
@@ -599,12 +721,29 @@ export interface ChainTile {
   kind?: PromptNode['kind']
 }
 
-/** Přečte vytištěnou hodnotu. `null` = nejde přečíst jako číslo. */
+/**
+ * Hotová hodnota na půlce kamene: číslo, nebo zlomek.
+ *
+ * ⚠ Vzor je tu schválně, i když `evaluateExpression` níž by si poradilo
+ *   i s celým výrazem. Levá půlka MÁ nést hotovou hodnotu — kdyby na ni
+ *   generátor omylem napsal `7 · 8`, dřív to spadlo na „není číslo"
+ *   a spadnout to musí dál.
+ */
+const PRINTED_HALF = /^[−-]?\d+(?:[,.]\d+)?$|^\d+\/\d+$/u
+
+/** Přečte vytištěnou hodnotu. `null` = nejde přečíst jako hotová hodnota. */
 function readPrintedValue(text: string): number | null {
-  // Čárka je na českém listu desetinný oddělovač; hodnoty kamenů jsou sice
-  // vždy celé, ale číst je tolerantně nic nestojí.
-  const parsed = Number(text.trim().replace(',', '.'))
-  return Number.isFinite(parsed) ? parsed : null
+  const trimmed = text.trim()
+  if (!PRINTED_HALF.test(trimmed)) return null
+  // Přes `evaluateExpression`, ne přes `Number`: to je jediné čtení, které
+  // zvládne desetinnou čárku i zlomkovou čáru (lomítko zná jako dělení,
+  // takže `3/4` mu dá 0,75 — přesně tu hodnotu, kterou zlomek má).
+  try {
+    return evaluateExpression(trimmed)
+  } catch (error) {
+    if (!(error instanceof ExpressionError)) throw error
+    return null
+  }
 }
 
 /** Spočítá pravou půlku. `null` = nejde vyhodnotit nebo má víc řešení. */

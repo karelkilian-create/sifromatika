@@ -9,6 +9,7 @@
 import { BINGO_SIDE } from '../../core/constraints/index.js'
 import { chunkCards, planCardLayout } from '../../core/document/cards.js'
 import type { DocumentBlock, DocumentModel, DocumentPage } from '../../core/document/index.js'
+import { printedResult } from '../../core/number/index.js'
 import { worksheetTitle, type BingoSheet } from './index.js'
 
 /**
@@ -76,7 +77,7 @@ function teacherPage(sheet: BingoSheet): DocumentBlock[] {
       rows: sheet.tasks.map((task, index) => [
         `${index + 1}.`,
         task.prompt.text,
-        String(task.value),
+        printedResult(task),
       ]),
     },
   ]

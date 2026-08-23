@@ -24,7 +24,7 @@ import type {
   VerificationReport,
 } from '../../core/model/index.js'
 import { ALLOW_DECIMAL_RESULTS } from '../../core/model/index.js'
-import { formatValue } from '../../core/number/index.js'
+import { printedResult } from '../../core/number/index.js'
 import { createRng } from '../../core/rng/index.js'
 import {
   verifyDistinctValues,
@@ -217,7 +217,7 @@ function generateOnce(config: PexesoProject): PexesoOutcome {
   const cards = rng.shuffle(
     tasks.flatMap((task, pairIndex): PexesoCard[] => [
       { text: task.prompt.text, kind: 'prompt', pairIndex },
-      { text: formatValue(task.value), kind: 'value', pairIndex },
+      { text: printedResult(task), kind: 'value', pairIndex },
     ]),
   )
 
@@ -239,6 +239,7 @@ function generateOnce(config: PexesoProject): PexesoOutcome {
             taskText: task.prompt.text,
             declaredValue: task.value,
             kind: task.prompt.kind,
+            printedValue: task.printedValue,
           })),
           // Celý výsledek je požadavek ŠIFRY (kód políčka v mřížce), ne
           // tohohle listu. Viz `TaskRules` v `core/model`.

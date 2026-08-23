@@ -53,7 +53,7 @@ export interface TopicSelection {
   percents: boolean
   /** Mocniny a odmocniny (`7²`, `√81`). Od 8. ročníku. */
   powers: boolean
-  /** Zlomky jako část celku (`3/4 z 80`). Od 7. ročníku. */
+  /** Zlomky (`3/4 z 80`, ve hrách i `1/2 + 1/4`). Od 7. ročníku. */
   fractions: boolean
 }
 
@@ -78,7 +78,13 @@ export function generatorMixFromTopics(
   if (usable.decimals) mix.decimal = 1
   if (usable.percents) mix.percent = 1
   if (usable.powers) mix.powers = 1
-  if (usable.fractions) mix.fractions = 1
+  // Jedno zaškrtávátko, dvě id: `3/4 z 80` a `1/2 + 1/4` jsou pro učitele
+  // jedno téma, ale musí mít každý svou zásobu cílů — jinak by zlomkový
+  // výsledek vycházel jednou z dvanácti. Viz `fractionSumsGenerator`.
+  if (usable.fractions) {
+    mix.fractions = 1
+    mix['fraction-sums'] = 1
+  }
   return Object.keys(mix).length > 0 ? mix : { arithmetic: 1 }
 }
 
@@ -123,6 +129,6 @@ export function topicsFromGeneratorMix(
     decimals: enabled('decimal'),
     percents: enabled('percent'),
     powers: enabled('powers'),
-    fractions: enabled('fractions'),
+    fractions: enabled('fractions') || enabled('fraction-sums'),
   }
 }

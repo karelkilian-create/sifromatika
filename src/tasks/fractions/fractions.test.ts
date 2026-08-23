@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest'
 import fc from 'fast-check'
 import { gradeProfile } from '../../core/constraints/index.js'
 import type { Grade, OperationTag } from '../../core/model/index.js'
-import { REQUIRE_WHOLE_RESULTS } from '../../core/model/index.js'
+import { ALLOW_DECIMAL_RESULTS, REQUIRE_WHOLE_RESULTS } from '../../core/model/index.js'
 import { isWholeNumber } from '../../core/number/index.js'
 import { createRng } from '../../core/rng/index.js'
 import { evaluateExpression } from '../../core/verify/index.js'
-import { fractionsGenerator } from './index.js'
+import { fractionSumsGenerator, fractionsGenerator } from './index.js'
 
 const ALL: Partial<Record<OperationTag, number>> = { add: 1, sub: 1, mul: 1, div: 1 }
 
@@ -212,5 +212,104 @@ describe('fractionsGenerator — verifikace zlomek přečte', () => {
   it('předložka `z` váže těsně jako tečka', () => {
     // Kdyby vázala volně, bylo by `1/2 z 80 + 10` rovno `1/2 z 90`.
     expect(evaluateExpression('1/2 z 80 + 10')).toBeCloseTo(50, 9)
+  })
+})
+
+/** `1/2 + 1/4` → operandy a operace. */
+function sumParts(text: string) {
+  const match = /^(\d+)\/(\d+) ([+−]) (\d+)\/(\d+)$/u.exec(text)
+  if (match === null) throw new Error(`neočekávaný tvar: ${text}`)
+  return {
+    left: { numerator: Number(match[1]), denominator: Number(match[2]) },
+    operator: match[3]!,
+    right: { numerator: Number(match[4]), denominator: Number(match[5]) },
+  }
+}
+
+function gcd(a: number, b: number): number {
+  return b === 0 ? a : gcd(b, a % b)
+}
+
+/** Všechny úlohy, které generátor pro daný ročník a mix umí vyrobit. */
+function everySum(grade: Grade, mix = ALL) {
+  const rng = createRng('zlomkovy-vysledek')
+  const ctx = {
+    profile: gradeProfile(grade),
+    mix,
+    usedExpressions: new Set<string>(),
+    rules: ALLOW_DECIMAL_RESULTS,
+  }
+  const tasks = []
+  for (const target of fractionSumsGenerator.reachableValues(gradeProfile(grade), mix, ALLOW_DECIMAL_RESULTS)) {
+    // Bez sdílené `usedExpressions`: každý cíl se zkouší nezávisle, jinak by
+    // pozdější cíle padaly jen proto, že se dřívější úloha už použila.
+    const task = fractionSumsGenerator.generateForValue(target, { ...ctx, usedExpressions: new Set() }, rng)
+    if (task !== null) tasks.push(task)
+  }
+  return tasks
+}
+
+describe('fractionSumsGenerator', () => {
+  it('nabízí se od sedmé třídy, stejně jako část z celku', () => {
+    expect(fractionSumsGenerator.supports(gradeProfile(6))).toBe(false)
+    expect(fractionSumsGenerator.supports(gradeProfile(7))).toBe(true)
+  })
+
+  it('na list se zlomkovým výsledkem nesmí, když si o něj neřekl', () => {
+    // Šifra: výsledek je kód políčka v mřížce. `supports` na pravidla listu
+    // nevidí, takže zákaz musí padnout tady.
+    const profile = gradeProfile(7)
+    expect(fractionSumsGenerator.reachableValues(profile, ALL, REQUIRE_WHOLE_RESULTS).size).toBe(0)
+    expect(
+      fractionSumsGenerator.generateForValue(0.75, { ...context(7), rules: REQUIRE_WHOLE_RESULTS }, createRng('sifra')),
+    ).toBeNull()
+  })
+
+  it('výsledek je pravý zlomek v základním tvaru, nikdy celé číslo', () => {
+    const tasks = everySum(7)
+    expect(tasks.length).toBeGreaterThan(10)
+    for (const task of tasks) {
+      const printed = task.printedValue
+      expect(printed, task.prompt.text).toBeDefined()
+      const [numerator, denominator] = printed!.split('/').map(Number) as [number, number]
+      expect(gcd(numerator, denominator), `${task.prompt.text} = ${printed}`).toBe(1)
+      expect(numerator, `${task.prompt.text} = ${printed}`).toBeLessThan(denominator)
+      expect(isWholeNumber(task.value)).toBe(false)
+    }
+  })
+
+  it('vytištěná podoba souhlasí s hodnotou i se zadáním', () => {
+    for (const task of everySum(7)) {
+      expect(evaluateExpression(task.prompt.text)).toBeCloseTo(task.value, 9)
+      expect(evaluateExpression(task.printedValue!)).toBeCloseTo(task.value, 9)
+    }
+  })
+
+  it('operandy jsou pravé zlomky ze seznamu jmenovatelů', () => {
+    const allowed = [2, 3, 4, 5, 6, 8, 10]
+    for (const task of everySum(7)) {
+      const { left, right } = sumParts(task.prompt.text)
+      for (const operand of [left, right]) {
+        expect(allowed, task.prompt.text).toContain(operand.denominator)
+        expect(operand.numerator, task.prompt.text).toBeLessThan(operand.denominator)
+      }
+    }
+  })
+
+  it('ctí zaškrtnuté operace — samotné sčítání nedá odčítání', () => {
+    for (const task of everySum(7, { add: 1 })) {
+      expect(sumParts(task.prompt.text).operator, task.prompt.text).toBe('+')
+      expect(task.didactic.operations).toEqual(['add'])
+    }
+  })
+
+  it('zásoba pokrývá oba tvary — stejný i násobný jmenovatel', () => {
+    const texts = everySum(7).map((task) => task.prompt.text)
+    const sameDenominator = texts.filter((text) => {
+      const { left, right } = sumParts(text)
+      return left.denominator === right.denominator
+    })
+    expect(sameDenominator.length).toBeGreaterThan(0)
+    expect(texts.length - sameDenominator.length).toBeGreaterThan(0)
   })
 })

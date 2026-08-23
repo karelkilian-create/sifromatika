@@ -428,7 +428,10 @@ describe('pravidla listu', () => {
     // Zatím to nikdo nepoužívá; až přijde kruh (`3,14 · 7² = 153,86`), zvedne
     // se `maxResultPlaces` na 2 a verifikace to musí pustit beze změny.
     expect(
-      verifyTasks([{ taskText: '1,5 + 0,75', declaredValue: 2.25 }], { maxResultPlaces: 2 }),
+      verifyTasks([{ taskText: '1,5 + 0,75', declaredValue: 2.25 }], {
+        maxResultPlaces: 2,
+        fractionResults: false,
+      }),
     ).toEqual({ ok: true })
   })
 
@@ -474,5 +477,105 @@ describe('porovnává se vytištěná podoba, ne číslo', () => {
         { left: '0,5', right: '0,1 + 0,2' },
       ]),
     ).toEqual({ ok: true })
+  })
+})
+
+describe('zlomek jako výsledek', () => {
+  function fractionTask(text: string, value: number, printedValue?: string): Task {
+    return {
+      id: text,
+      generatorId: 'fraction-sums',
+      value,
+      printedValue,
+      prompt: { kind: 'expr', text },
+      solutionSteps: [],
+      didactic: { grade: 7, difficulty: 1, effort: 1, operations: ['add'], skills: [] },
+    }
+  }
+
+  it('vytištěný zlomek projde tam, kde by desetinné číslo neprošlo', () => {
+    // Jádro celé změny: `1/3` se na dvě desetinná místa vytisknout NEJDE
+    // a jako číslo by spadlo na `unprintable-value`. Jako zlomek je to
+    // přesně napsaný výsledek.
+    expect(
+      verifyTasks(
+        [{ taskText: '1/6 + 1/6', declaredValue: 1 / 3, printedValue: '1/3' }],
+        ALLOW_DECIMAL_RESULTS,
+      ),
+    ).toEqual({ ok: true })
+  })
+
+  it('nezkrácený zlomek je vada, i když má správnou hodnotu', () => {
+    // Dítě, které zkrátí na `3/4`, by svou kartičku na stole nenašlo.
+    const report = verifyTasks(
+      [{ taskText: '1/2 + 1/4', declaredValue: 0.75, printedValue: '6/8' }],
+      ALLOW_DECIMAL_RESULTS,
+    )
+    expect(report.ok).toBe(false)
+    if (report.ok) return
+    expect(report.failures[0]?.code).toBe('unreduced-fraction')
+  })
+
+  it('vytištěný zlomek musí souhlasit se zadáním', () => {
+    const report = verifyTasks(
+      [{ taskText: '1/2 + 1/4', declaredValue: 0.75, printedValue: '2/3' }],
+      ALLOW_DECIMAL_RESULTS,
+    )
+    expect(report.ok).toBe(false)
+    if (report.ok) return
+    expect(report.failures[0]?.code).toBe('task-value-mismatch')
+  })
+
+  it('na šifru zlomkový výsledek nesmí — v mřížce nemá kam ukázat', () => {
+    const report = verifyTasks([
+      { taskText: '1/2 + 1/4', declaredValue: 0.75, printedValue: '3/4' },
+    ])
+    expect(report.ok).toBe(false)
+    if (report.ok) return
+    expect(report.failures[0]?.code).toBe('fraction-result-not-allowed')
+  })
+
+  it('jiný nečíselný zápis výsledku list neumí', () => {
+    // Pojistka proti tomu, aby se do vytištěné podoby propašoval výraz.
+    const report = verifyTasks(
+      [{ taskText: '1/2 + 1/4', declaredValue: 0.75, printedValue: '1/2 + 1/4' }],
+      ALLOW_DECIMAL_RESULTS,
+    )
+    expect(report.ok).toBe(false)
+    if (report.ok) return
+    expect(report.failures[0]?.code).toBe('task-value-mismatch')
+  })
+
+  it('zlomek a desetinné číslo téže hodnoty se na jednom stole potkat nesmí', () => {
+    // `1/4 + 1/4` a `0,25 + 0,25` vypadají různě a jsou to tytéž hodnoty.
+    // Dítě by spárovalo správně a hra by mu stejně nevyšla.
+    const report = verifyDistinctValues([
+      fractionTask('1/4 + 1/4', 0.5, '1/2'),
+      fractionTask('0,25 + 0,25', 0.5),
+    ])
+    expect(report.ok).toBe(false)
+    if (report.ok) return
+    expect(report.failures[0]?.code).toBe('ambiguous-pairing')
+  })
+
+  it('řetěz domina se skládá i přes zlomek na půlce kamene', () => {
+    expect(
+      verifyChain([
+        { left: '3/4', right: '5/6 − 1/2' },
+        { left: '1/3', right: '1/2 + 1/4' },
+      ]),
+    ).toEqual({ ok: true })
+  })
+
+  it('výraz na levé půlce kamene je pořád vada', () => {
+    // Levá půlka nese hotovou hodnotu. Že ji nově čte `evaluateExpression`,
+    // nesmí znamenat, že se tam vejde `7 · 8`.
+    const report = verifyChain([
+      { left: '7 · 8', right: '56 + 0' },
+      { left: '56', right: '7 · 8' },
+    ])
+    expect(report.ok).toBe(false)
+    if (report.ok) return
+    expect(report.failures[0]?.code).toBe('broken-chain')
   })
 })
