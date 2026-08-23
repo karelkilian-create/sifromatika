@@ -217,6 +217,17 @@ function RunView({ run }: { run: InlineRun }) {
  * Číslo je pozice v seznamu, ne údaj z modelu — rámečky na tajenku se číslují
  * stejně a kdyby si obojí neslo vlastní číslování, mohlo by se rozejít.
  */
+/**
+ * Do kolika úloh se vejde širší rozestup mezi řádky.
+ *
+ * Změřeno tiskem: na řádek s řadou padne asi 5 mm a na sazbu úloh zbývá po
+ * nadpisu a instrukci 238 mm. Dvacet řádků s šestimilimetrovou mezerou je
+ * 224 mm, takže se ještě vejdou; jednadvacátý už ne. Nad tou hranicí se
+ * proto zůstává u těsného rozestupu — list plný úloh vzduch nepotřebuje,
+ * potřebuje se vejít.
+ */
+const ROOMY_MAX_ITEMS = 20
+
 function TaskListView({
   columns,
   items,
@@ -224,8 +235,29 @@ function TaskListView({
   columns: 1 | 2
   items: readonly { text: string; showEquals: boolean }[]
 }) {
+  /*
+   * Vzduch mezi řádky dostane jen krátký JEDNOSLOUPCOVÝ seznam samých řad,
+   * tedy list číselných řad. Dítě u něj hledá pravidlo a potřebuje si nad
+   * čísly a pod nimi škrtat rozdíly; na dvanácti úlohách přitom zůstávaly
+   * tři čtvrtiny papíru prázdné.
+   *
+   * ⚠ Šifra ho dostat NESMÍ, i když má někdy taky jen dvanáct úloh: pod
+   *   seznamem jí stojí tabulka a rámečky na tajenku a ty se při první
+   *   milimetrové změně sesypou na druhý list. Stalo se to už jednou,
+   *   s kontrolní úsečkou (commit 6d834a1).
+   *
+   * Rozhoduje o tom sazba, ne model — `DocumentModel` popisuje obsah
+   * a rozměry v něm schválně nejsou.
+   */
+  const roomy =
+    columns === 1 && items.length <= ROOMY_MAX_ITEMS && items.every((item) => !item.showEquals)
+
   return (
-    <ol className={`task-list${columns === 2 ? ' task-list--two-columns' : ''}`}>
+    <ol
+      className={`task-list${columns === 2 ? ' task-list--two-columns' : ''}${
+        roomy ? ' task-list--roomy' : ''
+      }`}
+    >
       {items.map((item, index) => (
         <li
           className={`task-list__item${item.showEquals ? '' : ' task-list__item--sequence'}`}

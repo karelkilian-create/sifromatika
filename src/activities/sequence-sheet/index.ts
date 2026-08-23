@@ -59,7 +59,11 @@ export function defaultSequenceSheetConfig(
       output: {
         includeSolution: true,
         paper: 'A4',
-        columns: 2,
+        // Jeden sloupec, ne dva. Řada je nejširší zadání v projektu a ve dvou
+        // sloupcích na ni zbylo 85 mm — musela se zmenšit a stejně vyplnila
+        // řádek celý. Na plné šířce zbude za zadáním kus linky, na kterém si
+        // dítě může zkusit hledat pravidlo (rozdíly mezi členy).
+        columns: 1,
         // Není co prozradit — list nemá tajenku, takže název patří i na něj.
         printTitleOnWorksheet: true,
       },

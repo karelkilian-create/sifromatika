@@ -152,6 +152,14 @@
   column-count: 2;
 }
 
+/*
+ * Širší rozestup pro krátký list řad. Míru drží `ROOMY_MAX_ITEMS` v rendereru:
+ * dvacet řádků po šesti milimetrech se na stránku ještě vejde.
+ */
+.task-list--roomy .task-list__item {
+  margin-bottom: 6mm;
+}
+
 .task-list__item {
   display: flex;
   align-items: baseline;
