@@ -162,7 +162,38 @@ Odloženo 23. 8. 2026 po rozvaze s Karlem, podklad je v
 
 Až se k tomu vrátíme, tohle je první otázka, ne poslední.
 
-## 10. Co se odchýlilo od návrhu
+## 10. Otevřené: poměr hledaného čísla a operandu
+
+Zapsáno **23. 8. 2026 po zkušebním tisku** — Karel vytiskl domino z rovnic
+a na kartičce stálo `78 + ? = 80`. Úloha je správně, ale dítě u ní nepočítá,
+jen přečte rozdíl dvou skoro stejných čísel.
+
+Je to táž vada, jakou u odčítání opravila `GENERATOR_VERSION` 2 (`711 − 708
+= 3`): menšenec se tehdy losoval z celého oboru nezávisle na výsledku.
+U rovnic hlídá generátor jen druhý operand (`MIN_OPERAND`, aby nebyl 0 ani 1),
+ale ne jeho poměr k hledanému číslu.
+
+Naměřeno na 2160 úlohách (4., 5. a 7. ročník, domino ze samých rovnic):
+
+| Co | Kolik |
+|---|---|
+| hledané číslo desetkrát menší než operand | 1,1 % |
+| hledané číslo pod deset | 3,8 % |
+| hledané číslo pod deset vedle operandu ≥ 20 | 1,9 % |
+
+Tedy zhruba **jedna kartička na čtyři až osm dvanáctikamenových domin** —
+ne tolik, aby to samo o sobě stálo za inkrement verze, ale dost na to, aby
+to učitel v ruce potkal.
+
+**Návrh opravy:** nepustit dvojici, kde je hledané číslo řádově menší než
+druhý operand. `78 + ? = 80` tím vypadne, `99 + ? = 1000` (dobrá úloha
+z téhož listu) zůstane.
+
+⚠ **Přidat k nejbližšímu kroku, který `GENERATOR_VERSION` zvedne stejně.**
+Samotná tahle změna by přehodila losování všude a znehodnotila sdílené
+odkazy kvůli jedné kartičce z padesáti.
+
+## 11. Co se odchýlilo od návrhu
 
 Provedeno **23. 8. 2026**. `GENERATOR_VERSION` se nezměnil — ověřily to golden
 snímky, nepřepsal se ani jeden.
