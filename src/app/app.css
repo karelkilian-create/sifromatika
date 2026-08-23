@@ -302,6 +302,10 @@ body {
  * Co je uvnitř, řečené na jednom řádku. Samotný nadpis „Pokročilé nastavení
  * obsahu" neprozradí, že se za ním skrývají procenta a zlomky. Vyjmenovat
  * témata jménem nejde — každý ročník má jiná — takže jen tři kategorie.
+ *
+ * Slova sedí na to, co je uvnitř vidět: „Povolené operace" a „Témata“. Proto
+ * ne „typy příkladů" — to popisuje témata, ne operace, a vedle „témat" by
+ * vypadalo jako druhé jméno téhož.
  * Po otevření mizí, seznam si učitel přečte přímo.
  */
 .editor__advanced-lure {

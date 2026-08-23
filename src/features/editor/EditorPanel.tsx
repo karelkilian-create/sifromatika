@@ -367,7 +367,7 @@ export function EditorPanel({
       <details className="editor__advanced">
         <summary>
           Pokročilé nastavení obsahu
-          <span className="editor__advanced-lure">operace, témata úloh, název listu</span>
+          <span className="editor__advanced-lure">početní operace, témata příkladů, název listu</span>
         </summary>
 
         <div className="editor__advanced-grid">
