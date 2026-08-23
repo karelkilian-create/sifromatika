@@ -39,6 +39,49 @@ const OPERATION_LABELS: Record<OperationTag, string> = {
   div: 'Dělení',
 }
 
+/**
+ * Složený příklad do nápovědy — a jen z operací, které jsou zaškrtnuté.
+ *
+ * Do 23. 8. 2026 tu stálo natvrdo „100 : 10 + 784" a ukazovalo se podle
+ * ročníku. Věta „počítání se zaškrtnutými operacemi" se tím sama vyvracela
+ * v následující závorce: učitel měl odškrtnuté dělení a v ukázce ho viděl.
+ *
+ * Pořadí je pořadím přednosti — bere se první, na který výběr stačí.
+ */
+const COMPOSED_EXAMPLES: readonly { text: string; operations: readonly OperationTag[] }[] = [
+  { text: '100 : 10 + 784', operations: ['div', 'add'] },
+  { text: '(24 − 8) · 2', operations: ['sub', 'mul'] },
+  { text: '12 · 3 + 40', operations: ['mul', 'add'] },
+  { text: '600 : 4 − 90', operations: ['div', 'sub'] },
+  { text: '45 + 2 − 11', operations: ['add', 'sub'] },
+]
+
+/** `null` = ze zaškrtnutých operací se složený příklad poskládat nedá. */
+function composedExample(operations: Record<OperationTag, boolean>): string | null {
+  const found = COMPOSED_EXAMPLES.find((example) =>
+    example.operations.every((operation) => operations[operation]),
+  )
+  return found?.text ?? null
+}
+
+/**
+ * Jednoduchý příklad do téže věty. Táž vada jako u složeného: „7 · 8" tu
+ * stálo natvrdo a svítilo i tomu, kdo si násobení odškrtl.
+ *
+ * `toggleOperation` nedovolí odškrtnout všechny čtyři, takže se vždycky něco
+ * najde; poslední větev je jen pojistka totality.
+ */
+const SIMPLE_EXAMPLES: readonly (readonly [OperationTag, string])[] = [
+  ['mul', '7 · 8'],
+  ['div', '56 : 8'],
+  ['add', '24 + 38'],
+  ['sub', '91 − 47'],
+]
+
+function simpleExample(operations: Record<OperationTag, boolean>): string {
+  return SIMPLE_EXAMPLES.find(([operation]) => operations[operation])?.[1] ?? '7 · 8'
+}
+
 export interface EditorPanelProps {
   state: EditorState
   onChange: (next: EditorState) => void
@@ -117,6 +160,8 @@ export function EditorPanel({
 
   /** Zaškrtnutá témata omezená na ta, která ročník opravdu umí. */
   const topics = usableTopics(topicsState, profile)
+  const composed = composedExample(state.shared.operations)
+  const simple = simpleExample(state.shared.operations)
 
   const toggleTopic = (topic: keyof TopicSelection) => {
     // Aspoň jedno téma musí zůstat — ze žádného se kartičky složit nedají.
@@ -311,8 +356,19 @@ export function EditorPanel({
         </p>
       )}
 
+      {/*
+          Zavřené rozbalovátko nese oranžový rámeček, otevřené už ne.
+          Obsah listu se řídí odsud a učitel, který sem nezabloudí, dostane
+          ročník jen podle jména — přesně to byla vada, kvůli které se
+          23. 8. 2026 zapínala všechna témata. Rámeček ho sem má dostat
+          napoprvé; jakmile je otevřeno, svou práci odvedl a barva by už
+          jen přebíjela náhled listu.
+      */}
       <details className="editor__advanced">
-        <summary>Pokročilé nastavení obsahu</summary>
+        <summary>
+          Pokročilé nastavení obsahu
+          <span className="editor__advanced-lure">operace, témata úloh, název listu</span>
+        </summary>
 
         <div className="editor__advanced-grid">
           <fieldset className="fieldset">
@@ -469,8 +525,10 @@ export function EditorPanel({
                     čtvrťákovi, který u sebe žádné zaškrtávátko nevidí.
                 */}
                 <p className="hint">
-                  Běžné příklady jsou počítání se zaškrtnutými operacemi („7 · 8“
-                  {profile.maxOperands > 2 ? ', v tomhle ročníku i „100 : 10 + 784“' : ''}), tedy
+                  Běžné příklady jsou počítání se zaškrtnutými operacemi („{simple}“
+                  {profile.maxOperands > 2 && composed !== null
+                    ? `, v tomhle ročníku i „${composed}“`
+                    : ''}), tedy
                   to, co zbude, když se žádné téma nepřidá. Ostatní témata přidávají svůj druh
                   úlohy: řada s chybějícím číslem („4 10 16 22 ?“)
                   {profile.decimals > 0 ? ', desetinná čísla („3,5 · 4“)' : ''}
@@ -507,13 +565,23 @@ export function EditorPanel({
                 type="text"
                 value={state.shared.title}
                 onChange={(event) => patchShared({ title: event.target.value })}
+                /*
+                    I ukázkový název se drží toho, co ročník umí — stejné
+                    pravidlo jako u nápovědy o kus výš. „Mocniny na kartičkách"
+                    v sedmé třídě nabízejí obsah, pro který tam učitel nemá ani
+                    zaškrtávátko; mocniny jsou látka osmičky, procenta sedmé.
+                */
                 placeholder={
                   isCipher
                     ? 'např. Lov pirátského pokladu'
                     : isPexeso
-                      ? 'např. Mocniny na kartičkách'
+                      ? profile.powers
+                        ? 'např. Mocniny na kartičkách'
+                        : 'např. Násobilka na kartičkách'
                       : isDomino
-                        ? 'např. Procenta v kruhu'
+                        ? profile.percents
+                          ? 'např. Procenta v kruhu'
+                          : 'např. Násobilka v kruhu'
                         : isBingo
                           ? 'např. Násobilkové bingo'
                           : 'např. Rozcvička na řady'

@@ -268,16 +268,52 @@ body {
   color: #5c5c66;
 }
 
+/*
+ * Rozbalovátko s obsahem listu.
+ *
+ * Zavřené je orámované oranžově, otevřené splyne se zbytkem panelu. Je to
+ * jediné místo, kde se rozhoduje, CO na listu bude — kdo ho přehlédne, vezme
+ * si ročník jen podle nadpisu. Barva má tedy jednu práci: dostat sem učitele
+ * napoprvé. Pak už by jen přebíjela náhled listu, což je přesně to, čemu se
+ * brání poznámka u `--brand-orange` nahoře.
+ *
+ * Rámeček je v obou stavech, mění se jen barva — jinak by se panel při
+ * otevření posunul.
+ */
 .editor__advanced {
   margin-top: 1rem;
-  border-top: 1px solid var(--ui-border);
-  padding-top: 0.75rem;
+  border: 2px solid var(--ui-border);
+  border-radius: 8px;
+  padding: 0.7rem 0.9rem 0.9rem;
+}
+
+.editor__advanced:not([open]) {
+  border-color: var(--brand-orange);
+  background: #fff7f1;
 }
 
 .editor__advanced summary {
   cursor: pointer;
   color: var(--ui-accent);
   font-weight: 600;
+}
+
+/*
+ * Co je uvnitř, řečené na jednom řádku. Samotný nadpis „Pokročilé nastavení
+ * obsahu" neprozradí, že se za ním skrývají procenta a zlomky. Vyjmenovat
+ * témata jménem nejde — každý ročník má jiná — takže jen tři kategorie.
+ * Po otevření mizí, seznam si učitel přečte přímo.
+ */
+.editor__advanced-lure {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--ui-muted);
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+.editor__advanced[open] .editor__advanced-lure {
+  display: none;
 }
 
 .editor__advanced-grid {
