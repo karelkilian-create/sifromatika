@@ -248,6 +248,12 @@ export function EditorPanel({
               value={sequence.taskCount}
               onChange={(event) => patchSequence({ taskCount: Number(event.target.value) })}
             />
+            {/* Jediná aktivita, která nápovědu neměla. Chyběla i informace:
+                že se k listu tiskne řešení, se jinak učitel dozví až
+                z náhledu. */}
+            <span className="field__hint">
+              na list pro děti, k tomu list s řešením a pravidly řad
+            </span>
           </label>
         )}
 

@@ -238,12 +238,24 @@ body {
   gap: 0.75rem;
 }
 
-/* Tlačítka nemají popisek, takže by u horní hrany stála vedle popisků polí,
-   ne vedle jejich rámečků. Na širokém okně, kde se vejdou do téhož řádku, je
-   proto sráží dolů. */
+/*
+ * Tlačítka mají VŽDY vlastní řádek (`flex-basis: 100%` v zalamovacím rodiči).
+ *
+ * Dřív se to dělo jen samo od sebe: u šifry i u her je pod prvním polem
+ * nápověda („15 písmen = 15 příkladů", „24 kartiček na 2 listech…"), pole se
+ * tím rozšíří a tlačítka se na řádek nevejdou. List číselných řad ale žádnou
+ * nápovědu nemá, takže se k němu všechno naskládalo do jedné řady a „Jiná
+ * varianta" se přilepila k výběru ročníku. Zalomení se nemá řídit délkou
+ * textu ve vedlejším prvku.
+ *
+ * `align-self` tu proto být nemusí — na vlastním řádku není k čemu se
+ * zarovnávat. Vnitřní flex zůstává: na telefonu tlačítka drží v řádku
+ * i tehdy, když se pole nad nimi skládají pod sebe.
+ */
 .editor__actions {
   display: flex;
-  align-self: flex-end;
+  flex-wrap: wrap;
+  flex-basis: 100%;
   gap: 0.75rem;
 }
 
