@@ -19,7 +19,11 @@ function worksheetPage(sheet: SequenceSheet): DocumentBlock[] {
       kind: 'task-list',
       columns: sheet.config.payload.output.columns,
       // Řada už otazník obsahuje — rovnítko za ní by bylo navíc.
-      items: sheet.tasks.map((task) => ({ text: task.prompt.text, showEquals: false })),
+      items: sheet.tasks.map((task) => ({
+        text: task.prompt.text,
+        showEquals: false,
+        kind: task.prompt.kind,
+      })),
     },
   ]
 }

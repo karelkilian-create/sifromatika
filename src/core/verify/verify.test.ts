@@ -9,6 +9,7 @@ import {
   decode,
   evaluateExpression,
   hasAdjacentOperators,
+  solveEquation,
   verifyChain,
   verifyDistinctValues,
   verifySheet,
@@ -577,5 +578,68 @@ describe('zlomek jako výsledek', () => {
     expect(report.ok).toBe(false)
     if (report.ok) return
     expect(report.failures[0]?.code).toBe('broken-chain')
+  })
+})
+
+describe('rovnice s chybějícím číslem', () => {
+  const slot = (taskText: string, declaredValue: number) => ({
+    taskText,
+    declaredValue,
+    kind: 'equation' as const,
+  })
+
+  it('sedící rovnice projde', () => {
+    expect(verifyTasks([slot('? + 15 = 40', 25)])).toEqual({ ok: true })
+    expect(verifyTasks([slot('7 · ? = 56', 8)])).toEqual({ ok: true })
+    expect(verifyTasks([slot('72 : ? = 8', 9)])).toEqual({ ok: true })
+  })
+
+  it('nesedící rovnice spadne', () => {
+    const report = verifyTasks([slot('? + 15 = 40', 24)])
+    expect(report.ok).toBe(false)
+    if (report.ok) return
+    expect(report.failures[0]?.code).toBe('task-value-mismatch')
+  })
+
+  it('rovnice, kterou splní víc čísel, je vada listu', () => {
+    // Na otazníku tu nezáleží — dítě může odpovědět správně a mít křížek.
+    const report = verifyTasks([slot('? · 0 = 0', 5)])
+    expect(report.ok).toBe(false)
+    if (report.ok) return
+    expect(report.failures[0]?.code).toBe('ambiguous-equation')
+  })
+
+  it('bez otazníku nebo se dvěma to není úloha o chybějícím čísle', () => {
+    expect(verifyTasks([slot('15 + 25 = 40', 25)]).ok).toBe(false)
+    expect(verifyTasks([slot('? + ? = 40', 20)]).ok).toBe(false)
+  })
+
+  it('na výsledek platí pravidla listu jako na každý jiný', () => {
+    // Šifra chce celé číslo, protože je to kód políčka.
+    const report = verifyTasks([slot('? + 1 = 3,5', 2.5)])
+    expect(report.ok).toBe(false)
+    if (report.ok) return
+    expect(report.failures[0]?.code).toBe('non-integer-result')
+    // Hry desetinný výsledek snesou.
+    expect(verifyTasks([slot('? + 1 = 3,5', 2.5)], ALLOW_DECIMAL_RESULTS)).toEqual({ ok: true })
+  })
+
+  it('domino rovnici vyřeší, ne jen ověří', () => {
+    // Kámen vpravo musí ukázat na hodnotu na dalším kameni, takže verifikace
+    // musí chybějící číslo najít sama.
+    expect(solveEquation('? + 15 = 40')).toBe(25)
+    expect(solveEquation('90 − ? = 34')).toBe(56)
+    expect(solveEquation('72 : ? = 8')).toBe(9)
+    expect(solveEquation('? : 4 = 9')).toBe(36)
+    expect(solveEquation('? · 0 = 0')).toBeNull()
+  })
+
+  it('řetěz domina se složí i z rovnic', () => {
+    expect(
+      verifyChain([
+        { left: '25', right: '? · 3 = 24', kind: 'equation' },
+        { left: '8', right: '? + 15 = 40', kind: 'equation' },
+      ]),
+    ).toEqual({ ok: true })
   })
 })

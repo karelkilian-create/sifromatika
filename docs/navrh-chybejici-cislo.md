@@ -1,4 +1,4 @@
-# Chybějící číslo v příkladu
+# Rovnice: chybějící číslo v příkladu
 
 Návrh k rozhodnutí, **23. 8. 2026**. Vzniklo místo převodů jednotek, které
 Karel odložil — viz „Proč ne převody" na konci.
@@ -105,8 +105,9 @@ bez toho, které dopisuje sazba (`showEquals: false`, stejně jako u řad).
 
 ## 6. Cena
 
-- `core/model` — `PromptNode` o člen bohatší (`kind: 'equation'`), nová
-  `SkillTag`, kód chyby pro víc řešení;
+- `core/model` — `PromptNode` o člen bohatší (`kind: 'equation'`),
+  `SkillTag` `rov.chybejici-cislo` (nový jmenný prostor `rov.`, aby seděl
+  s názvem tématu), kód chyby pro víc řešení;
 - `core/verify` — větev ve `verifySlot` (rozdělit, dosadit, porovnat)
   a totéž v `computePrinted` kvůli dominu;
 - `tasks/equation` — generátor, sedm tvarů, kostra podle `tasks/fractions`;
@@ -133,8 +134,13 @@ bez toho, které dopisuje sazba (`showEquals: false`, stejně jako u řad).
    ročník, tedy víc než kterékoli téma přidané letos.
 2. **Sedm tvarů z §3**, složené výrazy až později.
 3. **Hlásit obě operace** (§4) — jinak se téma buď schová, nebo splete.
-4. **Zaškrtávátko „Chybějící číslo v příkladu"**, tedy stejným způsobem
-   pojmenované jako „Řady s chybějícím číslem".
+4. **Zaškrtávátko „Rovnice"** (Karel, 23. 8. 2026). „Chybějící číslo
+   v příkladu" stálo v jednom sloupci hned pod „Řadami s chybějícím číslem"
+   a lišilo se od nich jedním slovem. Formulář čte učitel, ne dítě, takže
+   se slova „rovnice" nemá kdo leknout — a `? + 15 = 40` rovnice opravdu
+   je. Název navíc zůstane pravdivý, až v osmičce přibude zápis s `x`:
+   přejmenovávat se nebude podruhé. Co pod tím tématem je, ukáže ukázka
+   v nápovědě, jak to dnes mají všechna témata.
 5. **Rozhodnout**: má tvar `? : 4 = 9` (chybí dělenec) chodit i tam, kde má
    učitel zaškrtnuté jen dělení? Dítě u něj násobí. Navrhuju ano — je to
    dělení napsané a učitel ho tak čte.
@@ -158,4 +164,38 @@ Až se k tomu vrátíme, tohle je první otázka, ne poslední.
 
 ## 10. Co se odchýlilo od návrhu
 
-_(Doplní se po provedení, jako u předchozích kroků.)_
+Provedeno **23. 8. 2026**. `GENERATOR_VERSION` se nezměnil — ověřily to golden
+snímky, nepřepsal se ani jeden.
+
+**Domino rovnici neověřuje, ale řeší.** Návrh počítal s tím, že verifikace
+dosadí tvrzenou hodnotu a porovná strany. To stačí na list, ale ne na domino:
+kámen vpravo musí ukázat na hodnotu na dalším kameni, takže verifikace musí
+chybějící číslo **najít sama**. Přibyl `solveEquation`: stranu s otazníkem
+vyhodnotí pro dvě dosazení, z nich odhadne, jestli je v neznámé lineární
+(`? + 15`) nebo ji má ve jmenovateli (`72 : ?`), dopočítá kandidáta a ten
+**ověří dosazením**. Poslední krok drží celou konstrukci — špatný odhad
+neprojde, takže modely nemusí být úplné; co ani jeden nepokryje, spadne na
+`broken-chain`, nikdy ne na tiše špatný řetěz.
+
+**Generátor desetinná čísla nevyrábí.** §3 slibovala, že `? + 2,5 = 7`
+v šesté třídě vznikne samo. Nevzniká — operandy jsou celá čísla. Desetinný
+cíl projde, když si ho vyžádá aktivita, ale sám od sebe se neobjeví. Je to
+další tvar, ne oprava.
+
+**Přibyl strop na malý operand** (`MAX_TERM` = 100). Bez něj vyrábí osmá
+třída `? + 4783 = 9021`: v oboru, ale neprocvičí se na tom obrácení operace,
+jen odečtení na papíře. Velká čísla dodá druhá strana rovnice.
+
+**Dvě vady našel až náhled, ne testy** — obě v sazbě a obě proto, že se
+rozhodovala podle `showEquals` místo podle druhu zadání:
+
+1. na listu stálo `3 · ? = 84 =` — sazba dopisuje rovnítko a rovnice ho má
+   v sobě;
+2. rovnice zdědila **rozestupy členů číselné řady** (`word-spacing`), takže
+   se `3 · ? = 84` rozpadlo na čtyři kusy.
+
+`TaskListItem` proto nese `kind`. Rovnítko i rozestupy se teď řídí druhem
+zadání a příští druh se zeptá sám, místo aby vadu tiše zdědil.
+
+**Číselná pravidla výsledku se vyjmula do `checkResultRules`** — ptá se na ně
+přepočtený výraz i dosazená rovnice a hlášky musí zůstat tytéž.

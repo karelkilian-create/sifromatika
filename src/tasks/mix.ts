@@ -55,6 +55,8 @@ export interface TopicSelection {
   powers: boolean
   /** Zlomky (`3/4 z 80`, ve hrách i `1/2 + 1/4`). Od 7. ročníku. */
   fractions: boolean
+  /** Rovnice s chybějícím číslem (`? + 15 = 40`). Od 3. ročníku. */
+  equations: boolean
 }
 
 /**
@@ -81,6 +83,7 @@ export function generatorMixFromTopics(
   // Jedno zaškrtávátko, dvě id: `3/4 z 80` a `1/2 + 1/4` jsou pro učitele
   // jedno téma, ale musí mít každý svou zásobu cílů — jinak by zlomkový
   // výsledek vycházel jednou z dvanácti. Viz `fractionSumsGenerator`.
+  if (usable.equations) mix.equation = 1
   if (usable.fractions) {
     mix.fractions = 1
     mix['fraction-sums'] = 1
@@ -125,6 +128,10 @@ export function usableTopics(topics: TopicSelection, profile: DifficultyProfile)
     percents: topics.percents && profile.percents,
     powers: topics.powers && profile.powers,
     fractions: topics.fractions && profile.fractions,
+    // Žádná mez ročníku: chybějící číslo je látka od třetí třídy a zápis
+    // s otazníkem drží až do sedmé. `x` přijde s osmičkou a bude to tvar
+    // téhož generátoru, ne jiné téma.
+    equations: topics.equations,
   }
 }
 
@@ -151,5 +158,6 @@ export function topicsFromGeneratorMix(
     percents: enabled('percent'),
     powers: enabled('powers'),
     fractions: enabled('fractions') || enabled('fraction-sums'),
+    equations: enabled('equation'),
   }
 }

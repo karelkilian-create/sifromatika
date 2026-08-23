@@ -33,6 +33,7 @@ const ALL_TOPICS: TopicSelection = {
   percents: true,
   powers: true,
   fractions: true,
+  equations: true,
 }
 
 /** Osmá třída umí ze všech ročníků nejvíc témat, takže prosívá nejšíř. */

@@ -14,7 +14,7 @@ import { isRecord, parseDifficulty, parseGeneratorMix, parseOutput, parseTaskMix
  *   mocniny zaškrtávátko, takže by je soubor uměl zapnout, ale formulář by to
  *   po načtení neuměl ukázat ani vypnout.
  */
-const GENERATORS = ['arithmetic', 'sequence', 'decimal', 'percent', 'powers', 'fractions', 'fraction-sums']
+const GENERATORS = ['arithmetic', 'sequence', 'decimal', 'percent', 'powers', 'fractions', 'fraction-sums', 'equation']
 
 export function parsePexesoPayload(raw: unknown): PexesoConfig | null {
   if (!isRecord(raw)) return null

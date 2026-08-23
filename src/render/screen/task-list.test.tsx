@@ -11,7 +11,12 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { DocumentView } from './index.js'
 import type { DocumentModel } from '../../core/document/index.js'
 
-function sheet(count: number, showEquals: boolean, columns: 1 | 2 = 1): string {
+function sheet(
+  count: number,
+  showEquals: boolean,
+  columns: 1 | 2 = 1,
+  kind: 'expr' | 'sequence' | 'equation' = showEquals ? 'expr' : 'sequence',
+): string {
   const model: DocumentModel = {
     pages: [
       {
@@ -23,6 +28,7 @@ function sheet(count: number, showEquals: boolean, columns: 1 | 2 = 1): string {
             items: Array.from({ length: count }, (_, index) => ({
               text: `${index} 2 4 ? 8`,
               showEquals,
+              kind,
             })),
           },
         ],
@@ -46,6 +52,18 @@ describe('rozestup řádků v seznamu úloh', () => {
     // Pod seznamem jí stojí tabulka a rámečky na tajenku; ty se při první
     // milimetrové změně sesypou na druhý list.
     expect(sheet(12, true)).not.toContain('task-list--roomy')
+  })
+
+  it('rovnice vzduch nedostane — je to seznam příkladů, ne řad', () => {
+    // Rovnice taky nemá rovnítko od sazby, ale řádek si nevyžádá: `? + 15 = 40`
+    // je krátké a na listu jich bývá tolik co příkladů.
+    expect(sheet(12, false, 1, 'equation')).not.toContain('task-list--roomy')
+  })
+
+  it('rozestupy členů dostane jen řada, ne rovnice', () => {
+    // `3 · ? = 84` se s rozestupy řady rozpadne na čtyři kusy.
+    expect(sheet(12, false, 1, 'sequence')).toContain('task-list__item--sequence')
+    expect(sheet(12, false, 1, 'equation')).not.toContain('task-list__item--sequence')
   })
 
   it('dvousloupcová sazba vzduch nedostane', () => {

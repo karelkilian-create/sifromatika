@@ -18,6 +18,7 @@ import { useLayoutEffect } from 'react'
 
 import type {
   CardFace,
+  TaskListItem,
   DocumentBlock,
   DocumentModel,
   DocumentPage,
@@ -233,7 +234,7 @@ function TaskListView({
   items,
 }: {
   columns: 1 | 2
-  items: readonly { text: string; showEquals: boolean }[]
+  items: readonly TaskListItem[]
 }) {
   /*
    * Vzduch mezi řádky dostane jen krátký JEDNOSLOUPCOVÝ seznam samých řad,
@@ -250,7 +251,9 @@ function TaskListView({
    * a rozměry v něm schválně nejsou.
    */
   const roomy =
-    columns === 1 && items.length <= ROOMY_MAX_ITEMS && items.every((item) => !item.showEquals)
+    columns === 1 &&
+    items.length <= ROOMY_MAX_ITEMS &&
+    items.every((item) => item.kind === 'sequence')
 
   return (
     <ol
@@ -260,7 +263,9 @@ function TaskListView({
     >
       {items.map((item, index) => (
         <li
-          className={`task-list__item${item.showEquals ? '' : ' task-list__item--sequence'}`}
+          // Rozestupy členů patří ŘADĚ, ne všemu bez rovnítka. Rovnice je
+          // taky nemá, ale mezera v ní je obyčejná mezera.
+          className={`task-list__item${item.kind === 'sequence' ? ' task-list__item--sequence' : ''}`}
           key={index}
         >
           <span className="task-list__number">{index + 1}.</span>

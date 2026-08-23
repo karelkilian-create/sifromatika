@@ -42,6 +42,7 @@ const initialState: BingoEditorState = {
   percents: false,
   powers: false,
   fractions: false,
+  equations: false,
 }
 
 export const bingoModule = {

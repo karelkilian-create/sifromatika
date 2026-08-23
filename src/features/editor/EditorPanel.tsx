@@ -373,11 +373,20 @@ export function EditorPanel({
                     Zlomky
                   </label>
                 )}
+                <label className="checkbox">
+                  <input
+                    type="checkbox"
+                    checked={cipher.equations}
+                    onChange={() => patchCipher({ equations: !cipher.equations })}
+                  />
+                  Rovnice
+                </label>
                 <p className="hint">
-                  Řada („4 10 16 22 ?“), desetinná čísla („3,5 · 4“), procenta („25 % z 80“)
-                  i zlomky („3/4 z 80“) jsou samostatné volby a s operacemi platí zároveň — řada
-                  s podílem i procento se objeví jen při zapnutém násobení, zlomek při násobení
-                  nebo dělení. Výsledek zůstává vždy celé číslo, protože je to kód políčka
+                  Řada („4 10 16 22 ?“), desetinná čísla („3,5 · 4“), procenta („25 % z 80“),
+                  zlomky („3/4 z 80“) i rovnice („? + 15 = 40“) jsou samostatné volby
+                  a s operacemi platí zároveň — řada s podílem i procento se objeví jen při
+                  zapnutém násobení, zlomek při násobení nebo dělení, rovnice podle toho, kterou
+                  operaci má v sobě. Výsledek zůstává vždy celé číslo, protože je to kód políčka
                   v tabulce.
                 </p>
               </>
@@ -444,6 +453,14 @@ export function EditorPanel({
                     Zlomky
                   </label>
                 )}
+                <label className="checkbox">
+                  <input
+                    type="checkbox"
+                    checked={topics.equations}
+                    onChange={() => toggleTopic('equations')}
+                  />
+                  Rovnice
+                </label>
                 {/*
                     Ukázka u KAŽDÉHO tématu, ne jen u mocnin. Bez ní se učitel
                     z názvu nedozví, co téma vyrobí — a u řad se navíc pletlo
@@ -459,7 +476,8 @@ export function EditorPanel({
                   {profile.decimals > 0 ? ', desetinná čísla („3,5 · 4“)' : ''}
                   {profile.percents ? ', procenta („25 % z 80“)' : ''}
                   {profile.powers ? ', mocniny a odmocniny („7²“, „√81“)' : ''}
-                  {profile.fractions ? ', zlomky („3/4 z 80“ i „1/2 + 1/4“)' : ''}. Zaškrtnutá
+                  {profile.fractions ? ', zlomky („3/4 z 80“ i „1/2 + 1/4“)' : ''}, rovnice
+                  s chybějícím číslem („? + 15 = 40“). Zaškrtnutá
                   témata se míchají rovnoměrně; necháte-li zaškrtnuté jediné, bude z něj celé{' '}
                   {isBingo ? 'bingo' : isDomino ? 'domino' : 'pexeso'}. Operace platí zároveň
                   {profile.powers ? ', ale holé mocniny se objeví i bez nich' : ''}.

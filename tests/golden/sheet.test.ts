@@ -50,7 +50,12 @@ function render(sheet: CipherGridSheet): string {
     rows.push(`  ${row + 1} | ${cells.map((cell) => cell.letter).join(' ')}`)
   }
   const tasks = sheet.slots
-    .map((slot, index) => `  ${String(index + 1).padStart(2)}. ${slot.task.prompt.text} = ${slot.code}`)
+    .map((slot, index) => {
+      // Rovnice má rovnítko v sobě, takže by z „? + 15 = 40 = 25" nešlo
+      // přečíst, co je zadání a co kód. Šipka to rozdělí.
+      const separator = slot.task.prompt.kind === 'equation' ? '→' : '='
+      return `  ${String(index + 1).padStart(2)}. ${slot.task.prompt.text} ${separator} ${slot.code}`
+    })
     .join('\n')
 
   return [
@@ -533,6 +538,69 @@ describe('DoD 0.1 bod 7 — zmrazené desetinné pexeso', () => {
         11. 55,9 · 7 = 391,3
         12. 250,1 + 397,8 = 647,9
       součet e0c94ac1"
+    `)
+  })
+})
+
+describe('DoD 0.1 bod 7 — zmrazené rovnice', () => {
+  /**
+   * Šifra z rovnic, 4. ročník. Zamrzá tu jediný druh zadání, který má
+   * v sobě rovnítko — a s ním i to, že hledané číslo slouží jako kód políčka.
+   */
+  it('šifra z rovnic, 4. ročník', () => {
+    const config = defaultConfig('ROVNICE', 4, 'golden-rovnice')
+    config.payload.generatorMix = { equation: 1 }
+    const outcome = generateCipherGrid(config)
+    if (!outcome.ok) throw new Error(outcome.reason)
+    expect(outcome.sheet.verification).toEqual({ ok: true })
+    expect(render(outcome.sheet)).toMatchInlineSnapshot(`
+      "mřížka 9×9
+        1 | T N K R D U R V R
+        2 | B N L M C O K Y O
+        3 | K L S E T E I V U
+        4 | B K V T A A U T V
+        5 | E P I E P T R R M
+        6 | S E H R O O O E O
+        7 | S A R I O E O J R
+        8 | A I E S A O N K P
+        9 | N V T U C D R A U
+         1. 2 + ? = 99 → 97
+         2. 3 · ? = 87 → 29
+         3. 73 − ? = 24 → 49
+         4. 93 − ? = 2 → 91
+         5. 87 − ? = 13 → 74
+         6. ? − 13 = 82 → 95
+         7. ? : 4 = 17 → 68
+      součet 2fa2adc4"
+    `)
+  })
+
+  /**
+   * Domino z rovnic. Řetěz se tu skládá jedině tak, že verifikace rovnici
+   * VYŘEŠÍ — proto je tenhle snímek jediný zámek na `solveEquation` v běhu
+   * celé aktivity.
+   */
+  it('domino z rovnic, 5. ročník', () => {
+    const config = defaultDominoConfig(5, 'golden-domino-rovnice', 12)
+    config.payload.generatorMix = { equation: 1 }
+    const outcome = generateDomino(config)
+    if (!outcome.ok) throw new Error(outcome.reason)
+    expect(outcome.sheet.verification).toEqual({ ok: true })
+    expect(renderTiles(outcome.sheet)).toMatchInlineSnapshot(`
+      "Domino — 5. třída
+         1. 951 | 970 − ? = 6   (v kruhu 11.)
+         2. 895 | ? + 78 = 937   (v kruhu 1.)
+         3. 964 | ? : 5 = 179   (v kruhu 12.)
+         4. 285 | ? + 83 = 515   (v kruhu 4.)
+         5. 103 | 333 − ? = 25   (v kruhu 8.)
+         6. 165 | ? : 3 = 317   (v kruhu 10.)
+         7. 684 | 2 · ? = 206   (v kruhu 7.)
+         8. 787 | 68 + ? = 353   (v kruhu 3.)
+         9. 308 | ? : 5 = 33   (v kruhu 9.)
+        10. 432 | ? − 100 = 729   (v kruhu 5.)
+        11. 859 | 816 − ? = 29   (v kruhu 2.)
+        12. 829 | ? − 80 = 604   (v kruhu 6.)
+      součet 0bfff805"
     `)
   })
 })

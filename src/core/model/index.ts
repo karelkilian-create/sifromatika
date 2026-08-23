@@ -38,6 +38,7 @@ export type SkillTag =
   | 'proc.sleva-navyseni'
   | 'zlom.cast-z-celku'
   | 'zlom.scitani-odcitani'
+  | 'rov.chybejici-cislo'
   | 'rady.konstantni-krok'
   | 'rady.stridavy-krok'
   | 'rady.rostouci-krok'
@@ -88,6 +89,18 @@ export type PromptNode =
    * generátor místo papíru.
    */
   | { kind: 'sequence'; text: string; terms: readonly (number | null)[]; hiddenIndex: number }
+  /**
+   * Rovnice s chybějícím číslem: „? + 15 = 40".
+   *
+   * Nese jen text, na rozdíl od řady žádná strukturovaná data — verifikace si
+   * úlohu rozdělí na rovnítku a dosadí do ní hodnotu, kterou generátor tvrdí.
+   * Čitatel toho, co má vyjít, je tedy vytištěný text a nic jiného.
+   *
+   * ⚠ Zápis s otazníkem drží od 3. do 7. ročníku; rovnice s neznámou
+   *   (`x + 15 = 40`) je látka osmičky. Až na ni dojde, je to další tvar
+   *   téhož generátoru, ne nový druh zadání.
+   */
+  | { kind: 'equation'; text: string }
 
 export interface Task {
   id: string
@@ -515,6 +528,14 @@ export interface VerificationFailure {
     | 'value-not-in-table'
     /** Na čísla řady sedí víc pravidel s různým výsledkem — vadné zadání. */
     | 'ambiguous-sequence'
+    /**
+     * Rovnici splní víc čísel než jedno: `? · 0 = 0`.
+     *
+     * Táž vada jako u řady, jen z jiné strany — dítě může odpovědět správně
+     * a mít křížek. Pozná se tím, že se levá strana po dosazení jiného čísla
+     * nezmění, tedy že na otazníku vůbec nezáleží.
+     */
+    | 'ambiguous-equation'
     /** Chybný matematický zápis, například dva operátory vedle sebe. */
     | 'malformed-notation'
     /**

@@ -17,7 +17,7 @@
  * pokaždé znovu. Změna tvaru bloku proto nevyžaduje migraci souborů.
  */
 
-import type { CipherTable } from '../model/index.js'
+import type { CipherTable, PromptNode } from '../model/index.js'
 
 /**
  * Kus textu v odstavci. Zvýraznění je sémantické, ne typografické — renderer
@@ -58,6 +58,16 @@ export interface TaskListItem {
    * navíc. Rozhoduje o tom aktivita, protože je to vlastnost zadání, ne sazby.
    */
   showEquals: boolean
+  /**
+   * Druh zadání. Chybí-li, je to běžný výraz.
+   *
+   * ⚠ NENÍ to totéž co `showEquals`, i když se to překrývá. Řada i rovnice
+   *   rovnítko nechtějí, ale sázet se musí každá jinak: členy řady odděluje
+   *   mezera a musí být od sebe znát, kdežto v rovnici je mezera obyčejná.
+   *   Dokud se sazba řídila jen `showEquals`, dostala rovnice rozestupy řady
+   *   a `3 · ? = 84` se rozpadlo na čtyři kusy.
+   */
+  kind?: PromptNode['kind']
 }
 
 /**

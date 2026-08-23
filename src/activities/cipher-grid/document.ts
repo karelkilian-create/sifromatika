@@ -76,7 +76,12 @@ function worksheetPage(sheet: CipherGridSheet): DocumentBlock[] {
       columns: sheet.config.payload.output.columns,
       items: sheet.slots.map((slot) => ({
         text: slot.task.prompt.text,
-        showEquals: slot.task.prompt.kind !== 'sequence',
+        // Rovnítko dopisuje sazba jen běžnému výrazu. Řada končí otazníkem
+        // a rovnice si rovnítko nese v sobě — u obou by z toho bylo
+        // `3 · ? = 84 =`. Vyjmenovaně, ne přes `!== 'sequence'`: příští druh
+        // zadání se tím zeptá sám, místo aby vadu tiše zdědil.
+        showEquals: slot.task.prompt.kind === 'expr',
+        kind: slot.task.prompt.kind,
       })),
     },
     { kind: 'heading', level: 2, text: 'Tajenka' },

@@ -19,7 +19,7 @@ import type {
   VerificationReport,
 } from '../model/index.js'
 import { REQUIRE_WHOLE_RESULTS } from '../model/index.js'
-import { fitsPlaces, formatValue, isPrintable, isWholeNumber } from '../number/index.js'
+import { fitsPlaces, formatValue, isPrintable, isWholeNumber, roundToPrintable } from '../number/index.js'
 import { inferMissing, parseSequence, SequenceError } from '../sequence/index.js'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -428,6 +428,168 @@ export interface SheetSlot {
   printedValue?: string
 }
 
+/**
+ * Ověření rovnice s chybějícím číslem („? + 15 = 40").
+ *
+ * Postup je záměrně hloupý, a proto spolehlivý: text se rozdělí na rovnítku,
+ * do strany s otazníkem se dosadí hodnota, kterou generátor tvrdí, a obě
+ * strany se spočítají TÝMŽ `evaluateExpression` jako každý jiný výraz.
+ * Dosazením otazník zmizí, takže tokenizer se nemusel měnit vůbec.
+ *
+ * ⚠ Dosazuje se VYTIŠTĚNÁ podoba čísla (`formatValue`), ne `String(value)`.
+ *   Na českém listu je desetinný oddělovač čárka a tokenizer čte to, co by
+ *   četlo dítě — `String(2.5)` by mu podstrčilo tečku.
+ */
+function verifyEquation(
+  text: string,
+  label: string,
+  declaredValue: number,
+): VerificationFailure[] {
+  const sides = text.split('=')
+  if (sides.length !== 2) {
+    return [
+      {
+        code: 'task-value-mismatch',
+        message: `${label} není rovnice — chybí v ní rovnítko, nebo jich je víc.`,
+      },
+    ]
+  }
+
+  const [left, right] = sides as [string, string]
+  const gaps = (text.match(/\?/gu) ?? []).length
+  if (gaps !== 1) {
+    return [
+      {
+        code: 'task-value-mismatch',
+        message: `${label} má ${gaps === 0 ? 'chybět jedno číslo, a nechybí žádné' : `${gaps} otazníky, a hledá se jen jedno číslo`}.`,
+      },
+    ]
+  }
+
+  const evaluate = (side: string, substitute: number): number | null => {
+    try {
+      return evaluateExpression(side.replace('?', formatValue(substitute)))
+    } catch (error) {
+      if (!(error instanceof ExpressionError)) throw error
+      return null
+    }
+  }
+
+  const filled = evaluate(left, declaredValue)
+  const other = evaluate(right, declaredValue)
+  if (filled === null || other === null) {
+    return [
+      {
+        code: 'task-value-mismatch',
+        message: `${label} nejde vyhodnotit ani po dosazení ${formatValue(declaredValue)}.`,
+      },
+    ]
+  }
+
+  if (!nearlyEqual(filled, other)) {
+    return [
+      {
+        code: 'task-value-mismatch',
+        message: `${label} po dosazení ${formatValue(declaredValue)} nesedí: ${filled} ≠ ${other}.`,
+      },
+    ]
+  }
+
+  /*
+   * Řešení musí být právě jedno. `? · 0 = 0` splní každé číslo a dítě by
+   * mohlo odpovědět správně a dostat křížek — táž vada jako u řady, na kterou
+   * je `ambiguous-sequence`.
+   *
+   * Pozná se to dosazením jiného čísla: když se strana s otazníkem nezmění,
+   * na otazníku nezáleží. Na tvary, které generátor vyrábí (jeden otazník
+   * v jednom binárním výrazu), to stačí — takový výraz je v neznámé lineární,
+   * takže buď na ní závisí, a pak má řešení jediné, nebo nezávisí vůbec.
+   */
+  const gapOnLeft = left.includes('?')
+  const gapSide = gapOnLeft ? left : right
+  const withGapFilled = gapOnLeft ? filled : other
+  const withProbe = evaluate(gapSide, declaredValue + 1)
+  if (withProbe !== null && nearlyEqual(withProbe, withGapFilled)) {
+    return [
+      {
+        code: 'ambiguous-equation',
+        message: `${label} splní víc čísel než jedno — na otazníku v ní nezáleží. Dítě může odpovědět správně a mít křížek.`,
+      },
+    ]
+  }
+
+  return []
+}
+
+/**
+ * Kolik je chybějící číslo v rovnici? `null` = nedá se určit.
+ *
+ * Potřebuje to domino: kámen vpravo nese zadání a musí ukázat na hodnotu na
+ * dalším kameni, takže rovnici nestačí ověřit — musí se **vyřešit**.
+ *
+ * Řeší se to odhadem a kontrolou, ne algebrou:
+ *
+ *   1. strana s otazníkem se vyhodnotí pro dvě různá dosazení,
+ *   2. z nich se odhadne, jak vypadá — buď je v neznámé lineární
+ *      (`? + 15`, `7 · ?`), nebo má neznámou ve jmenovateli (`72 : ?`),
+ *   3. z modelu se dopočítá kandidát a ten se **ověří dosazením**
+ *      (`verifyEquation`).
+ *
+ * Krok 3 je to, co drží celou konstrukci: špatný odhad neprojde, takže
+ * modelů může být málo a nemusí být úplné. Kdyby se někdy objevil tvar, který
+ * ani jeden nepokrývá, vrátí se `null` a domino spadne na `broken-chain` —
+ * nikdy ne na tiše špatný řetěz.
+ */
+export function solveEquation(text: string): number | null {
+  const sides = text.split('=')
+  if (sides.length !== 2) return null
+  const [left, right] = sides as [string, string]
+  if ((text.match(/\?/gu) ?? []).length !== 1) return null
+
+  const gapSide = left.includes('?') ? left : right
+  const knownSide = left.includes('?') ? right : left
+
+  const at = (x: number): number | null => {
+    try {
+      return evaluateExpression(gapSide.replace('?', formatValue(x)))
+    } catch (error) {
+      if (!(error instanceof ExpressionError)) throw error
+      return null
+    }
+  }
+
+  let known: number
+  try {
+    known = evaluateExpression(knownSide)
+  } catch (error) {
+    if (!(error instanceof ExpressionError)) throw error
+    return null
+  }
+
+  const first = at(1)
+  const second = at(2)
+  if (first === null || second === null) return null
+
+  const candidates: number[] = []
+
+  // Lineární: f(x) = a + b·x. Ze dvou bodů vyjde b i a, a z nich neznámá.
+  const slope = second - first
+  if (Math.abs(slope) > EPSILON) {
+    candidates.push((known - (first - slope)) / slope)
+  }
+
+  // Převrácená: f(x) = c/x. Pozná se tím, že f(1)·1 a f(2)·2 dají totéž c.
+  if (Math.abs(first * 1 - second * 2) < EPSILON && Math.abs(known) > EPSILON) {
+    candidates.push(first / known)
+  }
+
+  for (const candidate of candidates) {
+    const rounded = roundToPrintable(candidate)
+    if (verifyEquation(text, 'Rovnice', rounded).length === 0) return rounded
+  }
+  return null
+}
+
 /** Zlomek tak, jak smí být vytištěn: dvě celá čísla a lomítko, nic víc. */
 const PRINTED_FRACTION = /^(\d+)\/(\d+)$/u
 
@@ -517,6 +679,56 @@ function verifyPrintedValue(
   return []
 }
 
+/**
+ * Co smí VYJÍT — pravidla o samotném čísle, nezávisle na druhu zadání.
+ *
+ * Ptá se na ně přepočtený výraz i dosazená rovnice: `? + 2,5 = 7` má
+ * u kartiček stejnou mez na desetinná místa jako `4,5 + 2,5`.
+ */
+function checkResultRules(
+  value: number,
+  label: string,
+  rules: TaskRules,
+): VerificationFailure[] {
+  // Celý výsledek chce ŠIFRA, ne matematika — je to kód políčka v mřížce.
+  // Hry si o něj neříkají, takže je to parametr. Viz `TaskRules`.
+  if (rules.maxResultPlaces === 0 && !isWholeNumber(value)) {
+    return [
+      {
+        code: 'non-integer-result',
+        message: `${label} dává ${formatValue(value)}, což není celé číslo. Na tomhle listu slouží výsledek jako kód políčka, takže desetinné číslo smí být jen v zadání.`,
+      },
+    ]
+  }
+
+  // Hodnota, která se nedá vytisknout beze ztráty, je vada listu, ne důvod
+  // k tichému zaokrouhlení: `1 : 3` vytištěné jako `0,33` dítě sečte
+  // a nedopočítá se. Radši spadnout a vygenerovat list znovu.
+  if (!isPrintable(value)) {
+    return [
+      {
+        code: 'unprintable-value',
+        message: `${label} dává ${value}, což se nedá vytisknout na dvě desetinná místa beze ztráty.`,
+      },
+    ]
+  }
+
+  // Hry desetinný výsledek snesou, ale ne libovolně přesný: `2,5` se na
+  // kartičce přečte na jeden pohled, `2,25` se přes stůl páruje hůř. Že se
+  // to hlídá tady a ne jen v generátoru, je schválně — verifikace je síť na
+  // chyby generátoru, ne jeho ozvěna.
+  if (!fitsPlaces(value, rules.maxResultPlaces)) {
+    return [
+      {
+        code: 'result-too-precise',
+        message: `${label} dává ${formatValue(value)}, což má víc než ${rules.maxResultPlaces === 1 ? 'jedno desetinné místo' : `${rules.maxResultPlaces} desetinná místa`}. Na kartičce se takový výsledek páruje hůř, než kolik ta úloha přinese.`,
+      },
+    ]
+  }
+
+  return []
+}
+
 /** Přepočet jedné úlohy. Vrací prázdné pole, když je všechno v pořádku. */
 function verifySlot(
   slot: SheetSlot,
@@ -560,6 +772,14 @@ function verifySlot(
     }
   }
 
+  if (slot.kind === 'equation') {
+    const failures = verifyEquation(slot.taskText, label, slot.declaredValue)
+    if (failures.length > 0) return failures
+    // Pravidla o výsledku platí i tady — hledané číslo dítě píše na list
+    // a na kartičku, takže pro ně platí týž strop desetinných míst.
+    return checkResultRules(slot.declaredValue, label, rules)
+  }
+
   let computed: number
   try {
     computed = evaluateExpression(slot.taskText)
@@ -597,41 +817,8 @@ function verifySlot(
         ]
   }
 
-  // Celý výsledek chce ŠIFRA, ne matematika — je to kód políčka v mřížce.
-  // Hry si o něj neříkají, takže je to parametr. Viz `TaskRules`.
-  if (rules.maxResultPlaces === 0 && !isWholeNumber(computed)) {
-    return [
-      {
-        code: 'non-integer-result',
-        message: `${label} dává ${formatValue(computed)}, což není celé číslo. Na tomhle listu slouží výsledek jako kód políčka, takže desetinné číslo smí být jen v zadání.`,
-      },
-    ]
-  }
-
-  // Hodnota, která se nedá vytisknout beze ztráty, je vada listu, ne důvod
-  // k tichému zaokrouhlení: `1 : 3` vytištěné jako `0,33` dítě sečte
-  // a nedopočítá se. Radši spadnout a vygenerovat list znovu.
-  if (!isPrintable(computed)) {
-    return [
-      {
-        code: 'unprintable-value',
-        message: `${label} dává ${computed}, což se nedá vytisknout na dvě desetinná místa beze ztráty.`,
-      },
-    ]
-  }
-
-  // Hry desetinný výsledek snesou, ale ne libovolně přesný: `2,5` se na
-  // kartičce přečte na jeden pohled, `2,25` se přes stůl páruje hůř. Že se
-  // to hlídá tady a ne jen v generátoru, je schválně — verifikace je síť na
-  // chyby generátoru, ne jeho ozvěna.
-  if (!fitsPlaces(computed, rules.maxResultPlaces)) {
-    return [
-      {
-        code: 'result-too-precise',
-        message: `${label} dává ${formatValue(computed)}, což má víc než ${rules.maxResultPlaces === 1 ? 'jedno desetinné místo' : `${rules.maxResultPlaces} desetinná místa`}. Na kartičce se takový výsledek páruje hůř, než kolik ta úloha přinese.`,
-      },
-    ]
-  }
+  const numeric = checkResultRules(computed, label, rules)
+  if (numeric.length > 0) return numeric
 
   return nearlyEqual(computed, slot.declaredValue)
     ? []
@@ -748,6 +935,7 @@ function readPrintedValue(text: string): number | null {
 
 /** Spočítá pravou půlku. `null` = nejde vyhodnotit nebo má víc řešení. */
 function computePrinted(text: string, kind: PromptNode['kind'] | undefined): number | null {
+  if (kind === 'equation') return solveEquation(text)
   if (kind === 'sequence') {
     try {
       const inference = inferMissing(parseSequence(text))
