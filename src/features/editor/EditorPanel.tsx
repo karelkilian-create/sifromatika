@@ -335,7 +335,7 @@ export function EditorPanel({
                     checked={cipher.sequences}
                     onChange={() => patchCipher({ sequences: !cipher.sequences })}
                   />
-                  Číselné řady
+                  Řady s chybějícím číslem
                 </label>
                 {profile.decimals > 0 && (
                   <label className="checkbox">
@@ -396,7 +396,7 @@ export function EditorPanel({
                     checked={topics.sequences}
                     onChange={() => toggleTopic('sequences')}
                   />
-                  Číselné řady
+                  Řady s chybějícím číslem
                 </label>
                 {profile.decimals > 0 && (
                   <label className="checkbox">
@@ -438,27 +438,31 @@ export function EditorPanel({
                     Zlomky
                   </label>
                 )}
+                {/*
+                    Ukázka u KAŽDÉHO tématu, ne jen u mocnin. Bez ní se učitel
+                    z názvu nedozví, co téma vyrobí — a u řad se navíc pletlo
+                    s aktivitou téhož jména. Vyjmenovávají se jen témata, která
+                    ročník opravdu nabízí, jinak by nápověda slibovala procenta
+                    čtvrťákovi, který u sebe žádné zaškrtávátko nevidí.
+                */}
                 <p className="hint">
                   Běžné příklady jsou počítání se zaškrtnutými operacemi („7 · 8“
                   {profile.maxOperands > 2 ? ', v tomhle ročníku i „100 : 10 + 784“' : ''}), tedy
-                  to, co zbude, když se žádné téma nepřidá. Zaškrtnutá témata se míchají
-                  rovnoměrně; necháte-li zaškrtnuté jediné, bude z něj celé{' '}
-                  {isBingo ? 'bingo' : isDomino ? 'domino' : 'pexeso'} — třeba samé mocniny
-                  („7²“, „√81“, „2³ − 8“). Operace platí zároveň, ale holé mocniny se objeví
-                  i bez nich.
+                  to, co zbude, když se žádné téma nepřidá. Ostatní témata přidávají svůj druh
+                  úlohy: řada s chybějícím číslem („4 10 16 22 ?“)
+                  {profile.decimals > 0 ? ', desetinná čísla („3,5 · 4“)' : ''}
+                  {profile.percents ? ', procenta („25 % z 80“)' : ''}
+                  {profile.powers ? ', mocniny a odmocniny („7²“, „√81“)' : ''}
+                  {profile.fractions ? ', zlomky („3/4 z 80“ i „1/2 + 1/4“)' : ''}. Zaškrtnutá
+                  témata se míchají rovnoměrně; necháte-li zaškrtnuté jediné, bude z něj celé{' '}
+                  {isBingo ? 'bingo' : isDomino ? 'domino' : 'pexeso'}. Operace platí zároveň
+                  {profile.powers ? ', ale holé mocniny se objeví i bez nich' : ''}.
                   {profile.decimals > 0 && (
                     <>
                       {' '}
-                      Tady smí desetinné číslo i vyjít („0,5 · 5 = 2,5“) — na rozdíl od šifry, kde
-                      je výsledek kód políčka, a tedy vždy celý.
-                    </>
-                  )}
-                  {profile.fractions && (
-                    <>
-                      {' '}
-                      Ze zlomků se sem dostane i sčítání a odčítání, kde zlomek vyjde („1/2 + 1/4 =
-                      3/4“). Na šifře najdete jen část z celku („3/4 z 80“), protože zlomek se
-                      do mřížky jako kód políčka nevejde.
+                      Na rozdíl od šifry, kde je výsledek kód políčka, tady smí i vyjít desetinné
+                      číslo („0,5 · 5 = 2,5“)
+                      {profile.fractions ? ' nebo zlomek („1/2 + 1/4 = 3/4“)' : ''}.
                     </>
                   )}
                 </p>
