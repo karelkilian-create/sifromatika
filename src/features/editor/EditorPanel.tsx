@@ -384,7 +384,7 @@ export function EditorPanel({
                     checked={topics.arithmetic}
                     onChange={() => toggleTopic('arithmetic')}
                   />
-                  Počítání
+                  Běžné příklady
                 </label>
                 <label className="checkbox">
                   <input
@@ -435,8 +435,11 @@ export function EditorPanel({
                   </label>
                 )}
                 <p className="hint">
-                  Zaškrtnuté typy se míchají rovnoměrně. Necháte-li zaškrtnutý jediný, bude z něj
-                  celé {isBingo ? 'bingo' : isDomino ? 'domino' : 'pexeso'} — třeba samé mocniny
+                  Běžné příklady jsou počítání se zaškrtnutými operacemi („7 · 8“
+                  {profile.maxOperands > 2 ? ', v tomhle ročníku i „100 : 10 + 784“' : ''}), tedy
+                  to, co zbude, když se žádné téma nepřidá. Zaškrtnuté typy se míchají rovnoměrně;
+                  necháte-li zaškrtnutý jediný, bude z něj celé{' '}
+                  {isBingo ? 'bingo' : isDomino ? 'domino' : 'pexeso'} — třeba samé mocniny
                   („7²“, „√81“, „2³ − 8“). Operace platí zároveň, ale holé mocniny se objeví
                   i bez nich.
                   {profile.decimals > 0 && (
