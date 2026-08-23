@@ -310,9 +310,7 @@ export function EditorPanel({
 
         <div className="editor__advanced-grid">
           <fieldset className="fieldset">
-            <legend className="field__label">
-              {isCipher || isCards ? 'Typy příkladů' : 'Povolené operace'}
-            </legend>
+            <legend className="field__label">Povolené operace</legend>
             {(Object.keys(OPERATION_LABELS) as OperationTag[]).map((operation) => (
               <label className="checkbox" key={operation}>
                 <input
@@ -326,6 +324,11 @@ export function EditorPanel({
 
             {isCipher ? (
               <>
+                {/* Podnadpis, ne jen mezera: první čtyři volby jsou operace
+                    a platí ZÁROVEŇ se zbytkem, kdežto tyhle jsou témata, která
+                    se mezi sebou míchají. V jednom sloupci to vypadalo jako
+                    jeden seznam šesti rovnocenných zaškrtávátek. */}
+                <p className="fieldset__subhead">Témata</p>
                 <label className="checkbox">
                   <input
                     type="checkbox"
@@ -374,6 +377,7 @@ export function EditorPanel({
               </>
             ) : isCards ? (
               <>
+                <p className="fieldset__subhead">Témata</p>
                 {/* Na rozdíl od šifry jde odškrtnout i počítání. Kartičková hra
                     je hra na jedno téma — celé pexeso nebo domino ze samých
                     mocnin je legitimní zadání, kdežto list na hodinu ze samých
@@ -437,8 +441,8 @@ export function EditorPanel({
                 <p className="hint">
                   Běžné příklady jsou počítání se zaškrtnutými operacemi („7 · 8“
                   {profile.maxOperands > 2 ? ', v tomhle ročníku i „100 : 10 + 784“' : ''}), tedy
-                  to, co zbude, když se žádné téma nepřidá. Zaškrtnuté typy se míchají rovnoměrně;
-                  necháte-li zaškrtnutý jediný, bude z něj celé{' '}
+                  to, co zbude, když se žádné téma nepřidá. Zaškrtnutá témata se míchají
+                  rovnoměrně; necháte-li zaškrtnuté jediné, bude z něj celé{' '}
                   {isBingo ? 'bingo' : isDomino ? 'domino' : 'pexeso'} — třeba samé mocniny
                   („7²“, „√81“, „2³ − 8“). Operace platí zároveň, ale holé mocniny se objeví
                   i bez nich.

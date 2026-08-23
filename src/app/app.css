@@ -336,6 +336,20 @@ body {
   font-size: 0.92rem;
 }
 
+/*
+ * Podnadpis uvnitř skupiny zaškrtávátek („Témata" pod operacemi).
+ *
+ * Vlastní třída, ne `field__label`: ten je popiskem celé skupiny a sedí
+ * v `legend`. Rozestup nahoru je to hlavní, co dělá práci — bez něj splyne
+ * první téma s poslední operací.
+ */
+.fieldset__subhead {
+  margin: 0.55rem 0 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ui-muted);
+}
+
 .hint {
   margin: 0.2rem 0 0;
   font-size: 0.8rem;
