@@ -77,6 +77,15 @@
  *      Druhá změna téhož čísla: zaškrtnuté „jen sčítání" dosud zlomky
  *      z listu vyhodilo úplně (část z celku je dělení a násobení). Nově
  *      dostane sčítání zlomků, protože ten tvar sčítání opravdu je.
+ * 10 — odškrtnuté „Mocniny a odmocniny" mocniny opravdu vypnou. Aritmetika
+ *      osmého ročníku je má v sobě (`POWER_SHAPES`) a bere si je podle
+ *      profilu, ne podle vah, takže učitel, který si téma odškrtl, dostal
+ *      `7² − 8` na kartičkách dál. Mění pexeso, domino a bingo v 8. a 9.
+ *      ročníku, a jen tam, kde mocniny zaškrtnuté NEJSOU.
+ *
+ *      Šifra zůstává beze změny: pro mocniny nemá zaškrtávátko, takže není
+ *      co ctít — a vyjmout je z ní by osmé třídě sebralo složené výrazy,
+ *      aniž by si to kdo přál.
  */
-export const GENERATOR_VERSION = 9
+export const GENERATOR_VERSION = 10
 export const APP_VERSION = '0.1.0-dev'

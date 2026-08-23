@@ -613,6 +613,18 @@ a.button {
  *   čtyřech stránkách kartiček by se nasčítal do dalšího papíru.
  */
 @media print {
+  /*
+   * Bílý podklad. `print.css` totéž říká už u `html, body`, jenže tenhle
+   * soubor se importuje POZDĚJI a `body { background: var(--ui-bg) }` na
+   * jeho začátku je stejně specifické — takže vyhrává a na papír se dostane
+   * šedá. Vidět to není, dokud si někdo v tiskovém dialogu nezapne „Grafika
+   * na pozadí"; pak vyjde list z tiskárny s šedou plochou všude, kde nesahá
+   * sazba. Táž past, jakou popisuje komentář výš, jen o jeden prvek dřív.
+   */
+  body {
+    background: #fff;
+  }
+
   .app {
     max-width: none;
     margin: 0;

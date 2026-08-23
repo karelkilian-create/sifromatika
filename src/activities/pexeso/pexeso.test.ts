@@ -271,18 +271,30 @@ describe('témata', () => {
   })
 
   /**
-   * ⚠ Zaškrtávátko „Mocniny a odmocniny" mocniny PŘIDÁVÁ, ale nevypíná.
+   * Zaškrtávátko „Mocniny a odmocniny" mocniny přidává **i vypíná**.
    *
-   * Aritmetika osmého ročníku má mocninné tvary v sobě od commitu 791c1ac a
-   * losuje si je z jednoho pytle se zbytkem (`POWER_SHAPES` v `tasks/shapes.ts`).
-   * Vyjmout je odtamtud by změnilo obsah šifer, které už někdo má uložené —
-   * proto tenhle test popisuje dnešní stav, ne ideál. Kdyby se chování mělo
-   * změnit, změní se s ním i tenhle test a `GENERATOR_VERSION`.
+   * Aritmetika osmého ročníku má mocninné tvary v sobě od commitu 791c1ac
+   * a bere si je podle PROFILU, ne podle vah — odškrtnuté téma proto do
+   * `GENERATOR_VERSION` 10 vyhodilo jen samostatný generátor `powers`
+   * a `7² − 8` na kartičkách zůstalo. Ořez dělá `profileForMix`.
+   *
+   * ⚠ Šifry se to netýká: pro mocniny nemá zaškrtávátko, takže u ní není
+   *   co ctít a složené výrazy s mocninou v osmé třídě zůstávají.
    */
-  it('počítání v osmé třídě samo o sobě mocniny občas nabídne', () => {
+  it('odškrtnuté mocniny se do počítání nevloudí ani přes aritmetiku', () => {
     let withPower = 0
     for (let i = 0; i < 20; i++) {
       const sheet = withTopics(8, { arithmetic: 1 }, `aritmetika-mocniny-${i}`)
+      withPower += sheet.tasks.filter((task) => /[²³√]/u.test(task.prompt.text)).length
+    }
+    expect(withPower).toBe(0)
+  })
+
+  it('zaškrtnuté mocniny je do počítání pustí zpátky', () => {
+    // Druhá půlka téhož pravidla: ořez se smí týkat jen odškrtnutého tématu.
+    let withPower = 0
+    for (let i = 0; i < 20; i++) {
+      const sheet = withTopics(8, { arithmetic: 1, powers: 1 }, `aritmetika-s-mocninami-${i}`)
       withPower += sheet.tasks.filter((task) => /[²³√]/u.test(task.prompt.text)).length
     }
     expect(withPower).toBeGreaterThan(0)

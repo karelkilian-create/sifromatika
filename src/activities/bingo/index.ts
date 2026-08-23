@@ -44,7 +44,7 @@ import {
   verifyDistinctValues,
   verifyTasks,
 } from '../../core/verify/index.js'
-import { pickGenerator } from '../../tasks/mix.js'
+import { pickGenerator, profileForMix } from '../../tasks/mix.js'
 import { taskGenerators } from '../../tasks/registry.js'
 import { APP_VERSION, GENERATOR_VERSION } from '../../version.js'
 
@@ -139,9 +139,13 @@ function generateOnce(config: BingoProject): BingoOutcome {
    * Nedělá se to už v konfiguraci: `payload.difficulty` má dál poctivě
    * říkat, jaký ročník si učitel zvolil. Jak s ním hra naloží, je věc hry.
    */
-  const difficulty = cardGameProfile(payload.difficulty)
-
   const generatorMix = payload.generatorMix ?? { arithmetic: 1 }
+
+  // Ořez o odškrtnutá témata musí přijít PŘED generováním: aritmetika si
+  // mocniny bere z profilu, ne z vah, takže by je učitel dostal i po
+  // odškrtnutí. Viz `profileForMix`.
+  const difficulty = profileForMix(cardGameProfile(payload.difficulty), generatorMix)
+
   const generators = taskGenerators.filter(
     (generator) => generator.supports(difficulty) && (generatorMix[generator.id] ?? 0) > 0,
   )

@@ -89,6 +89,27 @@ export function generatorMixFromTopics(
 }
 
 /**
+ * Profil oříznutý o témata, která si učitel odškrtl.
+ *
+ * Váhy v `generatorMix` říkají, KTERÉ generátory poběží. To ale nestačí:
+ * aritmetika osmého ročníku má mocninné tvary v sobě (`POWER_SHAPES`
+ * v `tasks/shapes.ts`) a bere si je podle profilu, ne podle vah. Odškrtnuté
+ * „Mocniny a odmocniny" tak z listu vyhodily samostatný generátor `powers`,
+ * ale `7² − 8` na kartičkách zůstalo — učitel odškrtl téma a dostal ho dál.
+ *
+ * ⚠ Volají to jen HRY. Šifra pro mocniny zaškrtávátko nemá (viz `GENERATORS`
+ *   v `cipher-grid/payload.ts`), takže u ní není co ctít: kdyby si tenhle
+ *   ořez vzala taky, přišla by osmá třída o složené výrazy s mocninou, aniž
+ *   by si to kdokoli přál.
+ */
+export function profileForMix(
+  profile: DifficultyProfile,
+  mix: Readonly<Record<string, number>>,
+): DifficultyProfile {
+  return (mix.powers ?? 0) > 0 ? profile : { ...profile, powers: false }
+}
+
+/**
  * Zaškrtnutá témata omezená na ta, která ročník opravdu umí.
  *
  * Potřebuje to i formulář, ne jen převod na konfiguraci: zaškrtnutá „Procenta"
