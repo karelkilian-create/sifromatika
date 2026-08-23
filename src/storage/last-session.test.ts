@@ -62,6 +62,27 @@ describe('zapamatované nastavení', () => {
     expect(restored?.checksum).toBe(checksum)
   })
 
+  /*
+   * Povýšení klíče je jediný způsob, jak se k učiteli dostane změněná výchozí
+   * hodnota — uložený formulář ji jinak přebije. Záznam z minulé verze se
+   * proto nesmí přečíst, a nemá ani zůstat ležet.
+   */
+  it('záznam z minulé verze se nepřečte a uklidí se', () => {
+    const store = fakeStorage()
+    useStorage(store)
+    store.setItem('sifromatika:posledni:1', 'cokoli z minula')
+
+    expect(readLastSession()).toBeNull()
+
+    const original = config()
+    const checksum = checksumForConfig(original)
+    if (checksum === null) throw new Error('z konfigurace nevznikl list')
+    saveLastSession(original, checksum)
+
+    expect(store.getItem('sifromatika:posledni:1')).toBeNull()
+    expect(readLastSession()?.config.seed).toBe(original.seed)
+  })
+
   it('bez uloženého záznamu se nic nevrací', () => {
     useStorage(fakeStorage())
     expect(readLastSession()).toBeNull()
@@ -72,7 +93,7 @@ describe('zapamatované nastavení', () => {
     useStorage(store)
 
     for (const junk of ['', 'nesmysl', '{}', '{"format":"neco-jineho"}', '[]']) {
-      store.setItem('sifromatika:posledni:1', junk)
+      store.setItem('sifromatika:posledni:2', junk)
       expect(readLastSession()).toBeNull()
     }
   })

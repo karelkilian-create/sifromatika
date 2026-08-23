@@ -24,12 +24,25 @@ import type { ProjectConfig } from '../core/model/index.js'
 import { buildSifraFile, parseSifra, type SifraFile } from './sifra.js'
 
 /**
- * Klíč se jmenuje po aplikaci a nese verzi schématu.
+ * Klíč se jmenuje po aplikaci a nese verzi záznamu.
  *
  * Až se schéma změní, dostane nový klíč a starý záznam se nepřečte — místo
  * aby se do formuláře nalilo něco, čemu tahle verze rozumí jinak.
+ *
+ * ⚠ Povýšit ho smí i změna, která se schématu netýká, a `:2` je přesně ta:
+ *   23. 8. 2026 začala mít všechna témata výchozí hodnotu „zapnuto". Kdo tu
+ *   už jednou byl, měl v `:1` uložený formulář z dob, kdy byla vypnutá — a ten
+ *   zápis výchozí hodnoty přebíjí, takže by se k novému stavu nedostal nikdy.
+ *   Cena je jeden zapamatovaný list; soubory `.sifra` ani sdílené odkazy jdou
+ *   mimo tohle úložiště, takže se jich to netýká.
  */
-const KEY = 'sifromatika:posledni:1'
+const KEY = 'sifromatika:posledni:2'
+
+/**
+ * Klíč z minulé verze. Uklízí se, aby po sobě aplikace nenechávala kilobajt,
+ * ke kterému se už nikdo nevrátí — ne proto, že by vadil.
+ */
+const RETIRED_KEYS = ['sifromatika:posledni:1']
 
 /**
  * Úložiště, nebo `null`.
@@ -47,7 +60,12 @@ function storage(): Storage | null {
 
 export function saveLastSession(config: ProjectConfig, checksum: string): void {
   try {
-    storage()?.setItem(KEY, JSON.stringify(buildSifraFile(config, checksum)))
+    const store = storage()
+    if (store === null) return
+    store.setItem(KEY, JSON.stringify(buildSifraFile(config, checksum)))
+    for (const retired of RETIRED_KEYS) {
+      store.removeItem(retired)
+    }
   } catch {
     // Zaplněná kvóta nebo zakázaný zápis. Viz hlavička: mlčky dál.
   }
