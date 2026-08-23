@@ -224,8 +224,8 @@ function generateOnce(config: DominoProject): DominoOutcome {
   // ukazuje zpátky na první a kruh se uzavírá sám.
   //
   // Směr je závazný, ne libovolný: v učitelské tabulce se pak čte shora dolů
-  // („výsledek v řádku je zadáním v řádku následujícím"). Opačné zřetězení dá
-  // stejně platný kruh, ale seznam, ve kterém se navazuje o řádek zpátky.
+  // („výsledek v řádku patří k zadání z řádku předešlého"). Opačné zřetězení
+  // dá stejně platný kruh, ale seznam, ve kterém se navazuje na druhou stranu.
   //
   // ⚠ Míchá se TADY, při generování, a uloží se do listu — ne až v
   //   `toDocument`. Kdyby míchala sazba, potřebovala by generátor náhody, dvě

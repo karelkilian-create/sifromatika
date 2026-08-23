@@ -13,6 +13,7 @@
 import { describe, expect, it } from 'vitest'
 import { CARD_VALUE_MAX } from '../core/constraints/index.js'
 import type { ActivityId, Grade, Task } from '../core/model/index.js'
+import type { TopicSelection } from '../tasks/mix.js'
 import { parseSifra, serializeSifra } from '../storage/sifra.js'
 import type { ActivitySheet, SharedEditorState } from './contract.js'
 import {
@@ -144,13 +145,35 @@ describe('kontrakt aktivity', () => {
     expect(labels.slice(0, -1).every((label) => label.startsWith('Kartičky'))).toBe(true)
   })
 
+  /*
+   * Osmý ročník schválně, ne pátý jako zbytek: výchozí stav má zaškrtnutá
+   * všechna témata a osmička je jediný ročník, který je všechna umí. V nižším
+   * by se neztratily kolečkem, ale ročníkem — a to je jiná věc, kterou hlídá
+   * test hned pod tímhle.
+   */
   it.each(ids)('%s: formulář → konfigurace → formulář nic neztratí', (id) => {
     const states = initialActivityStates()
-    const config = configFor(id, states, shared, 'registr-kolecko')
+    const osmicka: SharedEditorState = { ...shared, grade: 8 }
+    const config = configFor(id, states, osmicka, 'registr-kolecko')
 
     expect(config.activity).toBe(id)
-    expect(sharedFromConfig(config)).toEqual(shared)
+    expect(sharedFromConfig(config)).toEqual(osmicka)
     expect(activityStateFromConfig(config)).toEqual({ [id]: states[id] })
+  })
+
+  /*
+   * Téma, které ročník neumí, se do konfigurace nedostane — a tím pádem ani
+   * zpátky do formuláře. Není to ztráta, ale poctivost: uložený soubor
+   * a sdílený odkaz mají popisovat list, který z nich vyleze. Čtvrťák
+   * s procenty by sliboval obsah, který na papíře není.
+   */
+  it.each(ids)('%s: ročník ořízne témata, která neumí', (id) => {
+    const config = configFor(id, initialActivityStates(), { ...shared, grade: 4 }, 'registr-orez')
+    const back = activityStateFromConfig(config)[id] as Partial<TopicSelection>
+
+    expect(back.percents ?? false).toBe(false)
+    expect(back.fractions ?? false).toBe(false)
+    expect(back.powers ?? false).toBe(false)
   })
 
   it.each(ids)('%s: uložení do .sifra a otevření dá tutéž konfiguraci', (id) => {

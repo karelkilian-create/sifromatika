@@ -8,6 +8,7 @@
 
 import type { ActivityModule } from '../contract.js'
 import { applyShared } from '../shared-state.js'
+import { usableTopics } from '../../tasks/mix.js'
 import type { CipherGridConfig, CipherGridProject } from '../../core/model/index.js'
 import {
   defaultConfig,
@@ -36,16 +37,26 @@ export interface CipherGridEditorState {
 }
 
 /**
- * Typ je vypsaný schválně: bez něj by se `sequences: false` odvodilo jako
- * literál `false` a formulář by to zaškrtávátko odmítl zapnout.
+ * Všechna témata zapnutá.
+ *
+ * Učitel, který přijde poprvé, nemá jak tušit, co je pod „Pokročilým
+ * nastavením obsahu" schované. Když si vybere osmou třídu a dostane samé
+ * sčítání do sta, odejde s tím, že nástroj umí čtvrtou třídu — a podruhé
+ * nepřijde. Zapnuté téma jde odškrtnout, vypnuté se musí najít.
+ *
+ * Ročník má přednost: téma, které neumí, se do mixu nedostane, i když tu
+ * zůstane zaškrtnuté — viz `toConfig` níž.
+ *
+ * Typ je vypsaný schválně: bez něj by se `sequences: true` odvodilo jako
+ * literál `true` a formulář by to zaškrtávátko odmítl vypnout.
  */
 const initialState: CipherGridEditorState = {
   message: 'POKLAD JE U BAZÉNU',
-  sequences: false,
-  decimals: false,
-  percents: false,
-  fractions: false,
-  equations: false,
+  sequences: true,
+  decimals: true,
+  percents: true,
+  fractions: true,
+  equations: true,
   distinctCellPerOccurrence: true,
   printTitleOnWorksheet: false,
 }
@@ -64,15 +75,20 @@ export const cipherGridModule = {
 
   toConfig(state, shared, seed): CipherGridProject {
     const config = applyShared(defaultConfig(state.message, shared.grade, seed), shared)
+    // Téma, které ročník neumí, se do mixu nedostane, i kdyby ve formuláři
+    // zůstalo zaškrtnuté. Generátory by ho stejně zahodily (`supports`),
+    // ale uložený soubor a sdílený odkaz by pak slibovaly obsah, který na
+    // listu není. Šifra mocniny nemá, takže `powers` je tu vždycky vypnuté.
+    const usable = usableTopics({ ...state, arithmetic: true, powers: false }, config.payload.difficulty)
     // Poměr 3 : 1 ke každému zapnutému zpestření. Řada i procento zaberou
     // dítěti víc času než příklad, takže „každá čtvrtá" je zhruba to, co udrží
     // délku listu na jedné hodině.
     const generatorMix: Record<string, number> = { arithmetic: 3 }
-    if (state.sequences) generatorMix.sequence = 1
-    if (state.decimals) generatorMix.decimal = 1
-    if (state.percents) generatorMix.percent = 1
-    if (state.fractions) generatorMix.fractions = 1
-    if (state.equations) generatorMix.equation = 1
+    if (usable.sequences) generatorMix.sequence = 1
+    if (usable.decimals) generatorMix.decimal = 1
+    if (usable.percents) generatorMix.percent = 1
+    if (usable.fractions) generatorMix.fractions = 1
+    if (usable.equations) generatorMix.equation = 1
     // Sama aritmetika se zapisuje vahou 1, aby uložené soubory bez zpestření
     // vypadaly přesně jako dřív — jinak by se listu změnil obsah.
     config.payload.generatorMix =

@@ -71,7 +71,7 @@ function teacherPage(sheet: DominoSheet): DocumentBlock[] {
       kind: 'paragraph',
       runs: [
         {
-          text: `Kameny jdou po sobě takto a poslední navazuje zpátky na první. Zkontrolovat to jde i bez skládání — výsledek v každém řádku je zadáním v řádku následujícím.`,
+          text: `Kameny jdou po sobě takto a poslední navazuje zpátky na první. Zkontrolovat to jde i bez skládání — výsledek v každém řádku patří k zadání z řádku předešlého.`,
         },
       ],
     },

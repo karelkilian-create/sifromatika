@@ -72,7 +72,10 @@ describe('.sifra — uložení a načtení', () => {
       {
         activity: 'cipher-grid',
         shared: {
-          grade: 5,
+          // Šestka, ne pátá třída: desetinná čísla jsou tu proto, aby se na
+          // nich poznalo, že kolečko drží zaškrtnuté téma. Ročník, který je
+          // neumí, by je oříznul dřív, než by se do souboru dostala.
+          grade: 6,
           title: 'Lov pirátského pokladu',
           operations: { add: true, sub: false, mul: true, div: false },
         },
@@ -131,7 +134,7 @@ describe('.sifra — uložení a načtení', () => {
     const cipher = round.state.byActivity['cipher-grid']
     expect(round.seed).toBe('kolecko')
     expect(cipher.message).toBe('ZLATÝ KLÍČ')
-    expect(round.state.shared.grade).toBe(5)
+    expect(round.state.shared.grade).toBe(6)
     expect(round.state.shared.title).toBe('Lov pirátského pokladu')
     expect(round.state.shared.operations).toEqual({ add: true, sub: false, mul: true, div: false })
     expect(cipher.sequences).toBe(true)

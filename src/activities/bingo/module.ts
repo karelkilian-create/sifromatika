@@ -31,18 +31,28 @@ export interface BingoEditorState extends TopicSelection {
 }
 
 /**
+ * Všechna témata zapnutá.
+ *
+ * Učitel, který přijde poprvé, nemá jak tušit, co je pod „Pokročilým
+ * nastavením obsahu" schované. Když si vybere osmou třídu a dostane samé
+ * sčítání do sta, odejde s tím, že nástroj umí čtvrtou třídu — a podruhé
+ * nepřijde. Zapnuté téma jde odškrtnout, vypnuté se musí najít.
+ *
+ * Ročník má přednost: téma, které neumí, se do mixu nedostane, i když tu
+ * zůstane zaškrtnuté (`generatorMixFromTopics` v `tasks/mix.ts`).
+ *
  * Typ je vypsaný schválně: bez něj by se z `fallback` odvodil literál `12`
  * a políčko „Počet karet" by nešlo přestavit.
  */
 const initialState: BingoEditorState = {
   cardCount: CARD_COUNT_LIMITS.fallback,
   arithmetic: true,
-  sequences: false,
-  decimals: false,
-  percents: false,
-  powers: false,
-  fractions: false,
-  equations: false,
+  sequences: true,
+  decimals: true,
+  percents: true,
+  powers: true,
+  fractions: true,
+  equations: true,
 }
 
 export const bingoModule = {

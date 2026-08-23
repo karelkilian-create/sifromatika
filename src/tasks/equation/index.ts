@@ -162,30 +162,37 @@ function shapeAllowed(
 }
 
 /**
- * Druhý operand pro daný tvar a cíl — všechny, ze kterých úloha zůstane
- * v oboru ročníku.
+ * Kandidáti na druhý operand pro daný tvar. Na cíli nezávisí, takže se dají
+ * spočítat jednou a projít pro každý cíl znovu — viz `reachableValues`.
+ */
+function operandPool(shape: Shape, profile: DifficultyProfile): number[] {
+  const ceiling = Math.min(MAX_TERM, profile.numberRange.max)
+  const factors = profile.multiplicationTables.filter((factor) => factor >= MIN_OPERAND)
+  return shape.operations.includes('mul')
+    ? factors
+    : Array.from({ length: ceiling - MIN_OPERAND + 1 }, (_, index) => index + MIN_OPERAND)
+}
+
+/**
+ * Vejde se rovnice s tímhle druhým operandem do oboru ročníku?
  *
- * ⚠ Hlídá se obě strany rovnice, ne jen ta hledaná. `? + 15 = 4030` je
+ * ⚠ Hlídají se obě strany rovnice, ne jen ta hledaná. `? + 15 = 4030` je
  *   v oboru osmé třídy podle výsledku, ale to velké číslo v zadání je přesně
  *   to, čemu se `MAX_TERM` brání.
  */
-function optionsFor(target: number, shape: Shape, profile: DifficultyProfile): number[] {
-  const options: number[] = []
-  const ceiling = Math.min(MAX_TERM, profile.numberRange.max)
-  const factors = profile.multiplicationTables.filter((factor) => factor >= MIN_OPERAND)
-  const pool = shape.operations.includes('mul')
-    ? factors
-    : Array.from({ length: ceiling - MIN_OPERAND + 1 }, (_, index) => index + MIN_OPERAND)
+function fitsRange(target: number, other: number, shape: Shape, profile: DifficultyProfile): boolean {
+  const built = shape.build(target, other)
+  if (built === null) return false
+  const numbers = built.text.match(/\d+/gu)?.map(Number) ?? []
+  return !numbers.some((value) => value > profile.numberRange.max)
+}
 
-  for (const other of pool) {
-    const built = shape.build(target, other)
-    if (built === null) continue
-    // Obě strany rovnice musí zůstat v oboru — čísla v zadání i výsledek.
-    const numbers = built.text.match(/\d+/gu)?.map(Number) ?? []
-    if (numbers.some((value) => value > profile.numberRange.max)) continue
-    options.push(other)
-  }
-  return options
+/**
+ * Druhý operand pro daný tvar a cíl — všechny, ze kterých úloha zůstane
+ * v oboru ročníku.
+ */
+function optionsFor(target: number, shape: Shape, profile: DifficultyProfile): number[] {
+  return operandPool(shape, profile).filter((other) => fitsRange(target, other, shape, profile))
 }
 
 export const equationGenerator: TaskGenerator = {
@@ -202,13 +209,18 @@ export const equationGenerator: TaskGenerator = {
     const shapes = SHAPES.filter((shape) => shapeAllowed(shape, profile, mix))
     if (shapes.length === 0) return values
 
+    // Jde jen o to, JESTLI nějaký operand existuje, ne o to který — proto se
+    // hledá první a dál se nepočítá. V osmé třídě je cílů deset tisíc a sedm
+    // tvarů po stovce operandů z toho dělalo sedm milionů zbytečných pokusů:
+    // list se šifrou se generoval tři sekundy, a šestkrát za sebou, protože
+    // `generateCipherGrid` zkouší víc semínek.
+    const pools = shapes.map((shape) => operandPool(shape, profile))
+
     for (let target = 1; target <= profile.numberRange.max; target++) {
-      for (const shape of shapes) {
-        if (optionsFor(target, shape, profile).length > 0) {
-          values.add(target)
-          break
-        }
-      }
+      const reachable = shapes.some((shape, index) =>
+        pools[index]!.some((other) => fitsRange(target, other, shape, profile)),
+      )
+      if (reachable) values.add(target)
     }
     return values
   },

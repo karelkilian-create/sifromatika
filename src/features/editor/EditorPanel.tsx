@@ -312,7 +312,7 @@ export function EditorPanel({
       )}
 
       <details className="editor__advanced">
-        <summary>Pokročilé nastavení</summary>
+        <summary>Pokročilé nastavení obsahu</summary>
 
         <div className="editor__advanced-grid">
           <fieldset className="fieldset">
