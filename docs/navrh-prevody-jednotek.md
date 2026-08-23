@@ -1,5 +1,13 @@
 # Převody jednotek
 
+> **ODLOŽENO 23. 8. 2026.** Karel to zastavil s tím, že bez převodů obsahu
+> nemá téma valnou cenu — a měl pravdu, výmluva „obsah je spjatý
+> s geometrií" v §3 neobstojí: převádět `m² → cm²` je řádek v tabulce
+> jednotek. Skutečná překážka je obor čísel: se stropem kartiček 1000 zbude
+> na obsah 120 úloh (s 10 000 jich je 1210) a objem je pod ním mrtvý úplně,
+> šest úloh. Až se k tématu vrátíme, začíná se rozhodnutím o oboru čísel,
+> ne psaním kódu. Místo toho se dělá `docs/navrh-chybejici-cislo.md`.
+
 Návrh k rozhodnutí, **23. 8. 2026**. Krok 5 z pořadí prací — poslední velké
 téma před slovními úlohami.
 
