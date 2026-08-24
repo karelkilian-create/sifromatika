@@ -534,7 +534,9 @@ export function EditorPanel({
                   {profile.decimals > 0 ? ', desetinná čísla („3,5 · 4“)' : ''}
                   {profile.percents ? ', procenta („25 % z 80“)' : ''}
                   {profile.powers ? ', mocniny a odmocniny („7²“, „√81“)' : ''}
-                  {profile.fractions ? ', zlomky („3/4 z 80“ i „1/2 + 1/4“)' : ''}, rovnice
+                  {profile.fractions
+                    ? ', zlomky („3/4 z 80“, „1/2 + 1/4“, „2/3 · 3/5“ i „1/2 : 1/4“)'
+                    : ''}, rovnice
                   s chybějícím číslem („? + 15 = 40“). Zaškrtnutá
                   témata se míchají rovnoměrně; necháte-li zaškrtnuté jediné, bude z něj celé{' '}
                   {isBingo ? 'bingo' : isDomino ? 'domino' : 'pexeso'}. Operace platí zároveň

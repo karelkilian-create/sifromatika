@@ -147,7 +147,9 @@ Podrobněji:
 
 Umí pět aktivit — šifru se souřadnicovou i lineární tabulkou, list číselných řad, pexeso,
 domino a bingo — pro **3. až 8. ročník**. Vedle čtyř základních operací zvládne pořadí operací a závorky,
-celá čísla, mocniny a odmocniny, desetinná čísla (`3,5 · 4`) a procenta (`25 % z 80`).
+celá čísla, mocniny a odmocniny, desetinná čísla (`3,5 · 4`), procenta (`25 % z 80`),
+zlomky (`3/4 z 80`, ve hrách i `1/2 + 1/4`, `2/3 · 3/5` a `1/2 : 1/4`) a rovnice
+s chybějícím číslem (`? + 15 = 40`).
 K tomu klamná písmena, tisk, soubory `.sifra` a diplom ke stažení.
 
 Devátý ročník se schválně nenabízí: chybí mu rovnice a lomené výrazy, a dát deváťákovi
@@ -156,12 +158,12 @@ osmáckou matematiku pod nadpisem „9. třída" je horší než ročník nenab�
 Výsledek každé úlohy je vždy kladné celé číslo — je to kód políčka v tabulce. Desetinná
 čísla a procenta proto patří do zadání, ne do výsledku.
 
-Zatím neumí slovní úlohy, geometrii, převody jednotek, zlomky, PDF export bez tiskového
-dialogu, offline režim ani sdílení odkazem. Plán je v [roadmapě](docs/sifromatika-navrh-architektury.md#7-roadmapa-01--10).
+Zatím neumí slovní úlohy, geometrii, převody jednotek, smíšená čísla, PDF export bez
+tiskového dialogu ani offline režim. Plán je v [roadmapě](docs/sifromatika-navrh-architektury.md#7-roadmapa-01--10).
 
 ## Testování
 
-460 testů. Kromě obvyklých jednotkových testů dva druhy, na kterých projekt stojí:
+628 testů. Kromě obvyklých jednotkových testů dva druhy, na kterých projekt stojí:
 
 - **Property testy** — 10 000 náhodných konfigurací musí dát nula nepoužitelných listů.
   Ruční testy tenhle prostor kombinací nepokryjí.

@@ -10,7 +10,18 @@ import type { DominoConfig } from '../../core/model/index.js'
 import { isRecord, parseDifficulty, parseGeneratorMix, parseOutput, parseTaskMix } from '../payload-utils.js'
 
 /** Témata, která má domino ve formuláři — tatáž sada jako pexeso. */
-const GENERATORS = ['arithmetic', 'sequence', 'decimal', 'percent', 'powers', 'fractions', 'fraction-sums', 'equation']
+const GENERATORS = [
+  'arithmetic',
+  'sequence',
+  'decimal',
+  'percent',
+  'powers',
+  'fractions',
+  'fraction-sums',
+  'fraction-products',
+  'fraction-quotients',
+  'equation',
+]
 
 export function parseDominoPayload(raw: unknown): DominoConfig | null {
   if (!isRecord(raw)) return null

@@ -92,6 +92,37 @@ describe('evaluateExpression — český zápis', () => {
   })
 })
 
+describe('zlomková čára je jedno číslo', () => {
+  /**
+   * Tokenizer čte `3/4` týmž vzorem, jakým ho sazba kreslí jako čitatele nad
+   * jmenovatelem (`MATH_PATTERN` v `render/screen/math.tsx`): číslice,
+   * lomítko, číslice, bez mezer. Rozejít se ta dvě čtení nesmí, jinak
+   * verifikace ověřuje jiný výraz, než dítě uvidí na papíře.
+   */
+  it('váže těsněji než tečka i dvojtečka', () => {
+    expect(evaluateExpression('1/2 : 1/4')).toBeCloseTo(2, 9)
+    expect(evaluateExpression('2/3 · 3/5')).toBeCloseTo(0.4, 9)
+    expect(evaluateExpression('3/4 + 1/8')).toBeCloseTo(0.875, 9)
+  })
+
+  it('lomítko s mezerami zůstává dělením', () => {
+    // Sazba ho jako zlomek nekreslí, tokenizer ho jako zlomek nečte. Takový
+    // zápis vzniká jen v ručně upraveném `.sifra`; generátor píše dvojtečku.
+    expect(evaluateExpression('36 / 4')).toBe(9)
+    expect(evaluateExpression('36 : 4 / 2')).toBe(4.5)
+  })
+
+  it('nulový jmenovatel je vada zápisu, ne nekonečno', () => {
+    expect(() => evaluateExpression('1/0')).toThrow(/jmenovatel/)
+  })
+
+  it('desetinné číslo se se zlomkem nepoplete', () => {
+    // Čárka je desetinný oddělovač, takže `3,5` je číslo a lomítko za ním
+    // je dělení — zlomek má nad čarou celé číslo.
+    expect(evaluateExpression('3,5 · 2')).toBeCloseTo(7, 9)
+  })
+})
+
 describe('buildCodeIndex / decode', () => {
   it('více kódů smí ukazovat na stejné písmeno', () => {
     const index = buildCodeIndex(makeTable(['A', 'B', 'A']))

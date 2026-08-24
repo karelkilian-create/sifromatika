@@ -59,6 +59,10 @@ type Token =
  * Dělení se píše dvojtečkou (`36 : 4`), násobení tečkou (`6 · 4`). Křížek se
  * jako vstup přijímá taky — může přijít z ručně upraveného `.sifra` nebo
  * ze starší verze — ale generátor ho nevyrábí.
+ *
+ * ⚠ Lomítko tu zůstává jen pro **osamocené** lomítko z ručně upraveného
+ *   souboru (`36 / 4`). Lomítko mezi číslicemi bez mezer je zlomková čára
+ *   a přečte se dřív, v tokenizeru — viz tam.
  */
 const OPERATOR_ALIASES: Readonly<Record<string, '+' | '-' | '*' | '/'>> = {
   '+': '+',
@@ -135,6 +139,39 @@ function tokenize(input: string): Token[] {
           i++
         }
         tokens.push({ kind: 'num', value: Number(`${digits}.${decimals}`) })
+        continue
+      }
+
+      // Zlomková čára: `3/4` je JEDNO číslo, ne dělení.
+      //
+      // ⚠ Do verze 10 to bylo dělení a fungovalo to — ovšem náhodou.
+      //   `a/b · c/d` vyhodnocené zleva doprava dá (a:b·c):d, což je a·c/(b·d),
+      //   tedy správně. `a/b : c/d` ale dá (a:b:c):d, takže `1/2 : 1/4`
+      //   vyšlo 0,125 místo 2. Dělení zlomků by tak generátor nevyrobil,
+      //   protože verifikace by mu ho zamítla — a měla by pravdu, tokenizer
+      //   totiž čte něco jiného, než co je na papíře.
+      //
+      // Podmínka je táž jako v sazbě: číslice, lomítko, číslice, bez mezer
+      // (`MATH_PATTERN` v `render/screen/math.tsx`). Co se vytiskne jako
+      // jeden zlomek se zlomkovou čarou, to se tady přečte jako jedno číslo.
+      // Rozejít se ty dvě čtení nesmí, jinak verifikace ověřuje jiný výraz,
+      // než dítě uvidí.
+      if (
+        separator === '/' &&
+        afterSeparator !== undefined &&
+        afterSeparator >= '0' &&
+        afterSeparator <= '9'
+      ) {
+        i++
+        let denominator = ''
+        while (i < source.length && source[i]! >= '0' && source[i]! <= '9') {
+          denominator += source[i]!
+          i++
+        }
+        if (Number(denominator) === 0) {
+          throw new ExpressionError(`Zlomek s nulovým jmenovatelem ve výrazu ${JSON.stringify(input)}`)
+        }
+        tokens.push({ kind: 'num', value: Number(digits) / Number(denominator) })
         continue
       }
 
@@ -244,8 +281,8 @@ function nearlyEqual(a: number, b: number): boolean {
  * Spočítá hodnotu aritmetického výrazu.
  *
  * Podporuje `+ − · :`, závorky, unární mínus, mocniny `²` a `³`, odmocninu
- * `√`, desetinná čísla (`3,5`) a procenta (`25 % z 80`), se standardní
- * prioritou.
+ * `√`, desetinná čísla (`3,5`), zlomky (`3/4`) a procenta (`25 % z 80`),
+ * se standardní prioritou.
  * Záměrně NEpoužívá `eval` ani `new Function` — kdyby se sem někdy dostal
  * text z importovaného `.sifra` souboru, byla by to díra.
  */

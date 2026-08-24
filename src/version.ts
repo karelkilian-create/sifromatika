@@ -86,6 +86,29 @@
  *      Šifra zůstává beze změny: pro mocniny nemá zaškrtávátko, takže není
  *      co ctít — a vyjmout je z ní by osmé třídě sebralo složené výrazy,
  *      aniž by si to kdo přál.
+ * 11 — násobení a dělení zlomků (`2/3 · 3/5`, `1/2 : 1/4`), od 7. ročníku
+ *      a jen ve hrách. Tři změny, které jdou spolu:
+ *
+ *      • **zlomková čára je pro tokenizer jedno číslo**, ne dělení. Do
+ *        verze 10 to dělení bylo a u sčítání i násobení vycházelo nastejno
+ *        (`a/b · c/d` čtené zleva doprava je opravdu `a·c/(b·d)`). Dělení
+ *        zlomků to ale rozbilo: `1/2 : 1/4` se počítalo jako 1:2:1:4, tedy
+ *        0,125 místo 2. Hodnoty dosavadních úloh se tím NEMĚNÍ — `3/4 z 80`
+ *        i `1/2 + 1/4` dávají totéž co dřív.
+ *      • **tvar se vybírá před losováním**, ne osmi pokusy poslepu. Se dvěma
+ *        tvary to bylo neviditelné, u dělení by to znamenalo mizející úlohy.
+ *      • **jedno zaškrtávátko „Zlomky" se překládá na čtyři generátory**
+ *        a váhu tématu si dělí. Do verze 10 měly zlomky dvě id po jedničce,
+ *        takže vedle samotného počítání zabraly dvě třetiny listu, ačkoli
+ *        nápověda slibuje rovnoměrné míchání. Váha jednoho tématu je proto
+ *        `TOPIC_WEIGHT` = 12 a zlomky berou 4 × 3.
+ *
+ *      Mění se každé pexeso, domino a bingo se zaškrtnutými zlomky (7. ročník
+ *      výš) — a nově i ta, kde jsou zlomky zaškrtnuté VEDLE jiného tématu,
+ *      protože se jim srovnala váha. **Šifra a list řad se nemění**: šifra
+ *      zlomkový výsledek nedostane (`TaskRules.fractionResults`) a svůj mix
+ *      si staví sama, s vlastními vahami. Ověřeno tím, že se z golden snímků
+ *      přepsaly jen dva, oba herní.
  */
-export const GENERATOR_VERSION = 10
+export const GENERATOR_VERSION = 11
 export const APP_VERSION = '0.1.0-dev'

@@ -325,19 +325,19 @@ describe('formulář → konfigurace', () => {
       shared,
       'temata-vahy',
     )
-    expect(config.payload.generatorMix).toEqual({ arithmetic: 1, powers: 1 })
+    expect(config.payload.generatorMix).toEqual({ arithmetic: 12, powers: 12 })
   })
 
   it('samotné mocniny znamenají, že počítání v mixu není', () => {
     const config = pexesoModule.toConfig(topics, shared, 'jen-mocniny-mix')
-    expect(config.payload.generatorMix).toEqual({ powers: 1 })
+    expect(config.payload.generatorMix).toEqual({ powers: 12 })
   })
 
   // Bez téhle pojistky by osmák s mocninami přepnutý na šestou třídu dostal
   // místo pexesa hlášku, že pro tuhle obtížnost není žádný generátor.
   it('téma, které ročník neumí, se nahradí počítáním', () => {
     const config = pexesoModule.toConfig(topics, { ...shared, grade: 6 }, 'mocniny-v-sestce')
-    expect(config.payload.generatorMix).toEqual({ arithmetic: 1 })
+    expect(config.payload.generatorMix).toEqual({ arithmetic: 12 })
 
     const outcome = generatePexeso(config)
     expect(outcome.ok).toBe(true)
@@ -349,10 +349,10 @@ describe('formulář → konfigurace', () => {
   it('pátá třída desetinná čísla nedostane, ani když v nastavení zůstala', () => {
     const decimalsOnly = { ...topics, powers: false, decimals: true }
     const patka = pexesoModule.toConfig(decimalsOnly, { ...shared, grade: 5 }, 'desetiny-v-patce')
-    expect(patka.payload.generatorMix).toEqual({ arithmetic: 1 })
+    expect(patka.payload.generatorMix).toEqual({ arithmetic: 12 })
 
     const sestka = pexesoModule.toConfig(decimalsOnly, { ...shared, grade: 6 }, 'desetiny-v-sestce')
-    expect(sestka.payload.generatorMix).toEqual({ decimal: 1 })
+    expect(sestka.payload.generatorMix).toEqual({ decimal: 12 })
   })
 
   it('konfigurace → formulář vrátí tatáž zaškrtnutí', () => {

@@ -10,7 +10,18 @@ import type { BingoConfig } from '../../core/model/index.js'
 import { isRecord, parseDifficulty, parseGeneratorMix, parseOutput, parseTaskMix } from '../payload-utils.js'
 
 /** Témata, která má bingo ve formuláři — tatáž sada jako pexeso a domino. */
-const GENERATORS = ['arithmetic', 'sequence', 'decimal', 'percent', 'powers', 'fractions', 'fraction-sums', 'equation']
+const GENERATORS = [
+  'arithmetic',
+  'sequence',
+  'decimal',
+  'percent',
+  'powers',
+  'fractions',
+  'fraction-sums',
+  'fraction-products',
+  'fraction-quotients',
+  'equation',
+]
 
 export function parseBingoPayload(raw: unknown): BingoConfig | null {
   if (!isRecord(raw)) return null

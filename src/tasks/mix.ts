@@ -53,14 +53,29 @@ export interface TopicSelection {
   percents: boolean
   /** Mocniny a odmocniny (`7²`, `√81`). Od 8. ročníku. */
   powers: boolean
-  /** Zlomky (`3/4 z 80`, ve hrách i `1/2 + 1/4`). Od 7. ročníku. */
+  /** Zlomky (`3/4 z 80`, ve hrách i `1/2 + 1/4` a `2/3 · 3/5`). Od 7. ročníku. */
   fractions: boolean
   /** Rovnice s chybějícím číslem (`? + 15 = 40`). Od 3. ročníku. */
   equations: boolean
 }
 
 /**
- * Zaškrtávátka → váhy generátorů. Váhy jsou rovnoměrné.
+ * Kolik váhy dostane JEDNO zaškrtnuté téma.
+ *
+ * Není to jednička, protože zlomky se dělí na čtyři generátory a váha se
+ * mezi ně musí rozdělit celočíselně. Dvanáctka je nejmenší číslo, které to
+ * unese pro dvě, tři i čtyři rodiny — a nechává rezervu, kdyby se takhle
+ * jednou rozpadlo i jiné téma.
+ *
+ * ⚠ Přenásobení všech vah touž konstantou samo o sobě NEMĚNÍ výstup:
+ *   `rng.weighted` losuje z `next() · součet vah`, takže se pravděpodobnosti
+ *   ani sekvence náhodných čísel nepohnou. Změní se jen to, co se změnit má —
+ *   podíl zlomků.
+ */
+const TOPIC_WEIGHT = 12
+
+/**
+ * Zaškrtávátka → váhy generátorů. Každé zaškrtnuté téma váží stejně.
  *
  * Téma, které ročník neumí, se do mixu nedostane, i kdyby ve formuláři
  * zůstalo zaškrtnuté po přepnutí ročníku. Bez téhle pojistky by osmák
@@ -75,20 +90,30 @@ export function generatorMixFromTopics(
 ): Record<string, number> {
   const usable = usableTopics(topics, profile)
   const mix: Record<string, number> = {}
-  if (usable.arithmetic) mix.arithmetic = 1
-  if (usable.sequences) mix.sequence = 1
-  if (usable.decimals) mix.decimal = 1
-  if (usable.percents) mix.percent = 1
-  if (usable.powers) mix.powers = 1
-  // Jedno zaškrtávátko, dvě id: `3/4 z 80` a `1/2 + 1/4` jsou pro učitele
-  // jedno téma, ale musí mít každý svou zásobu cílů — jinak by zlomkový
-  // výsledek vycházel jednou z dvanácti. Viz `fractionSumsGenerator`.
-  if (usable.equations) mix.equation = 1
+  if (usable.arithmetic) mix.arithmetic = TOPIC_WEIGHT
+  if (usable.sequences) mix.sequence = TOPIC_WEIGHT
+  if (usable.decimals) mix.decimal = TOPIC_WEIGHT
+  if (usable.percents) mix.percent = TOPIC_WEIGHT
+  if (usable.powers) mix.powers = TOPIC_WEIGHT
+  if (usable.equations) mix.equation = TOPIC_WEIGHT
+  // Jedno zaškrtávátko, ČTYŘI generátory: `3/4 z 80`, `1/2 + 1/4`,
+  // `2/3 · 3/5` a `1/2 : 1/4` jsou pro učitele jedno téma, ale každý musí mít
+  // svou zásobu cílů — jinak by o poměru na listu rozhodovalo to, jak široký
+  // obor která rodina náhodou pokrývá (644 hodnot proti 19, 15 a 25). Viz
+  // `resultGenerator` v `tasks/fractions`.
+  //
+  // ⚠ Váha se mezi ně DĚLÍ, nedostane každý celou. Do verze 10 měly zlomky
+  //   dvě id po jedničce, takže vedle samotného počítání zabraly dvě třetiny
+  //   listu — a nápověda v editoru přitom slibuje, že se témata míchají
+  //   rovnoměrně. Se čtyřmi id by to byly čtyři pětiny.
   if (usable.fractions) {
-    mix.fractions = 1
-    mix['fraction-sums'] = 1
+    const share = TOPIC_WEIGHT / 4
+    mix.fractions = share
+    mix['fraction-sums'] = share
+    mix['fraction-products'] = share
+    mix['fraction-quotients'] = share
   }
-  return Object.keys(mix).length > 0 ? mix : { arithmetic: 1 }
+  return Object.keys(mix).length > 0 ? mix : { arithmetic: TOPIC_WEIGHT }
 }
 
 /**
@@ -157,7 +182,11 @@ export function topicsFromGeneratorMix(
     decimals: enabled('decimal'),
     percents: enabled('percent'),
     powers: enabled('powers'),
-    fractions: enabled('fractions') || enabled('fraction-sums'),
+    fractions:
+      enabled('fractions') ||
+      enabled('fraction-sums') ||
+      enabled('fraction-products') ||
+      enabled('fraction-quotients'),
     equations: enabled('equation'),
   }
 }

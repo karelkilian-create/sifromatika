@@ -76,10 +76,16 @@ describe('zaškrtnuté téma přežije cestu přes payload', () => {
     // Šifra mocniny v seznamu nemá schválně: nemá pro ně zaškrtávátko, takže
     // by je soubor uměl zapnout, ale formulář ani ukázat, ani vypnout.
     //
-    // `fraction-sums` chybí z tvrdšího důvodu: výsledek šifry je kód políčka
-    // v mřížce a zlomek nemá kam ukázat, takže by ten generátor pro šifru
-    // nevyrobil ani jednu úlohu (`TaskRules.fractionResults`).
-    const { powers: _powers, 'fraction-sums': _sums, ...cipherMix } = mix
+    // Celá rodina „zlomek jako výsledek" chybí z tvrdšího důvodu: výsledek
+    // šifry je kód políčka v mřížce a zlomek nemá kam ukázat, takže by pro ni
+    // ty generátory nevyrobily ani jednu úlohu (`TaskRules.fractionResults`).
+    const {
+      powers: _powers,
+      'fraction-sums': _sums,
+      'fraction-products': _products,
+      'fraction-quotients': _quotients,
+      ...cipherMix
+    } = mix
     const config = defaultConfig('ZLOMEK', GRADE, 'payload-sifra')
     config.payload.generatorMix = cipherMix
     expect(parseCipherGridPayload(clone(config.payload))?.generatorMix).toEqual(cipherMix)

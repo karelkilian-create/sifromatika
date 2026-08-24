@@ -326,12 +326,12 @@ describe('formulář → konfigurace', () => {
 
   it('zaškrtnuté téma se propíše do vah, a to rovnoměrně', () => {
     const config = bingoModule.toConfig({ ...topics, arithmetic: true }, shared, 'temata-vahy')
-    expect(config.payload.generatorMix).toEqual({ arithmetic: 1, powers: 1 })
+    expect(config.payload.generatorMix).toEqual({ arithmetic: 12, powers: 12 })
   })
 
   it('téma, které ročník neumí, se nahradí počítáním', () => {
     const config = bingoModule.toConfig(topics, { ...shared, grade: 6 }, 'mocniny-v-sestce')
-    expect(config.payload.generatorMix).toEqual({ arithmetic: 1 })
+    expect(config.payload.generatorMix).toEqual({ arithmetic: 12 })
     expect(generateBingo(config).ok).toBe(true)
   })
 

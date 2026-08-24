@@ -38,6 +38,7 @@ export type SkillTag =
   | 'proc.sleva-navyseni'
   | 'zlom.cast-z-celku'
   | 'zlom.scitani-odcitani'
+  | 'zlom.nasobeni-deleni'
   | 'rov.chybejici-cislo'
   | 'rady.konstantni-krok'
   | 'rady.stridavy-krok'
@@ -199,11 +200,17 @@ export interface DifficultyProfile {
   /** Smí se objevit počítání s procenty (`25 % z 80`)? Od 7. ročníku. */
   percents: boolean
   /**
-   * Smí se objevit zlomek jako část celku (`3/4 z 80`)? Od 7. ročníku.
+   * Smí se objevit počítání se zlomky (`3/4 z 80`, ve hrách i `2/3 · 3/5`)?
+   * Od 7. ročníku.
    *
    * Šestá třída zlomky zavádí, ale počítá s nimi až sedmá. Sedí tím na
    * stejném ročníku jako `percents`, což odpovídá i tomu, že `1/4 z 80`
    * a `25 % z 80` je táž úloha dvěma zápisy.
+   *
+   * ⚠ Jeden příznak na celé téma, včetně násobení a dělení zlomků. Sedmá
+   *   třída je má v látce společně se společným jmenovatelem, takže vlastní
+   *   ročníková brána by neměla co dělit — a nový příznak v profilu je
+   *   navíc pole v uloženém `.sifra`.
    */
   fractions: boolean
 }
