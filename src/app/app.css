@@ -299,13 +299,25 @@ body {
 }
 
 /*
- * Co je uvnitř, řečené na jednom řádku. Samotný nadpis „Pokročilé nastavení
- * obsahu" neprozradí, že se za ním skrývají procenta a zlomky. Vyjmenovat
- * témata jménem nejde — každý ročník má jiná — takže jen tři kategorie.
+ * Důvod ke kliknutí, ne seznam obsahu. Do 24. 8. 2026 tu stál inventář
+ * („početní operace, témata příkladů, název listu") a **nestačil**: první
+ * uživatelka rámeček viděla a přesto neotevřela, protože nápověda vedle
+ * tvrdila „všechno ostatní má rozumný default" — tedy že klikat netřeba.
+ * Inventář proti tomu neměl co postavit.
  *
- * Slova sedí na to, co je uvnitř vidět: „Povolené operace" a „Témata“. Proto
- * ne „typy příkladů" — to popisuje témata, ne operace, a vedle „témat" by
- * vypadalo jako druhé jméno téhož.
+ * Věta proto říká stav („teď je zaškrtnuté všechno") a akci („vyber, co chceš
+ * procvičovat"). Formulace je Šárčina, ne moje — první nástřel zněl „vyber
+ * operace a témata, která se právě probírají" a Karel ho škrtl: učitel neřeší,
+ * co se probírá, ale co chce procvičit.
+ *
+ * ⚠ Vyjmenovat, co je uvnitř, se tím obětovalo schválně. „Operace" a „témata"
+ *   sedí na nadpisy uvnitř a napovídala by, kam učitel dorazí — ale krátká věta
+ *   jeho vlastními slovy zvítězila nad úplností. Nevracet zpátky bez důvodu.
+ *
+ * ⚠ Nezvýrazňovat kvůli tomuhle i nápovědu „Jak na to". Svítí-li všechno,
+ *   nesvítí nic — a nápověda je navíc obchvat: krabice, která říká, ať se
+ *   otevře jiná krabice. Rámeček tady míří rovnou na cíl.
+ *
  * Po otevření mizí, seznam si učitel přečte přímo.
  */
 .editor__advanced-lure {
