@@ -20,11 +20,14 @@ export function QuickGuide() {
 
       <ol className="guide__steps">
         <li>Vyber aktivitu — šifru, číselné řady, pexeso, domino nebo bingo.</li>
-        <li>Nastav ročník. Všechno ostatní má rozumný default, takže hotový list vidíš hned.</li>
+        <li>
+          Nastav ročník. Všechna témata jsou ve výchozím nastavení zaškrtnutá, takže hotový list
+          vidíš hned.
+        </li>
         <li>Doplň, co je pro aktivitu vlastní: tajenku u šifry, počet kartiček, kamenů či karet u her.</li>
         <li>
-          V <strong>Pokročilém nastavení</strong> zaškrtni typy příkladů. Nabízí se jen to, co
-          ročník opravdu umí — procenta se u čtvrťáka neobjeví.
+          V <strong>Pokročilém nastavení obsahu</strong> výběr změníš — odškrtneš, co se právě
+          neprobírá. Nabízí se jen to, co ročník opravdu umí: procenta se u čtvrťáka neobjeví.
         </li>
         <li>
           Nesedí ti konkrétní příklady? <strong>Jiná varianta</strong> vyrobí nové, se stejným
@@ -48,9 +51,12 @@ export function QuickGuide() {
           V tiskovém dialogu nech <strong>měřítko 100 %</strong> a vypni záhlaví a zápatí.
           Při „Přizpůsobit stránce" se kartičky vytisknou menší, než mají být.
         </li>
+        {/* Pravidlo o celém výsledku patří ŠIFŘE, ne matematice: výsledek je u ní kód políčka
+            v tabulce. Hry žádnou tabulku nemají, takže od 21. 8. 2026 vyjde i 2,5 a od
+            23. 8. i zlomek. Viz `TaskRules` v `core/model`. */}
         <li>
-          Výsledek každého příkladu je vždy kladné celé číslo. Desetinná čísla a procenta proto
-          patří do zadání, ne do výsledku.
+          U <strong>šifry</strong> je výsledek vždy kladné celé číslo — ukazuje na políčko
+          v tabulce. Ve hrách vyjde i 2,5 nebo 3/4.
         </li>
         <li>
           <strong>Diplom</strong> je druhá záložka nahoře. Stáhne se jako <code>.docx</code>{' '}
