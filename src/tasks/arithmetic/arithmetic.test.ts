@@ -363,3 +363,53 @@ describe('dělení ve druhé třídě', () => {
     expect(Math.max(...values)).toBeGreaterThan(10)
   })
 })
+
+/**
+ * Třetí třída má malou násobilku celou. Do verze 11 měla `[2, 3, 4, 5, 10]`,
+ * takže `3 · 7` vzniknout mohlo (druhý činitel se losuje z 1–10), ale součin
+ * dvou činitelů od šesti výš ani jednou — a to je hlavní obsah toho ročníku.
+ */
+describe('násobilka třetí třídy', () => {
+  it('umí i součin dvou činitelů od šesti výš', () => {
+    const rng = createRng('trojka-nasobilka')
+    const ctx = {
+      profile: gradeProfile(3),
+      mix: { mul: 1 } as Partial<Record<OperationTag, number>>,
+      usedExpressions: new Set<string>(),
+      rules: REQUIRE_WHOLE_RESULTS,
+    }
+    const texts: string[] = []
+    for (const target of [36, 42, 48, 49, 54, 56, 63, 64, 72, 81]) {
+      const task = arithmeticGenerator.generateForValue(target, ctx, rng)
+      expect(task, `cíl ${target}`).not.toBeNull()
+      if (task !== null) texts.push(task.prompt.text)
+    }
+    // Aspoň jeden z těch cílů se dá vyrobit JEN dvěma činiteli od šesti výš:
+    // 49 = 7 · 7 a 81 = 9 · 9 jinak nejdou.
+    expect(texts).toContain('7 · 7')
+    expect(texts).toContain('9 · 9')
+  })
+
+  it('dělení uvnitř nové násobilky', () => {
+    const rng = createRng('trojka-deleni')
+    const ctx = {
+      profile: gradeProfile(3),
+      mix: { div: 1 } as Partial<Record<OperationTag, number>>,
+      usedExpressions: new Set<string>(),
+      rules: REQUIRE_WHOLE_RESULTS,
+    }
+    const task = arithmeticGenerator.generateForValue(8, ctx, rng)
+    expect(task?.prompt.text).toMatch(/^\d+ : [2-9]$/u)
+  })
+
+  it('dělení mimo obor násobilek trojce zůstává', () => {
+    // Školákov to má ve 3. ročníku jako samostatný oddíl, takže `86 : 2 = 43`
+    // je tam v pořádku — na rozdíl od druhé třídy, kde platí strop na podíl.
+    const values = arithmeticGenerator.reachableValues(
+      gradeProfile(3),
+      { div: 1 },
+      REQUIRE_WHOLE_RESULTS,
+    )
+    expect(Math.max(...values)).toBeGreaterThan(10)
+  })
+})

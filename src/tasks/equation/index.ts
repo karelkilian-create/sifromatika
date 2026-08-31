@@ -54,6 +54,23 @@ const MAX_TERM = 100
  */
 const MAX_DECOMPOSITION_GRADE = 3
 
+/**
+ * Kolikrát nejvýš smí být druhý operand větší než hledané číslo.
+ *
+ * Zapsáno po zkušebním tisku 23. 8. 2026: na dominu z rovnic stálo
+ * `78 + ? = 80`. Úloha je správně, ale dítě u ní nepočítá — jen přečte
+ * rozdíl dvou skoro stejných čísel. Je to táž vada, jakou u odčítání
+ * opravila `GENERATOR_VERSION` 2 (`711 − 708 = 3`), jen z druhé strany:
+ * generátor hlídal, aby druhý operand nebyl 0 ani 1, ale ne jeho poměr
+ * k hledanému číslu.
+ *
+ * Desetinásobek je řád. `78 + ? = 80` vypadne (2 proti 78),
+ * `99 + ? = 1000` zůstane (901 proti 99). Naměřeno na 2160 úlohách: takhle
+ * vadných byla zhruba jedna kartička na čtyři až osm dvanáctikamenových
+ * domin.
+ */
+const MAX_OPERAND_RATIO = 10
+
 interface Shape {
   id: string
   /** Kde chybí číslo — určuje i to, jak se úloha napíše. */
@@ -165,7 +182,9 @@ const SHAPES: readonly Shape[] = [
       step: `${formatValue(target * other)} : ${other} = ${formatValue(target)}`,
     }),
     operations: ['mul', 'div'],
-    minGrade: 4,
+    // Obrácená násobilka je látka třetí třídy — Školákov má „Procvičování
+    // násobilky a dělení" u každé řady od šestky výš (31. 8. 2026).
+    minGrade: 3,
     effort: 3,
   },
   {
@@ -179,7 +198,7 @@ const SHAPES: readonly Shape[] = [
       }
     },
     operations: ['mul', 'div'],
-    minGrade: 4,
+    minGrade: 3,
     effort: 3,
   },
   {
@@ -190,7 +209,20 @@ const SHAPES: readonly Shape[] = [
       step: `${formatValue(target * other)} : ${other} = ${formatValue(target)}`,
     }),
     operations: ['mul', 'div'],
-    minGrade: 5,
+    /*
+     * `72 : ? = 9` do třetí třídy (Karel, 31. 8. 2026). Do té doby to byla
+     * pátá, takže se tenhle tvar ve trojce ani ve čtyřce neobjevil ani
+     * jednou ze 120 semínek.
+     *
+     * Čísla přitom zůstávají uvnitř malé násobilky — dítě si vybaví spoj,
+     * který zná, jen z druhé strany. Že je to nejtěžší ze sedmi tvarů, nese
+     * `effort`, ne ročníková brána.
+     *
+     * ⚠ Drží to pohromadě s plnou násobilkou ve trojce: operandy si tenhle
+     *   tvar bere z `multiplicationTables` (`operandPool` níž), takže bez ní
+     *   by uměl jen `? = 2` až `? = 5`.
+     */
+    minGrade: 3,
     effort: 4,
   },
   /*
@@ -303,10 +335,29 @@ function crossingAllowed(
   return shape.crossesTen === undefined || !shape.crossesTen(target, other)
 }
 
-/** Obě podmínky najednou. Ptá se na ně `optionsFor` i `reachableValues`. */
+/**
+ * Počítá u téhle rovnice dítě, nebo jen čte?
+ *
+ * `78 + ? = 80` projde oborem i tvarem, a přesto je to špatná úloha — viz
+ * `MAX_OPERAND_RATIO`. Poměr se měří k hledanému číslu, ne k číslu na pravé
+ * straně: ta je u součtu vždycky velká a nic by neodfiltrovala.
+ *
+ * ⚠ Rozkladové tvary tudy projdou samy: v `? · 10 + 7 = 47` je hledaná
+ *   čtyřka i sedmička jednociferná, takže poměr nikdy nepřekročí desítku.
+ *   Kdyby se pravidlo někdy zpřísnilo na „hledané číslo pod deset" (což byl
+ *   jeden z měřených tvarů vady), **musí se pro ně udělat výjimka** —
+ *   jednociferné hledané číslo je tam celý smysl úlohy, ne vada.
+ */
+function balanced(target: number, other: number): boolean {
+  return target * MAX_OPERAND_RATIO >= other
+}
+
+/** Všechny podmínky najednou. Ptá se na ně `optionsFor` i `reachableValues`. */
 function usable(target: number, other: number, shape: Shape, profile: DifficultyProfile): boolean {
   return (
-    fitsRange(target, other, shape, profile) && crossingAllowed(target, other, shape, profile)
+    fitsRange(target, other, shape, profile) &&
+    crossingAllowed(target, other, shape, profile) &&
+    balanced(target, other)
   )
 }
 

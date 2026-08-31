@@ -180,3 +180,65 @@ describe('equationGenerator', () => {
     expect(task?.value).toBe(12)
   })
 })
+
+/**
+ * `72 : ? = 9` do třetí třídy (Karel, 31. 8. 2026). Do verze 11 to byla pátá,
+ * takže se ten tvar ve trojce ani ve čtyřce neobjevil ani jednou.
+ */
+describe('obrácená násobilka od třetí třídy', () => {
+  const divisorShapes = (grade: Grade) =>
+    every(grade, ALL, 200).filter((task) => / : \? =/u.test(task.prompt.text))
+
+  it('tvar `a : ? = c` umí už trojka', () => {
+    expect(divisorShapes(3).length).toBeGreaterThan(0)
+  })
+
+  it('dvojka ho nedostane — ta dělí jen v oboru malé násobilky', () => {
+    expect(divisorShapes(2).length).toBe(0)
+  })
+
+  it('operandy bere z násobilky ročníku, takže trojka umí i dělitele 6–9', () => {
+    // Tohle je ta vazba, kvůli které nešlo posunout tvary bez plné násobilky:
+    // `operandPool` čte `multiplicationTables`.
+    const texts = every(3, ALL, 200).map((task) => task.prompt.text)
+    expect(texts.some((text) => /(^|\D)[6789] · \?|\? : [6789] =|: \? = [6789]$/u.test(text))).toBe(true)
+  })
+})
+
+/**
+ * Hledané číslo nesmí být řádově menší než druhý operand. `78 + ? = 80` je
+ * správně, ale dítě u něj nepočítá — jen přečte rozdíl dvou skoro stejných
+ * čísel. Čekalo to od 23. 8. 2026 na inkrement, který přijde stejně.
+ */
+describe('poměr hledaného čísla a operandu', () => {
+  /** Druhý operand ze zadání — to menší z čísel, která v něm stojí. */
+  const operandOf = (text: string) => Math.min(...(text.match(/\d+/gu) ?? []).map(Number))
+
+  it('nevyrobí úlohu, kde je hledané číslo desetkrát menší než operand', () => {
+    let checked = 0
+    for (const grade of [3, 4, 5, 7, 8] as Grade[]) {
+      for (const task of every(grade, ALL, 200)) {
+        // Rozklad je vyňatý schválně, viz test pod tímhle.
+        if (task.prompt.text.includes('· 10')) continue
+        checked++
+        expect(task.value * 10, `${grade}. tř.: ${task.prompt.text}`).toBeGreaterThanOrEqual(
+          operandOf(task.prompt.text),
+        )
+      }
+    }
+    expect(checked).toBeGreaterThan(100)
+  })
+
+  it('rozklad oprava nevypnula', () => {
+    // `? · 10 + 7 = 47` má hledané číslo jednociferné schválně — poznat v 47
+    // čtyři desítky je ta procvičovaná dovednost. Poměrem projde sám, protože
+    // druhý operand je jednociferný taky; výjimku nepotřebuje. ⚠ Kdyby se
+    // pravidlo zpřísnilo na „hledané číslo pod deset", tenhle test spadne
+    // jako první a je to správně.
+    const decompositions = every(2, ALL, 200).filter((task) => task.prompt.text.includes('· 10'))
+    expect(decompositions.length).toBeGreaterThan(0)
+    for (const task of decompositions) {
+      expect(task.value, task.prompt.text).toBeLessThanOrEqual(9)
+    }
+  })
+})

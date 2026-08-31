@@ -109,6 +109,36 @@
  *      zlomkový výsledek nedostane (`TaskRules.fractionResults`) a svůj mix
  *      si staví sama, s vlastními vahami. Ověřeno tím, že se z golden snímků
  *      přepsaly jen dva, oba herní.
+ * 12 — třetí třída dodělává malou násobilku. Tři změny, které jdou spolu
+ *      a jsou první od druhé třídy, které mění výstup už používaných
+ *      ročníků (rozhodnuto 31. 8. 2026, docs/navrh-treti-trida.md):
+ *
+ *      • **násobilka 6–9 do třetí třídy.** Do verze 11 tam stálo
+ *        `[2, 3, 4, 5, 10]`, tedy násobilka druhé třídy plus desítka. Druhý
+ *        činitel se losuje z 1–10, takže `3 · 7` vzniknout mohlo — ale
+ *        součin dvou činitelů od šesti výš ani jednou, protože ani jeden
+ *        nebyl v povolené řadě. Naměřeno nula ze 479 součinů na 200 listech.
+ *        Násobilka 6, 7, 8 a 9 je přitom hlavní obsah toho ročníku. Vedlejší
+ *        zisk: hláška o chudém poměru operací klesla z 18/200 na 8/200,
+ *        protože násobení trefí víc kódů políček.
+ *      • **tři rovnicové tvary o ročník až dva níž**: `a · ? = c`
+ *        a `? : b = c` ze čtvrté do třetí, `a : ? = c` (`72 : ? = 9`) z páté
+ *        rovnou do třetí. Ten poslední se do verze 11 ve třetí ani ve čtvrté
+ *        třídě neobjevil ani jednou ze 120 semínek. Drží to pohromadě
+ *        s násobilkou: operandy si ty tvary berou z `multiplicationTables`.
+ *      • **hledané číslo nesmí být řádově menší než druhý operand.**
+ *        `78 + ? = 80` je správně, ale dítě u něj nepočítá, jen přečte rozdíl
+ *        dvou skoro stejných čísel; táž vada, jakou u odčítání opravila
+ *        verze 2 (`711 − 708`). Čekalo to od 23. 8. 2026 na inkrement, který
+ *        přijde stejně. Rozkladové tvary (`? · 10 + 7 = 47`) jsou vyňaté —
+ *        tam je jednociferné hledané číslo celý smysl úlohy.
+ *
+ *      ⚠ Mění se tím obsah třetí, čtvrté a páté třídy, ale **přelosují se
+ *        listy všech ročníků včetně druhé**: `createRng` dostává
+ *        `${generatorVersion}|${seed}` ve všech pěti aktivitách. Uložené
+ *        `.sifra` a sdílené odkazy vytisknou jiný list a ohlásí nesouhlasící
+ *        kontrolní součet. Karel to 31. 8. odsouhlasil s tím, že uložené
+ *        listy zatím skoro nikdo nemá.
  */
-export const GENERATOR_VERSION = 11
+export const GENERATOR_VERSION = 12
 export const APP_VERSION = '0.1.0-dev'

@@ -96,12 +96,27 @@ export function gradeProfile(grade: Grade): DifficultyProfile {
         fractions: false,
       }
     case 3:
+      /*
+       * Třetí třída dodělává malou násobilku — rozhodnuto 31. 8. 2026,
+       * viz docs/navrh-treti-trida.md §3.
+       *
+       * Do té doby tu stálo `[2, 3, 4, 5, 10]`, tedy násobilka druhé třídy
+       * plus desítka. Druhý činitel se přitom losuje z 1 až 10, takže `3 · 7`
+       * vzniknout mohlo — ale **součin dvou činitelů od šesti výš ani jednou**,
+       * protože ani jeden z nich nebyl v povolené řadě. Naměřeno: nula ze
+       * 479 součinů na 200 listech. Násobilka 6, 7, 8 a 9 je přitom hlavní
+       * obsah toho ročníku; Školákov jí věnuje čtyři samostatné oddíly.
+       *
+       * Obor zůstává do sta, ačkoli Školákov má ve trojce počítání do tisíce.
+       * Je to vědomé odložení: posun oboru položí trojku nad čtyřku a odtud
+       * se kaskáda nedá zastavit. Vlastní rozhodnutí, vlastní návrh — §7.
+       */
       return {
         grade,
         numberRange: { min: 0, max: 100 },
         allowNegatives: false,
         crossesTen: true,
-        multiplicationTables: [2, 3, 4, 5, 10],
+        multiplicationTables: [2, 3, 4, 5, 6, 7, 8, 9, 10],
         divisionExactOnly: true,
         maxOperands: 2,
         powers: false,
