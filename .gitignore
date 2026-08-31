@@ -38,3 +38,11 @@ ChatGPT_návrh.zip
 /*.png
 /*.sifra
 Screenshot_*
+
+# Vytištěné stránky Školákova, ze kterých se bere obsah ročníků.
+#
+# Nejde o velikost, ale o autorské právo: v patičce těch stránek stojí, že
+# přebírání obsahu je bez souhlasu autora zakázané, a Šifromatika je veřejný
+# repozitář pod MIT licencí. Odkaz a název souboru v návrhu na dohledání
+# stačí — viz docs/navrh-druha-trida.md a docs/navrh-treti-trida.md.
+/Matematika*.pdf
