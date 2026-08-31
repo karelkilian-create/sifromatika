@@ -40,6 +40,23 @@ export function cardGameProfile(profile: DifficultyProfile): DifficultyProfile {
 }
 
 /**
+ * Smí učitel u tohohle ročníku přepínat přechod přes desítku?
+ *
+ * Jen druhá třída. Školákov na té hranici dělí čtyři z šesti oddílů —
+ * „bez přechodu" je září, „s přechodem" je jaro — takže je to jediné pole
+ * profilu, kde jeden ročník potřebuje obojí. U trojky a výš je přechod dávno
+ * zvládnutá látka a zaškrtávátko by tam bylo šum.
+ *
+ * Je to funkce, a ne podmínka rozeseta po UI, protože se na totéž musí ptát
+ * tři místa: formulář (ukázat zaškrtávátko), `applyShared` (uložit volbu)
+ * a `parseDifficulty` (přečíst ji zpátky). Kdyby se rozešla, vznikl by
+ * neviditelný přepínač, který dál platí.
+ */
+export function crossesTenIsChoice(grade: Grade): boolean {
+  return grade === 2
+}
+
+/**
  * Výchozí profil pro ročník.
  *
  * Hodnoty odpovídají běžnému postupu na české ZŠ. Jsou to defaulty, ne dogma —
@@ -48,6 +65,36 @@ export function cardGameProfile(profile: DifficultyProfile): DifficultyProfile {
  */
 export function gradeProfile(grade: Grade): DifficultyProfile {
   switch (grade) {
+    case 2:
+      /*
+       * Druhá třída — obsah odpovídá tomu, co má pro 2. ročník Školákov
+       * (rozhodnuto 31. 8. 2026, viz docs/navrh-druha-trida.md).
+       *
+       * Od trojky se liší jedinou hodnotou, a je to úmysl: malá násobilka
+       * druhého ročníku končí u pětky. Desítka je látka třetí třídy, takže
+       * `6 · 10` tady nevznikne — desítky se ve dvojce zapisují rozkladem
+       * (`6 · 10 + 3`), což je vlastní téma s vlastním zaškrtávátkem.
+       *
+       * Obor je do sta, ne do dvaceti, ačkoli Školákov „do 20" jako etapu má.
+       * Výsledek je kód políčka a souřadnicová šifra počítá `řádek · 10 +
+       * sloupec`, takže platné kódy jsou 11–99; do dvaceti jich zbude devět,
+       * všechny v prvním řádku. Etapu „do 20" proto zastupuje `crossesTen`,
+       * který je u tohohle ročníku přepínatelný — a rozdíl mezi zářím
+       * a jarem je stejně on, ne horní mez oboru.
+       */
+      return {
+        grade,
+        numberRange: { min: 0, max: 100 },
+        allowNegatives: false,
+        crossesTen: true,
+        multiplicationTables: [2, 3, 4, 5],
+        divisionExactOnly: true,
+        maxOperands: 2,
+        powers: false,
+        decimals: 0,
+        percents: false,
+        fractions: false,
+      }
     case 3:
       return {
         grade,

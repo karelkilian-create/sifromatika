@@ -28,6 +28,7 @@ const shared: SharedEditorState = {
   grade: 5,
   title: 'Zkouška odkazu',
   operations: { add: true, sub: true, mul: true, div: false },
+  crossesTen: true,
 }
 
 function configOf(activity: ActivityId, overrides: Partial<SharedEditorState> = {}): ProjectConfig {

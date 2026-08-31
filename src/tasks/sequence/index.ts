@@ -90,6 +90,36 @@ function maxStep(profile: DifficultyProfile): number {
 }
 
 /**
+ * Kroky pro druhou třídu. Ne nižší strop, ale vlastní seznam.
+ *
+ * Vychází ze Školákova: „číselná řada" je krok po jedné, „vyhledávání
+ * a řazení násobků čísla 2 až 5" jsou kroky 2–5 a k tomu počítání po
+ * desítkách. Krok 7 mezi ně nepatří, přestože je menší než devítka, kterou
+ * by strop pustil.
+ *
+ * ⚠ Jednička existuje JEN tady. Ve vyšších ročnících by z řady udělala
+ *   počítání nahlas — a hlavně by přepsala výstup uložených seedů.
+ */
+const SECOND_GRADE_STEPS = [1, 2, 3, 4, 5, 10] as const
+
+function stepsFor(profile: DifficultyProfile): number[] {
+  return profile.grade <= 2 ? [...SECOND_GRADE_STEPS] : range(2, maxStep(profile))
+}
+
+/**
+ * Náhodný krok.
+ *
+ * ⚠ Pro vyšší ročníky je to bit po bitu totéž co dosavadní
+ *   `rng.int(2, maxStep(profile))`: `pick` je vnitřně `items[int(0, len − 1)]`
+ *   a nad souvislým rozsahem od dvojky dá tentýž výsledek za tentýž počet
+ *   dotazů na generátor. Kdyby to jednou přestalo platit, ohlásí to golden
+ *   testy — proto se sem nesahá „pro přehlednost".
+ */
+function randomStep(profile: DifficultyProfile, rng: Rng): number {
+  return rng.pick(stepsFor(profile))
+}
+
+/**
  * Podíly použitelné pro geometrickou řadu.
  *
  * Omezené na 2–5: čtvrtá mocnina šestky je 1296, takže se pětičlenná řada
@@ -107,11 +137,11 @@ const SHAPES: readonly Shape[] = [
   {
     id: 'step-up',
     operation: 'add',
-    minGrade: 3,
+    minGrade: 2,
     skill: 'rady.konstantni-krok',
     effort: 2,
-    variants: (profile) => range(2, maxStep(profile)).map((step) => [step]),
-    randomVariant: (profile, rng) => [rng.int(2, maxStep(profile))],
+    variants: (profile) => stepsFor(profile).map((step) => [step]),
+    randomVariant: (profile, rng) => [randomStep(profile, rng)],
     build(target, hidden, variant) {
       const step = variant[0]!
       return fill((index) => target + (index - hidden) * step)
@@ -120,11 +150,11 @@ const SHAPES: readonly Shape[] = [
   {
     id: 'step-down',
     operation: 'sub',
-    minGrade: 3,
+    minGrade: 2,
     skill: 'rady.konstantni-krok',
     effort: 2,
-    variants: (profile) => range(2, maxStep(profile)).map((step) => [step]),
-    randomVariant: (profile, rng) => [rng.int(2, maxStep(profile))],
+    variants: (profile) => stepsFor(profile).map((step) => [step]),
+    randomVariant: (profile, rng) => [randomStep(profile, rng)],
     build(target, hidden, variant) {
       const step = variant[0]!
       return fill((index) => target - (index - hidden) * step)

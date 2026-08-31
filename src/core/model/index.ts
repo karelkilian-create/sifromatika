@@ -22,6 +22,7 @@ export type SkillTag =
   | 'arit.odcitani-do-20'
   | 'arit.odcitani-do-100'
   | 'arit.prechod-pres-desitku'
+  | 'arit.desitky-jednotky'
   | 'arit.mala-nasobilka'
   | 'arit.deleni-beze-zbytku'
   | 'arit.deleni-se-zbytkem'
@@ -177,12 +178,19 @@ export interface CipherArtifact {
 // Konfigurace (serializovatelná — jde do .sifra i do URL)
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type Grade = 3 | 4 | 5 | 6 | 7 | 8 | 9
+export type Grade = 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
 
 export interface DifficultyProfile {
   grade: Grade
   numberRange: { min: number; max: number }
   allowNegatives: boolean
+  /**
+   * Smí sčítání a odčítání přecházet přes desítku (`18 + 5`, `23 − 7`)?
+   *
+   * ⚠ Jediné pole profilu, které si smí přepsat učitel — u druhé třídy je
+   *   z něj zaškrtávátko, protože právě tudy vede hranice mezi zářím
+   *   a jarem. Ukládá se jen `false`; viz `parseDifficulty`.
+   */
   crossesTen: boolean
   multiplicationTables: number[]
   divisionExactOnly: boolean

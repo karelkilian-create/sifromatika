@@ -34,6 +34,7 @@ const ALL_TOPICS: TopicSelection = {
   powers: true,
   fractions: true,
   equations: true,
+  decomposition: true,
 }
 
 /** Osmá třída umí ze všech ročníků nejvíc témat, takže prosívá nejšíř. */
@@ -98,5 +99,78 @@ describe('zaškrtnuté téma přežije cestu přes payload', () => {
       arithmetic: 3,
       fractions: 1,
     })
+  })
+})
+
+/**
+ * Rozklad na desítky a jednotky projde touž pastí obráceně: osmá třída ho
+ * neumí, takže by ho `ALL_TOPICS` výš z mixu vyhodila dřív, než se k parseru
+ * dostane. Druhá třída je jediné místo, kde se dá otestovat.
+ */
+describe('rozklad na desítky a jednotky přežije cestu přes payload', () => {
+  const SECOND: Grade = 2
+  const profile = gradeProfile(SECOND)
+  const { mix, clone } = payloadOf(profile)
+
+  it('formulář druhé třídy rozklad opravdu nabízí', () => {
+    expect(mix.decomposition).toBeGreaterThan(0)
+    expect(mix.percent).toBeUndefined()
+  })
+
+  it('pexeso', () => {
+    const config = defaultPexesoConfig(SECOND, 'payload-rozklad-pexeso', 12)
+    config.payload.generatorMix = mix
+    expect(parsePexesoPayload(clone(config.payload))?.generatorMix).toEqual(mix)
+  })
+
+  it('domino', () => {
+    const config = defaultDominoConfig(SECOND, 'payload-rozklad-domino', 12)
+    config.payload.generatorMix = mix
+    expect(parseDominoPayload(clone(config.payload))?.generatorMix).toEqual(mix)
+  })
+
+  it('bingo', () => {
+    const config = defaultBingoConfig(SECOND, 'payload-rozklad-bingo', 12)
+    config.payload.generatorMix = mix
+    expect(parseBingoPayload(clone(config.payload))?.generatorMix).toEqual(mix)
+  })
+
+  it('šifra', () => {
+    const config = defaultConfig('ROZKLAD', SECOND, 'payload-rozklad-sifra')
+    config.payload.generatorMix = { arithmetic: 3, decomposition: 1 }
+    expect(parseCipherGridPayload(clone(config.payload))?.generatorMix).toEqual({
+      arithmetic: 3,
+      decomposition: 1,
+    })
+  })
+})
+
+/**
+ * Přechod přes desítku je jediné pole profilu, které se ze souboru přebírá.
+ * Zbytek se odvozuje z ročníku znovu, aby oprava defaultů dorazila i do
+ * dřív uložených aktivit.
+ */
+describe('přechod přes desítku v uloženém souboru', () => {
+  it('odškrtnutý přechod se u druhé třídy přečte zpátky', () => {
+    const config = defaultConfig('ZARI', 2, 'payload-prechod')
+    config.payload.difficulty = { ...config.payload.difficulty, crossesTen: false }
+    const parsed = parseCipherGridPayload(JSON.parse(JSON.stringify(config.payload)) as unknown)
+    expect(parsed?.difficulty.crossesTen).toBe(false)
+  })
+
+  it('u ročníku, kde to volba není, se ignoruje', () => {
+    // Jinak by soubor uměl zapnout stav, který formulář neumí ani ukázat,
+    // ani vypnout — táž past jako u mocnin v šifře.
+    const config = defaultConfig('PATA', 5, 'payload-prechod-petka')
+    config.payload.difficulty = { ...config.payload.difficulty, crossesTen: false }
+    const parsed = parseCipherGridPayload(JSON.parse(JSON.stringify(config.payload)) as unknown)
+    expect(parsed?.difficulty.crossesTen).toBe(true)
+  })
+
+  it('starší soubor bez toho pole dostane hodnotu z profilu', () => {
+    const config = defaultConfig('STARY', 2, 'payload-prechod-stary')
+    const raw = JSON.parse(JSON.stringify(config.payload)) as { difficulty: Record<string, unknown> }
+    delete raw.difficulty.crossesTen
+    expect(parseCipherGridPayload(raw)?.difficulty.crossesTen).toBe(true)
   })
 })

@@ -55,8 +55,10 @@ export interface TopicSelection {
   powers: boolean
   /** Zlomky (`3/4 z 80`, ve hrách i `1/2 + 1/4` a `2/3 · 3/5`). Od 7. ročníku. */
   fractions: boolean
-  /** Rovnice s chybějícím číslem (`? + 15 = 40`). Od 3. ročníku. */
+  /** Rovnice s chybějícím číslem (`? + 15 = 40`). Od 2. ročníku. */
   equations: boolean
+  /** Rozklad na desítky a jednotky (`3 · 10 + 7`). Do 3. ročníku. */
+  decomposition: boolean
 }
 
 /**
@@ -96,6 +98,7 @@ export function generatorMixFromTopics(
   if (usable.percents) mix.percent = TOPIC_WEIGHT
   if (usable.powers) mix.powers = TOPIC_WEIGHT
   if (usable.equations) mix.equation = TOPIC_WEIGHT
+  if (usable.decomposition) mix.decomposition = TOPIC_WEIGHT
   // Jedno zaškrtávátko, ČTYŘI generátory: `3/4 z 80`, `1/2 + 1/4`,
   // `2/3 · 3/5` a `1/2 : 1/4` jsou pro učitele jedno téma, ale každý musí mít
   // svou zásobu cílů — jinak by o poměru na listu rozhodovalo to, jak široký
@@ -138,6 +141,22 @@ export function profileForMix(
 }
 
 /**
+ * Nabízí se v tomhle ročníku rozklad na desítky a jednotky?
+ *
+ * Dvojka ho má jako látku, trojka jako opakování; od čtvrté třídy je rozklad
+ * čtení čísla, ne úloha. Je to jediné téma s mezí SHORA — ostatní s ročníkem
+ * přibývají.
+ *
+ * Funkce, ne podmínka na dvou místech: ptá se na to `usableTopics` i formulář,
+ * a kdyby se rozešly, zaškrtávátko by slibovalo téma, které se do mixu
+ * nedostane. Generátor si tutéž mez drží ještě jednou ve svém `supports` —
+ * ten je poslední pojistkou pro soubor z cizí ruky.
+ */
+export function decompositionAvailable(profile: DifficultyProfile): boolean {
+  return profile.grade <= 3
+}
+
+/**
  * Zaškrtnutá témata omezená na ta, která ročník opravdu umí.
  *
  * Potřebuje to i formulář, ne jen převod na konfiguraci: zaškrtnutá „Procenta"
@@ -153,10 +172,15 @@ export function usableTopics(topics: TopicSelection, profile: DifficultyProfile)
     percents: topics.percents && profile.percents,
     powers: topics.powers && profile.powers,
     fractions: topics.fractions && profile.fractions,
-    // Žádná mez ročníku: chybějící číslo je látka od třetí třídy a zápis
-    // s otazníkem drží až do sedmé. `x` přijde s osmičkou a bude to tvar
-    // téhož generátoru, ne jiné téma.
+    // Žádná mez ročníku: chybějící číslo je látka od druhé třídy (`? + 5 = 13`)
+    // a zápis s otazníkem drží až do sedmé. `x` přijde s osmičkou a bude to
+    // tvar téhož generátoru, ne jiné téma.
+    //
+    // ⚠ Že tu mez není, musí krýt generátor: nejnižší `minGrade` v jeho
+    //   `SHAPES` je proto 2, ne 3. Kdyby byl vyšší než nejnižší nabízený
+    //   ročník, zaškrtávátko by tu slibovalo téma, ze kterého nic nevypadne.
     equations: topics.equations,
+    decomposition: topics.decomposition && decompositionAvailable(profile),
   }
 }
 
@@ -188,5 +212,6 @@ export function topicsFromGeneratorMix(
       enabled('fraction-products') ||
       enabled('fraction-quotients'),
     equations: enabled('equation'),
+    decomposition: enabled('decomposition'),
   }
 }

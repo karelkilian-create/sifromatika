@@ -739,3 +739,87 @@ describe('DoD 0.1 bod 7 — zmrazené bingo', () => {
     `)
   })
 })
+
+/**
+ * Druhá třída. Tři snímky, protože jsou to tři různé věci, které se od
+ * ostatních ročníků liší: obsah profilu, přepínatelný přechod přes desítku
+ * a rozklad na desítky a jednotky.
+ */
+describe('druhá třída', () => {
+  it('šifra pro 2. ročník — do sta a bez desítky v násobilce', () => {
+    expect(render(build('DVOJKA', 2, 'golden-dvojka'))).toMatchInlineSnapshot(`
+      "mřížka 9×9
+        1 | V O E J T U U A U
+        2 | S A A N B V N M S
+        3 | A O O S O V T A J
+        4 | J O I S D O L P S
+        5 | Z A S M O I K N P
+        6 | V N B M N U O R N
+        7 | C E N M Y V E O O
+        8 | V V U B E E H A U
+        9 | D N I S C Z V E I
+         1. 72 + 19 = 91
+         2. 72 − 46 = 26
+         3. 28 − 16 = 12
+         4. 8 + 33 = 41
+         5. 70 − 13 = 57
+         6. 2 · 9 = 18
+      součet d13aab4c"
+    `)
+  })
+
+  it('odškrtnutý přechod přes desítku list opravdu změní', () => {
+    const config = defaultConfig('DVOJKA', 2, 'golden-dvojka')
+    config.payload.difficulty = { ...config.payload.difficulty, crossesTen: false }
+    const outcome = generateCipherGrid(config)
+    if (!outcome.ok) throw new Error(outcome.reason)
+    expect(outcome.sheet.verification).toEqual({ ok: true })
+    expect(render(outcome.sheet)).toMatchInlineSnapshot(`
+      "mřížka 9×9
+        1 | K A V E J T U U U
+        2 | S A A N B V N M S
+        3 | A O O S O O V T A
+        4 | J J O I S D O L P
+        5 | S Z A S M O K I N
+        6 | P V N B M N U O R
+        7 | N C E N M Y V E O
+        8 | O V V U B E E H A
+        9 | D U N I S C Z V E
+         1. 30 + 61 = 91
+         2. 77 − 51 = 26
+         3. 4 · 9 = 36
+         4. 51 − 10 = 41
+         5. 36 + 21 = 57
+         6. 35 − 23 = 12
+      součet a2d2a54c"
+    `)
+  })
+
+  it('šifra z rozkladu na desítky a jednotky, 2. ročník', () => {
+    const config = defaultConfig('DESITKY', 2, 'golden-rozklad')
+    config.payload.generatorMix = { decomposition: 1 }
+    const outcome = generateCipherGrid(config)
+    if (!outcome.ok) throw new Error(outcome.reason)
+    expect(outcome.sheet.verification).toEqual({ ok: true })
+    expect(render(outcome.sheet)).toMatchInlineSnapshot(`
+      "mřížka 9×9
+        1 | N C K I D N C O N
+        2 | A A V I K L S Y Y
+        3 | I I G V S C I T A
+        4 | M S N K I T N I A
+        5 | N A N O T O E A A
+        6 | P Y O A E Y O P J
+        7 | V I A M T I N L T
+        8 | M K I N S I B J A
+        9 | L V O P T P V J K
+         1. 1 · 10 + 5 = 15
+         2. 6 · 10 + 5 = 65
+         3. 8 · 10 + 5 = 85
+         4. 3 · 10 + 1 = 31
+         5. 7 · 10 + 9 = 79
+         6. 4 · 10 + 4 = 44
+         7. 2 · 10 + 8 = 28
+      součet dca1b5f8"
+    `)
+  })
+})

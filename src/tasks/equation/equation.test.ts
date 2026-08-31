@@ -12,6 +12,7 @@ import type { Grade, OperationTag } from '../../core/model/index.js'
 import { ALLOW_DECIMAL_RESULTS, REQUIRE_WHOLE_RESULTS } from '../../core/model/index.js'
 import { createRng } from '../../core/rng/index.js'
 import { solveEquation, verifyTasks } from '../../core/verify/index.js'
+import { crossesTenOnAdd, crossesTenOnSub } from '../shapes.js'
 import { equationGenerator } from './index.js'
 
 const ALL: Partial<Record<OperationTag, number>> = { add: 1, sub: 1, mul: 1, div: 1 }
@@ -100,6 +101,72 @@ describe('equationGenerator', () => {
       const numbers = (task.prompt.text.match(/\d+/gu) ?? []).map(Number)
       expect(Math.min(...numbers), task.prompt.text).toBeLessThanOrEqual(100)
     }
+  })
+
+  it('druhá třída dostane obrácené sčítání, ne obrácené odčítání', () => {
+    // `? + 5 = 13` ano, `? − 5 = 8` až od trojky: obrátit odčítání je o krok
+    // dál. Kdyby se dvojce nedostalo ani jedno, měla by zaškrtnuté téma,
+    // ze kterého nic nevypadne.
+    const texts = every(2).map((task) => task.prompt.text)
+    expect(texts.length).toBeGreaterThan(0)
+    expect(texts.some((text) => /^\? \+ /u.test(text) || / \+ \? =/u.test(text))).toBe(true)
+    expect(texts.some((text) => /^\? −/u.test(text))).toBe(false)
+  })
+
+  it('rozklad s otazníkem je látka nejvýš třetí třídy', () => {
+    const decompositions = (grade: Grade) =>
+      every(grade, ALL, 200).filter((task) => task.prompt.text.includes('· 10'))
+    expect(decompositions(2).length).toBeGreaterThan(0)
+    expect(decompositions(4).length).toBe(0)
+    expect(decompositions(8).length).toBe(0)
+  })
+
+  it('u rozkladu s otazníkem je hledané číslo vždy jednociferné', () => {
+    // Otazník stojí na desítkách nebo na jednotkách, takže odpověď je 1 až 9.
+    // Větší cíl musí tvar odmítnout, jinak by generátor sliboval hodnotu,
+    // kterou nevyrobí.
+    for (const task of every(2, ALL, 200)) {
+      if (!task.prompt.text.includes('· 10')) continue
+      expect(task.value, task.prompt.text).toBeGreaterThanOrEqual(1)
+      expect(task.value, task.prompt.text).toBeLessThanOrEqual(9)
+    }
+  })
+
+  it('odškrtnutý přechod přes desítku platí i pro rovnice', () => {
+    // `? + 5 = 13` je sčítání s přechodem stejně jako `5 + 8`. Bez tohohle
+    // by list „pro září" vypadal správně jen v příkladech.
+    //
+    // Kontroluje se LEVÁ strana s dosazeným výsledkem, tedy to, co dítě
+    // opravdu počítá — ne tvar, který si generátor pamatuje.
+    const profile = { ...gradeProfile(2), crossesTen: false }
+    const rng = createRng('rovnice-bez-prechodu')
+    const targets = [...equationGenerator.reachableValues(profile, ALL, REQUIRE_WHOLE_RESULTS)]
+    expect(targets.length).toBeGreaterThan(0)
+
+    let checked = 0
+    for (const target of targets.slice(0, 80)) {
+      const task = equationGenerator.generateForValue(
+        target,
+        { profile, mix: ALL, usedExpressions: new Set<string>(), rules: REQUIRE_WHOLE_RESULTS },
+        rng,
+      )
+      if (task === null) continue
+
+      const left = task.prompt.text.split('=')[0]!.replace('?', String(task.value))
+      const parts = left.trim().split(' ')
+      if (parts.length !== 3) continue // rozklad má tři členy, ten přes desítku nejde
+      const [first, operator, second] = parts as [string, string, string]
+      const a = Number(first)
+      const b = Number(second)
+      if (operator === '+') {
+        expect(crossesTenOnAdd(a, b), task.prompt.text).toBe(false)
+        checked++
+      } else if (operator === '−') {
+        expect(crossesTenOnSub(a, b), task.prompt.text).toBe(false)
+        checked++
+      }
+    }
+    expect(checked).toBeGreaterThan(5)
   })
 
   it('ve hrách smí i desetinný cíl, pokud ho pravidla listu pustí', () => {

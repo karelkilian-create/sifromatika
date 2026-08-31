@@ -340,3 +340,26 @@ describe('arithmeticGenerator — mocniny a odmocniny (8. ročník)', () => {
     }
   })
 })
+
+/**
+ * Druhá třída dělí jen v oboru malé násobilky. `86 : 2 = 43` je matematicky
+ * správně, beze zbytku a v oboru do sta — ale je to dělení dvojciferného
+ * čísla mimo násobilku, tedy látka čtvrté třídy.
+ */
+describe('dělení ve druhé třídě', () => {
+  it('podíl zůstane jednociferný', () => {
+    const profile = gradeProfile(2)
+    const values = arithmeticGenerator.reachableValues(profile, { div: 1 }, REQUIRE_WHOLE_RESULTS)
+    expect(values.size).toBeGreaterThan(0)
+    expect(Math.max(...values)).toBeLessThanOrEqual(10)
+  })
+
+  it('vyšší ročníky si strop neberou — ty mají výstup zmrazený', () => {
+    const values = arithmeticGenerator.reachableValues(
+      gradeProfile(4),
+      { div: 1 },
+      REQUIRE_WHOLE_RESULTS,
+    )
+    expect(Math.max(...values)).toBeGreaterThan(10)
+  })
+})

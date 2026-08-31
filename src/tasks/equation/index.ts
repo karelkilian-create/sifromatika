@@ -27,6 +27,7 @@ import type {
 import type { Rng } from '../../core/rng/index.js'
 import { formatValue } from '../../core/number/index.js'
 import { evaluateExpression } from '../../core/verify/index.js'
+import { crossesTenOnAdd, crossesTenOnSub } from '../shapes.js'
 
 /**
  * Nejmenší druhý operand. Jednička je vyloučená schválně: `? · 1 = 7`
@@ -44,6 +45,15 @@ const MIN_OPERAND = 2
  */
 const MAX_TERM = 100
 
+/**
+ * Poslední ročník s rozkladovými tvary.
+ *
+ * Táž mez jako u samostatného tématu „Desítky a jednotky"
+ * (`decompositionAvailable` v `tasks/mix`), jen odsud se na ni nedá sáhnout:
+ * `tasks/mix` zná zaškrtávátka a generátor o nich vědět nemá.
+ */
+const MAX_DECOMPOSITION_GRADE = 3
+
 interface Shape {
   id: string
   /** Kde chybí číslo — určuje i to, jak se úloha napíše. */
@@ -51,7 +61,35 @@ interface Shape {
   /** Které operace se úlohy týkají: napsaná i ta, kterou dítě použije. */
   operations: OperationTag[]
   minGrade: number
+  /**
+   * Poslední ročník, kde se tvar smí objevit. Bez něj platí „až nahoru".
+   *
+   * Existuje kvůli rozkladu: `? · 10 + 7 = 47` je úloha o desítkách
+   * a jednotkách, tedy látka druhé třídy. V osmičce by to nebyla rovnice,
+   * ale hádanka o zápisu.
+   */
+  maxGrade?: number
   effort: number
+  /**
+   * Vlastní zásoba druhých operandů.
+   *
+   * Bez ní se pool odvodí z operací tvaru: násobilkové tvary dostanou
+   * činitele z profilu, ostatní čísla od `MIN_OPERAND` nahoru. Rozkladovým
+   * tvarům nesedí ani jedno — jejich druhý operand je CIFRA, ne činitel.
+   */
+  operands?: (profile: DifficultyProfile) => number[]
+  /**
+   * Přechází tahle rovnice přes desítku?
+   *
+   * Ptá se na to jen druhá třída s odškrtnutým přechodem — nikde jinde není
+   * `crossesTen` v profilu `false`. Tvary s násobením a dělením pole nemají:
+   * přechod přes desítku se u nich nesleduje ani v aritmetice.
+   *
+   * ⚠ Stačí JEDNA kontrola na tvar, ne obě strany rovnice. Když se `? + b = c`
+   *   sečte bez přechodu, odečte se `c − b` bez přechodu taky — jednotky
+   *   součtu jsou pak vždy aspoň tak velké jako jednotky sčítance.
+   */
+  crossesTen?: (target: number, other: number) => boolean
 }
 
 /**
@@ -70,8 +108,11 @@ const SHAPES: readonly Shape[] = [
       text: `? + ${other} = ${target + other}`,
       step: `${formatValue(target + other)} − ${other} = ${formatValue(target)}`,
     }),
+    crossesTen: (target, other) => crossesTenOnAdd(target, other),
     operations: ['add', 'sub'],
-    minGrade: 3,
+    // Od druhé třídy: `? + 5 = 13` je běžné cvičení druhého ročníku a bez něj
+    // by dvojka měla zaškrtnuté téma, ze kterého nic nevypadne.
+    minGrade: 2,
     effort: 2,
   },
   {
@@ -81,8 +122,9 @@ const SHAPES: readonly Shape[] = [
       text: `${other} + ? = ${target + other}`,
       step: `${formatValue(target + other)} − ${other} = ${formatValue(target)}`,
     }),
+    crossesTen: (target, other) => crossesTenOnAdd(target, other),
     operations: ['add', 'sub'],
-    minGrade: 3,
+    minGrade: 2,
     effort: 2,
   },
   {
@@ -95,7 +137,11 @@ const SHAPES: readonly Shape[] = [
         step: `${formatValue(target - other)} + ${other} = ${formatValue(target)}`,
       }
     },
+    crossesTen: (target, other) => crossesTenOnSub(target, other),
     operations: ['add', 'sub'],
+    // ⚠ Zůstává na trojce, i když dva tvary nad ním klesly na dvojku:
+    //   obrátit odčítání je o krok dál než obrátit sčítání a druhá třída má
+    //   z čeho brát i bez toho.
     minGrade: 3,
     effort: 3,
   },
@@ -106,6 +152,7 @@ const SHAPES: readonly Shape[] = [
       text: `${target + other} − ? = ${other}`,
       step: `${formatValue(target + other)} − ${other} = ${formatValue(target)}`,
     }),
+    crossesTen: (target, other) => crossesTenOnSub(target + other, other),
     operations: ['add', 'sub'],
     minGrade: 4,
     effort: 3,
@@ -146,6 +193,56 @@ const SHAPES: readonly Shape[] = [
     minGrade: 5,
     effort: 4,
   },
+  /*
+   * Rozklad s otazníkem — dva poslední tvary, a schválně na konci pole.
+   * `rng.pick` losuje podle indexu, takže vsunutí doprostřed by přepsalo
+   * výstup uložených seedů.
+   *
+   * Hledané číslo je v obou jednociferné, protože otazník stojí na desítkách
+   * nebo na jednotkách. Pro větší cíl tvar vrátí `null` a generátor sáhne po
+   * jiném — na kód 4 tedy vyjde `? · 10 + 7 = 47`, na kód 47 přímý rozklad
+   * z `tasks/decomposition`. Dávkuje se to samo, nic se nenastavuje.
+   *
+   * ⚠ Vypadá to jako vada „dítě odpověď jen přečte" — tady je to ale ta
+   *   procvičovaná dovednost: poznat v 47 čtyři desítky. Až se ten poměr
+   *   mezi hledaným číslem a operandem bude ladit, musí být oba tvary vyňaté.
+   */
+  {
+    id: 'missing-tens',
+    // ? · 10 + b = c
+    build: (target, other) => {
+      if (target < 1 || target > 9) return null // otazník je na desítkách
+      const whole = target * 10 + other
+      return {
+        text: `? · 10 + ${other} = ${whole}`,
+        step: `${formatValue(whole)} = ${formatValue(target)} · 10 + ${other}`,
+      }
+    },
+    operations: ['mul', 'add'],
+    minGrade: 2,
+    maxGrade: MAX_DECOMPOSITION_GRADE,
+    // Jednotky, tedy 1 až 9. Nula ne: `? · 10 + 0 = 40` je zápis, ne úloha.
+    operands: () => [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    effort: 3,
+  },
+  {
+    id: 'missing-units',
+    // a · 10 + ? = c
+    build: (target, other) => {
+      if (target < 1 || target > 9) return null // otazník je na jednotkách
+      const whole = other * 10 + target
+      return {
+        text: `${other} · 10 + ? = ${whole}`,
+        step: `${formatValue(whole)} = ${other} · 10 + ${formatValue(target)}`,
+      }
+    },
+    operations: ['mul', 'add'],
+    minGrade: 2,
+    maxGrade: MAX_DECOMPOSITION_GRADE,
+    // Desítky. Nula by dala `0 · 10 + ? = 7`, což o rozkladu neučí nic.
+    operands: () => [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    effort: 3,
+  },
 ]
 
 /** Prázdný mix znamená „všechny operace", stejně jako u aritmetiky. */
@@ -155,6 +252,7 @@ function shapeAllowed(
   mix: Partial<Record<OperationTag, number>>,
 ): boolean {
   if (profile.grade < shape.minGrade) return false
+  if (shape.maxGrade !== undefined && profile.grade > shape.maxGrade) return false
   const chosen = (['add', 'sub', 'mul', 'div'] as OperationTag[]).filter(
     (operation) => (mix[operation] ?? 0) > 0,
   )
@@ -166,6 +264,7 @@ function shapeAllowed(
  * spočítat jednou a projít pro každý cíl znovu — viz `reachableValues`.
  */
 function operandPool(shape: Shape, profile: DifficultyProfile): number[] {
+  if (shape.operands !== undefined) return shape.operands(profile)
   const ceiling = Math.min(MAX_TERM, profile.numberRange.max)
   const factors = profile.multiplicationTables.filter((factor) => factor >= MIN_OPERAND)
   return shape.operations.includes('mul')
@@ -188,11 +287,35 @@ function fitsRange(target: number, other: number, shape: Shape, profile: Difficu
 }
 
 /**
+ * Smí se přes desítku, nebo si to učitel odškrtl?
+ *
+ * Vrací `true` všude, kde profil přechod povoluje — tedy ve všech ročnících
+ * kromě druhé třídy s odškrtnutým zaškrtávátkem. Vyšší ročníky tím projdou
+ * beze změny chování.
+ */
+function crossingAllowed(
+  target: number,
+  other: number,
+  shape: Shape,
+  profile: DifficultyProfile,
+): boolean {
+  if (profile.crossesTen) return true
+  return shape.crossesTen === undefined || !shape.crossesTen(target, other)
+}
+
+/** Obě podmínky najednou. Ptá se na ně `optionsFor` i `reachableValues`. */
+function usable(target: number, other: number, shape: Shape, profile: DifficultyProfile): boolean {
+  return (
+    fitsRange(target, other, shape, profile) && crossingAllowed(target, other, shape, profile)
+  )
+}
+
+/**
  * Druhý operand pro daný tvar a cíl — všechny, ze kterých úloha zůstane
  * v oboru ročníku.
  */
 function optionsFor(target: number, shape: Shape, profile: DifficultyProfile): number[] {
-  return operandPool(shape, profile).filter((other) => fitsRange(target, other, shape, profile))
+  return operandPool(shape, profile).filter((other) => usable(target, other, shape, profile))
 }
 
 export const equationGenerator: TaskGenerator = {
@@ -218,7 +341,7 @@ export const equationGenerator: TaskGenerator = {
 
     for (let target = 1; target <= profile.numberRange.max; target++) {
       const reachable = shapes.some((shape, index) =>
-        pools[index]!.some((other) => fitsRange(target, other, shape, profile)),
+        pools[index]!.some((other) => usable(target, other, shape, profile)),
       )
       if (reachable) values.add(target)
     }

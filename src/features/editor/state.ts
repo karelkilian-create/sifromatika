@@ -38,6 +38,7 @@ export const INITIAL_EDITOR_STATE: EditorState = {
     grade: 4,
     title: '',
     operations: { add: true, sub: true, mul: true, div: true },
+    crossesTen: true,
   },
   byActivity: initialActivityStates(),
 }

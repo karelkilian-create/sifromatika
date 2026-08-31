@@ -7,8 +7,10 @@
  * příležitost, jak se rozejít v maličkosti.
  */
 
+import { crossesTenIsChoice } from '../core/constraints/index.js'
 import type {
   ActivityId,
+  DifficultyProfile,
   OperationTag,
   Project,
   ProjectConfig,
@@ -26,9 +28,10 @@ export function operationMix(
   return mix
 }
 
-/** Payload s váhami operací — společný jmenovatel všech dosavadních aktivit. */
-interface WithTaskMix {
+/** Payload se sdílenými poli — společný jmenovatel všech dosavadních aktivit. */
+interface WithSharedFields {
   taskMix: Partial<Record<OperationTag, number>>
+  difficulty: DifficultyProfile
 }
 
 /**
@@ -37,11 +40,16 @@ interface WithTaskMix {
  * Mutuje `config` schválně — dostává čerstvý objekt z `defaultConfig`, ne
  * cizí stav.
  */
-export function applyShared<Id extends ActivityId, P extends WithTaskMix>(
+export function applyShared<Id extends ActivityId, P extends WithSharedFields>(
   config: Project<Id, P>,
   shared: SharedEditorState,
 ): Project<Id, P> {
   config.payload.taskMix = operationMix(shared.operations)
+  // Ročníky, kde přechod přes desítku není volba, si nechají hodnotu
+  // z profilu. Odškrtnutí u druhé třídy se tak nepropíše do třetí, kterou si
+  // učitel zobrazí vzápětí — a po návratu na dvojku ho zas najde odškrtnuté,
+  // stejně jako zaškrtnutá témata.
+  if (crossesTenIsChoice(shared.grade)) config.payload.difficulty.crossesTen = shared.crossesTen
   const title = shared.title.trim()
   if (title !== '') config.title = title
   return config
@@ -54,6 +62,7 @@ export function sharedFromConfig(config: ProjectConfig): SharedEditorState {
 
   return {
     grade: payload.difficulty.grade,
+    crossesTen: payload.difficulty.crossesTen,
     title: config.title ?? '',
     operations: {
       add: enabled('add'),

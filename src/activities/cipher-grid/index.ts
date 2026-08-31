@@ -16,6 +16,7 @@ import type {
   CipherGridProject,
   CipherTable,
   Grade,
+  OperationTag,
   RelaxationLog,
   Task,
   VerificationReport,
@@ -98,6 +99,73 @@ function minimumPerOperation(taskCount: number, operationCount: number): number 
   return Math.max(1, Math.round(taskCount / operationCount / 2))
 }
 
+/** Všechny kódy, na které umí tahle tabulka ukázat. */
+function tableCodes(sheet: CipherGridSheet): number[] {
+  const scheme = cipherScheme(sheet.config.payload.cipher.strategy)
+  const { rows, cols } = sheet.table
+  const codes: number[] = []
+  for (let row = 1; row <= rows; row++) {
+    for (let col = 1; col <= cols; col++) {
+      codes.push(scheme.codeFor(row, col, rows, cols))
+    }
+  }
+  return codes
+}
+
+/**
+ * Umí vrstva úloh touhle operací trefit vůbec nějaké políčko?
+ *
+ * Ptáme se proto, že „chudý list" má dvě různé příčiny. Obvyklá je smůla na
+ * semínko a spraví ji Jiná varianta. Ta druhá je principiální: **druhá třída
+ * dělí jen v oboru malé násobilky**, takže podíl je jednociferný, kdežto kód
+ * políčka v souřadnicové tabulce začíná jedenáctkou. Dělení se na takový list
+ * nedostane nikdy — a nadávat na to i po šesti pokusech by znamenalo poslat
+ * učitele klikat na něco, co se stát nemůže.
+ *
+ * ⚠ Ptá se na CELÝ obor kódů tabulky, ne na kódy, které padly na tenhle list.
+ *   Jiné semínko rozmístí písmena jinam, takže „na tomhle listu to nešlo" je
+ *   pořád důvod zkusit další — jen „nejde to nikde" důvod není.
+ */
+function operationReachable(sheet: CipherGridSheet, operation: OperationTag): boolean {
+  const payload = sheet.config.payload
+  const generatorMix = payload.generatorMix ?? { arithmetic: 1 }
+  const generators = taskGenerators.filter(
+    (generator) => generator.supports(payload.difficulty) && (generatorMix[generator.id] ?? 0) > 0,
+  )
+  const codes = new Set(tableCodes(sheet))
+  return generators.some((generator) => {
+    const values = generator.reachableValues(
+      payload.difficulty,
+      { [operation]: 1 },
+      REQUIRE_WHOLE_RESULTS,
+    )
+    for (const value of values) {
+      if (codes.has(value)) return true
+    }
+    return false
+  })
+}
+
+/**
+ * Zaškrtnuté operace, které se na tenhle list vůbec mají jak dostat.
+ *
+ * Počítá se z nich i spravedlivý podíl: když dělení nemá kam ukázat, mají si
+ * list rozdělit zbylé tři operace, ne čtyři.
+ */
+function achievableOperations(sheet: CipherGridSheet): OperationTag[] {
+  const mix = sheet.config.payload.taskMix
+  const requested = ALL_OPERATIONS.filter((operation) => (mix[operation] ?? 0) > 0)
+  const operations = requested.length > 0 ? requested : ALL_OPERATIONS
+  // Levná cesta napřed: operace, která na listu JE, je zjevně dosažitelná
+  // a nemá smysl se na ni ptát generátorů. Dotaz stojí průchod celým oborem
+  // ročníku a v osmé třídě je to deset tisíc hodnot na generátor.
+  return operations.filter(
+    (operation) =>
+      sheet.slots.some((slot) => slot.task.didactic.operations.includes(operation)) ||
+      operationReachable(sheet, operation),
+  )
+}
+
 /**
  * O kolik úloh list nedosahuje na zvolený poměr operací. `0` = v pořádku.
  *
@@ -105,9 +173,8 @@ function minimumPerOperation(taskCount: number, operationCount: number): number 
  * procvičuje odčítání i násobení a do obou se má počítat.
  */
 function mixShortfall(sheet: CipherGridSheet): number {
-  const mix = sheet.config.payload.taskMix
-  const requested = ALL_OPERATIONS.filter((operation) => (mix[operation] ?? 0) > 0)
-  const operations = requested.length > 0 ? requested : ALL_OPERATIONS
+  const operations = achievableOperations(sheet)
+  if (operations.length === 0) return 0
   const minimum = minimumPerOperation(sheet.slots.length, operations.length)
 
   let shortfall = 0
@@ -137,9 +204,9 @@ function mixShortfall(sheet: CipherGridSheet): number {
  *    pravděpodobností spraví.
  */
 function mixNotice(sheet: CipherGridSheet): RelaxationLog {
-  const mix = sheet.config.payload.taskMix
-  const requested = ALL_OPERATIONS.filter((operation) => (mix[operation] ?? 0) > 0)
-  const operations = (requested.length > 0 ? requested : ALL_OPERATIONS).length
+  // Tytéž operace, ze kterých se počítal schodek — jinak by hláška počítala
+  // se čtyřmi operacemi tam, kde se na list mají jak dostat jen tři.
+  const operations = achievableOperations(sheet).length
   const tasks = sheet.slots.length
 
   if (tasks < operations) {

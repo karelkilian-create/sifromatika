@@ -27,6 +27,21 @@ export const SYMBOL: Record<OperationTag, string> = {
 
 export const MIN_OPERAND = 2
 
+/**
+ * Přechod přes desítku — didakticky zásadní hranice pro 2.–3. ročník.
+ *
+ * Sídlí to tady, a ne v aritmetice, protože se na to ptá i generátor rovnic:
+ * `? + 5 = 13` je sčítání s přechodem stejně jako `5 + 8`, a učitel, který si
+ * u druhé třídy přechod odškrtl, ho nesmí dostat ani v rovnici.
+ */
+export function crossesTenOnAdd(a: number, b: number): boolean {
+  return (a % 10) + (b % 10) >= 10
+}
+
+export function crossesTenOnSub(a: number, b: number): boolean {
+  return a % 10 < b % 10
+}
+
 export function inRange(value: number, profile: DifficultyProfile): boolean {
   return value >= MIN_OPERAND && value <= profile.numberRange.max
 }

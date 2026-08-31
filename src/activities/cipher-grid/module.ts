@@ -32,6 +32,8 @@ export interface CipherGridEditorState {
   fractions: boolean
   /** Míchat mezi příklady i rovnice s chybějícím číslem (`? + 15 = 40`). */
   equations: boolean
+  /** Míchat mezi příklady i rozklad na desítky a jednotky. Do 3. ročníku. */
+  decomposition: boolean
   distinctCellPerOccurrence: boolean
   printTitleOnWorksheet: boolean
 }
@@ -57,6 +59,7 @@ const initialState: CipherGridEditorState = {
   percents: true,
   fractions: true,
   equations: true,
+  decomposition: true,
   distinctCellPerOccurrence: true,
   printTitleOnWorksheet: false,
 }
@@ -89,6 +92,7 @@ export const cipherGridModule = {
     if (usable.percents) generatorMix.percent = 1
     if (usable.fractions) generatorMix.fractions = 1
     if (usable.equations) generatorMix.equation = 1
+    if (usable.decomposition) generatorMix.decomposition = 1
     // Sama aritmetika se zapisuje vahou 1, aby uložené soubory bez zpestření
     // vypadaly přesně jako dřív — jinak by se listu změnil obsah.
     config.payload.generatorMix =
@@ -107,6 +111,7 @@ export const cipherGridModule = {
       percents: (payload.generatorMix?.percent ?? 0) > 0,
       equations: (payload.generatorMix?.equation ?? 0) > 0,
       fractions: (payload.generatorMix?.fractions ?? 0) > 0,
+      decomposition: (payload.generatorMix?.decomposition ?? 0) > 0,
       distinctCellPerOccurrence: payload.cipher.distinctCellPerOccurrence,
       printTitleOnWorksheet: payload.output.printTitleOnWorksheet,
     }

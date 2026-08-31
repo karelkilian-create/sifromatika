@@ -16,6 +16,7 @@ const shared: SharedEditorState = {
   grade: 5,
   title: 'Zkouška paměti',
   operations: { add: true, sub: true, mul: false, div: true },
+  crossesTen: true,
 }
 
 function config(): ProjectConfig {

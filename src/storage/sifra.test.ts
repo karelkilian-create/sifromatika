@@ -78,6 +78,7 @@ describe('.sifra — uložení a načtení', () => {
           grade: 6,
           title: 'Lov pirátského pokladu',
           operations: { add: true, sub: false, mul: true, div: false },
+          crossesTen: true,
         },
         byActivity: {
           'cipher-grid': {
@@ -87,6 +88,7 @@ describe('.sifra — uložení a načtení', () => {
             percents: false,
             fractions: false,
             equations: false,
+            decomposition: false,
             distinctCellPerOccurrence: false,
             printTitleOnWorksheet: true,
           },
@@ -100,6 +102,7 @@ describe('.sifra — uložení a načtení', () => {
             powers: false,
             fractions: false,
             equations: false,
+            decomposition: false,
           },
           domino: {
             tileCount: 12,
@@ -110,6 +113,7 @@ describe('.sifra — uložení a načtení', () => {
             powers: false,
             fractions: false,
             equations: false,
+            decomposition: false,
           },
           bingo: {
             cardCount: 12,
@@ -120,6 +124,7 @@ describe('.sifra — uložení a načtení', () => {
             powers: false,
             fractions: false,
             equations: false,
+            decomposition: false,
           },
         },
       },
@@ -154,6 +159,7 @@ describe('.sifra — uložení a načtení', () => {
           grade: 5,
           title: 'Rozcvička na řady',
           operations: { add: true, sub: true, mul: false, div: false },
+          crossesTen: true,
         },
         byActivity: {
           ...INITIAL_EDITOR_STATE.byActivity,

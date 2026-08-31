@@ -10,7 +10,7 @@
  * o klamných písmenech nemá co dělat v listu číselných řad.
  */
 
-import { gradeProfile } from '../core/constraints/index.js'
+import { crossesTenIsChoice, gradeProfile } from '../core/constraints/index.js'
 import type {
   DifficultyProfile,
   Grade,
@@ -18,7 +18,7 @@ import type {
   OutputConfig,
 } from '../core/model/index.js'
 
-const GRADES: Grade[] = [3, 4, 5, 6, 7, 8, 9]
+const GRADES: Grade[] = [2, 3, 4, 5, 6, 7, 8, 9]
 const OPERATIONS: OperationTag[] = ['add', 'sub', 'mul', 'div']
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
@@ -52,14 +52,26 @@ export function parseGeneratorMix(raw: unknown, knownIds: readonly string[]): Re
  *
  * Odvozuje se ZNOVU, uložený profil se ignoruje. Kdyby se přebíral ze
  * souboru, oprava defaultů pro 4. třídu by se do dřív uložených aktivit
- * nikdy nepromítla — a učitel by nechápal proč. Až přijdou ruční úpravy
- * profilu, uloží se jako výslovný override.
+ * nikdy nepromítla — a učitel by nechápal proč.
+ *
+ * Jedinou výjimkou je přechod přes desítku u druhé třídy: tam je to volba
+ * učitele, ne default ročníku, a tichý návrat na „s přechodem" by mu list
+ * pro září přepsal na jarní. Je to ten výslovný override, se kterým tenhle
+ * komentář počítal od začátku.
+ *
+ * ⚠ Přebírá se jen `false`. Kdyby se ze souboru bralo i `true`, budoucí
+ *   změna defaultu ročníku by se do starších souborů nikdy nedostala —
+ *   tedy přesně to, čemu se odvozováním znovu předchází.
  */
 export function parseDifficulty(raw: unknown): DifficultyProfile | null {
   if (!isRecord(raw)) return null
   const grade = raw.grade
   if (typeof grade !== 'number' || !GRADES.includes(grade as Grade)) return null
-  return gradeProfile(grade as Grade)
+  const profile = gradeProfile(grade as Grade)
+  if (crossesTenIsChoice(profile.grade) && raw.crossesTen === false) {
+    return { ...profile, crossesTen: false }
+  }
+  return profile
 }
 
 /** Váhy operací. `null` = ani jedna povolená, což je neplatný stav. */

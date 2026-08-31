@@ -24,7 +24,15 @@ import type {
 } from '../../core/model/index.js'
 import type { Rng } from '../../core/rng/index.js'
 import { evaluateExpression } from '../../core/verify/index.js'
-import { MIN_OPERAND, POWER_SHAPES, SYMBOL, inRange, type CompoundShape } from '../shapes.js'
+import {
+  MIN_OPERAND,
+  POWER_SHAPES,
+  SYMBOL,
+  crossesTenOnAdd,
+  crossesTenOnSub,
+  inRange,
+  type CompoundShape,
+} from '../shapes.js'
 
 interface Operands {
   a: number
@@ -35,18 +43,6 @@ interface Operands {
 function enabledOperations(mix: Partial<Record<OperationTag, number>>): readonly OperationTag[] {
   const chosen = ALL_OPERATIONS.filter((op) => (mix[op] ?? 0) > 0)
   return chosen.length > 0 ? chosen : ALL_OPERATIONS
-}
-
-/**
- * Přechod přes desítku — didakticky zásadní hranice pro 2.–3. ročník.
- * Když ho profil nepovoluje, sčítání ani odčítání ho nesmí obsahovat.
- */
-function crossesTenOnAdd(a: number, b: number): boolean {
-  return (a % 10) + (b % 10) >= 10
-}
-
-function crossesTenOnSub(a: number, b: number): boolean {
-  return a % 10 < b % 10
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -95,6 +91,27 @@ function subCandidates(target: number, profile: DifficultyProfile): Operands[] {
   return out
 }
 
+/**
+ * Nejvyšší podíl, který se v dělení smí objevit.
+ *
+ * Druhá třída dělí jen v oboru malé násobilky (`40 : 5 = 8`). Bez tohohle
+ * stropu vyrobí generátor `86 : 2 = 43`: matematicky správně, v oboru do sta
+ * a beze zbytku — ale je to dělení dvojciferného čísla mimo násobilku, tedy
+ * látka čtvrté třídy. Ve druhé je podíl vždycky jednociferný.
+ *
+ * ⚠ Platí JEN pro dvojku. Vyšší ročníky mají výstup zmrazený v golden
+ *   snímcích a strop by jim ho přepsal — to je inkrement
+ *   `GENERATOR_VERSION`, ne oprava nového ročníku. Zda `86 : 2` patří do
+ *   třetí třídy, je samostatná otázka pro Karla.
+ *
+ * Důsledek, který je třeba mít na paměti: podíl do deseti se do souřadnicové
+ * šifry nevejde vůbec (kódy políček jsou 11–99). Dělení proto ve druhé třídě
+ * na souřadnicovém listu nebude, a `mixShortfall` na to nesmí nadávat.
+ */
+function maxQuotient(profile: DifficultyProfile): number {
+  return profile.grade <= 2 ? 10 : Number.POSITIVE_INFINITY
+}
+
 function mulCandidates(target: number, profile: DifficultyProfile): Operands[] {
   const out: Operands[] = []
   for (const table of profile.multiplicationTables) {
@@ -111,7 +128,7 @@ function mulCandidates(target: number, profile: DifficultyProfile): Operands[] {
 function divCandidates(target: number, profile: DifficultyProfile): Operands[] {
   const { max } = profile.numberRange
   const out: Operands[] = []
-  if (target < 1) return out
+  if (target < 1 || target > maxQuotient(profile)) return out
   for (const table of profile.multiplicationTables) {
     const dividend = target * table
     if (dividend > max) continue
@@ -190,6 +207,7 @@ function hasCandidate(
         (table) => target % table === 0 && target / table >= 1 && target / table <= 10,
       )
     case 'div':
+      if (target > maxQuotient(profile)) return false
       return target >= 1 && profile.multiplicationTables.some((table) => target * table <= max)
   }
 }

@@ -19,9 +19,15 @@ import {
   PAIR_COUNT_LIMITS,
   TASK_COUNT_LIMITS,
   TILE_COUNT_LIMITS,
+  crossesTenIsChoice,
   gradeProfile,
 } from '../../core/constraints/index.js'
-import { hasUsableTopic, usableTopics, type TopicSelection } from '../../tasks/mix.js'
+import {
+  decompositionAvailable,
+  hasUsableTopic,
+  usableTopics,
+  type TopicSelection,
+} from '../../tasks/mix.js'
 import { normalizeMessage, truncateToLetters } from '../../core/text/index.js'
 import type { EditorState } from './state.js'
 
@@ -309,6 +315,7 @@ export function EditorPanel({
             value={state.shared.grade}
             onChange={(event) => changeGrade(Number(event.target.value) as Grade)}
           >
+            <option value={2}>2. třída</option>
             <option value={3}>3. třída</option>
             <option value={4}>4. třída</option>
             <option value={5}>5. třída</option>
@@ -319,6 +326,20 @@ export function EditorPanel({
             <option value={8}>8. třída</option>
           </select>
         </label>
+
+        {/* Přechod přes desítku je volba jen u druhé třídy — tam vede hranice
+            mezi zářím a jarem. Jinde zaškrtávátko úplně mizí, ne zašedne:
+            stejné pravidlo jako u témat, která ročník neumí. */}
+        {crossesTenIsChoice(state.shared.grade) && (
+          <label className="checkbox">
+            <input
+              type="checkbox"
+              checked={state.shared.crossesTen}
+              onChange={() => patchShared({ crossesTen: !state.shared.crossesTen })}
+            />
+            Sčítání a odčítání s přechodem přes desítku
+          </label>
+        )}
 
         {/* Tlačítka drží pohromadě v jednom prvku, aby na telefonu mohla
             zůstat v řádku i ve chvíli, kdy se pole nad nimi skládají pod sebe. */}
@@ -439,6 +460,16 @@ export function EditorPanel({
                   />
                   Rovnice
                 </label>
+                {decompositionAvailable(profile) && (
+                  <label className="checkbox">
+                    <input
+                      type="checkbox"
+                      checked={cipher.decomposition}
+                      onChange={() => patchCipher({ decomposition: !cipher.decomposition })}
+                    />
+                    Desítky a jednotky
+                  </label>
+                )}
                 <p className="hint">
                   Řada („4 10 16 22 ?“), desetinná čísla („3,5 · 4“), procenta („25 % z 80“),
                   zlomky („3/4 z 80“) i rovnice („? + 15 = 40“) jsou samostatné volby
@@ -447,6 +478,12 @@ export function EditorPanel({
                   operaci má v sobě. Výsledek zůstává vždy celé číslo, protože je to kód políčka
                   v tabulce.
                 </p>
+                {decompositionAvailable(profile) && (
+                  <p className="hint">
+                    Desítky a jednotky („3 · 10 + 7“) se objeví i bez zaškrtnutého násobení —
+                    „· 10“ tu není násobilka, ale zápis desítek.
+                  </p>
+                )}
               </>
             ) : isCards ? (
               <>
@@ -519,6 +556,16 @@ export function EditorPanel({
                   />
                   Rovnice
                 </label>
+                {decompositionAvailable(profile) && (
+                  <label className="checkbox">
+                    <input
+                      type="checkbox"
+                      checked={topics.decomposition}
+                      onChange={() => toggleTopic('decomposition')}
+                    />
+                    Desítky a jednotky
+                  </label>
+                )}
                 {/*
                     Ukázka u KAŽDÉHO tématu, ne jen u mocnin. Bez ní se učitel
                     z názvu nedozví, co téma vyrobí — a u řad se navíc pletlo
@@ -539,10 +586,16 @@ export function EditorPanel({
                   {profile.fractions
                     ? ', zlomky („3/4 z 80“, „1/2 + 1/4“, „2/3 · 3/5“ i „1/2 : 1/4“)'
                     : ''}, rovnice
-                  s chybějícím číslem („? + 15 = 40“). Zaškrtnutá
+                  s chybějícím číslem („? + 15 = 40“)
+                  {decompositionAvailable(profile)
+                    ? ' a rozklad na desítky a jednotky („3 · 10 + 7“)'
+                    : ''}. Zaškrtnutá
                   témata se míchají rovnoměrně; necháte-li zaškrtnuté jediné, bude z něj celé{' '}
                   {isBingo ? 'bingo' : isDomino ? 'domino' : 'pexeso'}. Operace platí zároveň
-                  {profile.powers ? ', ale holé mocniny se objeví i bez nich' : ''}.
+                  {profile.powers ? ', ale holé mocniny se objeví i bez nich' : ''}
+                  {decompositionAvailable(profile)
+                    ? '; rozklad se objeví i bez zaškrtnutého násobení, „· 10“ je zápis desítek'
+                    : ''}.
                   {profile.decimals > 0 && (
                     <>
                       {' '}

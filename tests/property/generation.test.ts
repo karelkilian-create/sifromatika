@@ -44,9 +44,16 @@ const OPERATIONS: OperationTag[] = ['add', 'sub', 'mul', 'div']
 function randomConfig(rng: Rng, index: number): ProjectConfig {
   const wordCount = rng.int(1, 5)
   const message = Array.from({ length: wordCount }, () => rng.pick(WORDS)).join(' ')
-  const grade = rng.pick([3, 4, 5, 6, 7, 8]) as Grade
+  const grade = rng.pick([2, 3, 4, 5, 6, 7, 8]) as Grade
 
   const config = defaultConfig(message, grade, `prop-${index}`)
+
+  // Přechod přes desítku je volba jen u druhé třídy. Losuje se, protože
+  // odškrtnutý přechod ubere aritmetice kandidáty na každé políčko — a kdyby
+  // jich ubral tolik, že list nevznikne, musí to spadnout tady.
+  if (grade === 2 && rng.chance(0.5)) {
+    config.payload.difficulty = { ...config.payload.difficulty, crossesTen: false }
+  }
 
   const enabled = OPERATIONS.filter(() => rng.chance(0.6))
   const mix: Partial<Record<OperationTag, number>> = {}
@@ -144,7 +151,7 @@ describe('DoD 0.1 bod 6 — totéž pro list číselných řad', () => {
     let checked = 0
 
     for (let index = 0; index < 2_000; index++) {
-      const grade = rng.pick([3, 4, 5, 6, 7, 8]) as Grade
+      const grade = rng.pick([2, 3, 4, 5, 6, 7, 8]) as Grade
       const count = rng.int(TASK_COUNT_LIMITS.min, TASK_COUNT_LIMITS.max)
       const config = defaultSequenceSheetConfig(grade, `rady-${index}`, count)
 
@@ -186,7 +193,7 @@ describe('DoD 0.1 bod 6 — totéž pro list číselných řad', () => {
 describe('Invarianty nad libovolným vstupem', () => {
   it('nespadne ani na nesmyslné tajence', () => {
     fc.assert(
-      fc.property(fc.string(), fc.constantFrom(3, 4, 5, 6, 7, 8), fc.string({ minLength: 1 }), (message, grade, seed) => {
+      fc.property(fc.string(), fc.constantFrom(2, 3, 4, 5, 6, 7, 8), fc.string({ minLength: 1 }), (message, grade, seed) => {
         const outcome = generateCipherGrid(defaultConfig(message, grade as Grade, seed))
         if (outcome.ok) {
           expect(outcome.sheet.verification).toEqual({ ok: true })

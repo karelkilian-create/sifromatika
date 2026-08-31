@@ -146,7 +146,8 @@ Podrobněji:
 **Verze 0.1.** Použitelná: vytvoří list, ověří ho a vytiskne.
 
 Umí pět aktivit — šifru se souřadnicovou i lineární tabulkou, list číselných řad, pexeso,
-domino a bingo — pro **3. až 8. ročník**. Vedle čtyř základních operací zvládne pořadí operací a závorky,
+domino a bingo — pro **2. až 8. ročník**. Vedle čtyř základních operací zvládne rozklad na desítky
+a jednotky (`3 · 10 + 7`), pořadí operací a závorky,
 celá čísla, mocniny a odmocniny, desetinná čísla (`3,5 · 4`), procenta (`25 % z 80`),
 zlomky (`3/4 z 80`, ve hrách i `1/2 + 1/4`, `2/3 · 3/5` a `1/2 : 1/4`) a rovnice
 s chybějícím číslem (`? + 15 = 40`).

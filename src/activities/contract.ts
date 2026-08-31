@@ -61,6 +61,15 @@ export interface SharedEditorState {
   grade: Grade
   title: string
   operations: Record<OperationTag, boolean>
+  /**
+   * Smí sčítání a odčítání přecházet přes desítku?
+   *
+   * Sdílené pole, ne vlastnictví aktivity: učitel, který si u druhé třídy
+   * odškrtne přechod a přepne ze šifry na pexeso, musí najít odškrtnuto
+   * i tam. Projeví se jen u ročníků, kde je to volba
+   * (`crossesTenIsChoice`) — jinde platí hodnota z profilu.
+   */
+  crossesTen: boolean
 }
 
 /**

@@ -21,6 +21,7 @@ const GENERATORS = [
   'fraction-products',
   'fraction-quotients',
   'equation',
+  'decomposition',
 ]
 
 export function parseBingoPayload(raw: unknown): BingoConfig | null {

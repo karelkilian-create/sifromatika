@@ -306,6 +306,7 @@ describe('formulář → konfigurace', () => {
     grade: 8 as Grade,
     title: '',
     operations: { add: true, sub: true, mul: true, div: true },
+    crossesTen: true,
   }
 
   const topics = {
@@ -317,6 +318,7 @@ describe('formulář → konfigurace', () => {
     powers: true,
     fractions: false,
     equations: false,
+    decomposition: false,
   }
 
   it('zaškrtnuté téma se propíše do vah, a to rovnoměrně', () => {
@@ -371,6 +373,7 @@ describe('formulář → konfigurace', () => {
       powers: false,
       fractions: false,
       equations: false,
+      decomposition: false,
     })
   })
 })

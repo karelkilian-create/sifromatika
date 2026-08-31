@@ -408,3 +408,35 @@ describe('zaškrtnuté operace se na list opravdu dostanou', () => {
     }
   })
 })
+
+/**
+ * Druhá třída dělí jen v oboru malé násobilky, takže podíl je jednociferný —
+ * a kód políčka v souřadnicové tabulce začíná jedenáctkou. Dělení se tedy na
+ * takový list nemá jak dostat a hláška o chudém poměru operací na to nesmí
+ * nadávat: rada „zkus Jinou variantu" by poslala učitele klikat donekonečna.
+ */
+describe('generateCipherGrid — dělení ve druhé třídě', () => {
+  it('podíl mimo malou násobilku se neobjeví', () => {
+    for (let index = 0; index < 40; index++) {
+      const outcome = generateCipherGrid(defaultConfig('POKLAD JE U BAZÉNU', 2, `dvojka-deleni-${index}`))
+      if (!outcome.ok) continue
+      for (const slot of outcome.sheet.slots) {
+        const [, quotient] = /^(\d+) : (\d+)$/u.exec(slot.task.prompt.text) ?? []
+        if (quotient === undefined) continue
+        expect(slot.task.value, slot.task.prompt.text).toBeLessThanOrEqual(10)
+      }
+    }
+  })
+
+  it('nenadává na chudý poměr operací pokaždé', () => {
+    let thin = 0
+    for (let index = 0; index < 40; index++) {
+      const outcome = generateCipherGrid(defaultConfig('POKLAD JE U BAZÉNU', 2, `dvojka-hlaska-${index}`))
+      if (!outcome.ok) continue
+      if (outcome.sheet.relaxations.some((log) => log.code === 'operation-mix-thin')) thin++
+    }
+    // Bez ohledu na semínko by to bez opravy bylo 40 ze 40: dělení nemá kam
+    // ukázat, takže by schodek nikdy neklesl na nulu.
+    expect(thin).toBeLessThan(10)
+  })
+})

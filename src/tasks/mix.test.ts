@@ -11,7 +11,7 @@
 
 import { describe, expect, it } from 'vitest'
 import { gradeProfile } from '../core/constraints/index.js'
-import { generatorMixFromTopics, topicsFromGeneratorMix } from './mix.js'
+import { decompositionAvailable, generatorMixFromTopics, topicsFromGeneratorMix } from './mix.js'
 import type { TopicSelection } from './mix.js'
 
 const NOTHING: TopicSelection = {
@@ -22,6 +22,7 @@ const NOTHING: TopicSelection = {
   powers: false,
   fractions: false,
   equations: false,
+  decomposition: false,
 }
 
 /** Id, na která se rozpadá jedno zaškrtávátko „Zlomky". */
@@ -59,6 +60,7 @@ describe('generatorMixFromTopics', () => {
         powers: true,
         fractions: true,
         equations: true,
+        decomposition: true,
       },
       gradeProfile(7),
     )
@@ -90,5 +92,28 @@ describe('generatorMixFromTopics', () => {
     for (const id of FRACTION_IDS) {
       expect(topicsFromGeneratorMix({ [id]: 3 }).fractions, id).toBe(true)
     }
+  })
+})
+
+/**
+ * Rozklad na desítky a jednotky je jediné téma s mezí SHORA. Ostatní
+ * s ročníkem přibývají, tohle s ním mizí.
+ */
+describe('rozklad na desítky a jednotky', () => {
+  it('nabízí se do třetí třídy', () => {
+    expect(decompositionAvailable(gradeProfile(2))).toBe(true)
+    expect(decompositionAvailable(gradeProfile(3))).toBe(true)
+    expect(decompositionAvailable(gradeProfile(4))).toBe(false)
+  })
+
+  it('ve čtvrté třídě vypadne z mixu, i když zůstane zaškrtnutý', () => {
+    const topics = { ...NOTHING, arithmetic: true, decomposition: true }
+    expect(generatorMixFromTopics(topics, gradeProfile(2)).decomposition).toBeGreaterThan(0)
+    expect(generatorMixFromTopics(topics, gradeProfile(4)).decomposition).toBeUndefined()
+  })
+
+  it('váha se překládá tam i zpátky', () => {
+    expect(topicsFromGeneratorMix({ decomposition: 12 }).decomposition).toBe(true)
+    expect(topicsFromGeneratorMix({ arithmetic: 12 }).decomposition).toBe(false)
   })
 })

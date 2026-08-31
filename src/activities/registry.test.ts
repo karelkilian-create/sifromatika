@@ -36,6 +36,7 @@ const shared: SharedEditorState = {
   grade: 5,
   title: 'Zkouška registru',
   operations: { add: true, sub: true, mul: true, div: false },
+  crossesTen: true,
 }
 
 describe('katalog aktivit', () => {
@@ -147,18 +148,24 @@ describe('kontrakt aktivity', () => {
 
   /*
    * Osmý ročník schválně, ne pátý jako zbytek: výchozí stav má zaškrtnutá
-   * všechna témata a osmička je jediný ročník, který je všechna umí. V nižším
-   * by se neztratily kolečkem, ale ročníkem — a to je jiná věc, kterou hlídá
-   * test hned pod tímhle.
+   * všechna témata a osmička je z nich umí nejvíc. V nižším ročníku by se
+   * neztratily kolečkem, ale ročníkem — a to je jiná věc, kterou hlídá test
+   * hned pod tímhle.
+   *
+   * ⚠ Ročník, který umí všechna témata najednou, neexistuje: rozklad na
+   *   desítky a jednotky má mez SHORA (do 3. třídy), takže se s mocninami
+   *   nikde nepotká. V osmičce se proto poctivě ztratí a čeká se to.
    */
   it.each(ids)('%s: formulář → konfigurace → formulář nic neztratí', (id) => {
     const states = initialActivityStates()
     const osmicka: SharedEditorState = { ...shared, grade: 8 }
     const config = configFor(id, states, osmicka, 'registr-kolecko')
+    const slice = states[id] as unknown as Record<string, unknown>
+    const expected = 'decomposition' in slice ? { ...slice, decomposition: false } : slice
 
     expect(config.activity).toBe(id)
     expect(sharedFromConfig(config)).toEqual(osmicka)
-    expect(activityStateFromConfig(config)).toEqual({ [id]: states[id] })
+    expect(activityStateFromConfig(config)).toEqual({ [id]: expected })
   })
 
   /*
@@ -199,5 +206,53 @@ describe('kontrakt aktivity', () => {
   it.each(ids)('%s: tentýž seed dá tentýž kontrolní součet', (id) => {
     const config = configFor(id, initialActivityStates(), shared, 'registr-determinismus')
     expect(checksumForConfig(config)).toBe(checksumForConfig(config))
+  })
+})
+
+/**
+ * Přechod přes desítku je jediné pole profilu, které si nastavuje učitel.
+ * Sdílené pole proto musí platit u všech aktivit — a jen tam, kde je to volba.
+ */
+describe('přechod přes desítku napříč aktivitami', () => {
+  const dvojka: SharedEditorState = { ...shared, grade: 2, crossesTen: false }
+
+  /*
+   * Nejnižší ročník je nejtěsnější: obor do sta, násobilka do pětky a bez
+   * přechodu ještě míň kandidátů na každé políčko. Když z něj vyleze
+   * ověřený list ve všech aktivitách, vyleze i ze všech ostatních ročníků.
+   */
+  it.each(ids)('%s: druhá třída dá ověřený list i bez přechodu', (id) => {
+    for (const crossesTen of [true, false]) {
+      const run = runActivity(
+        id,
+        initialActivityStates(),
+        { ...dvojka, crossesTen },
+        `dvojka-${id}-${String(crossesTen)}`,
+      )
+      expect(run.outcome.ok, `${id}, přechod ${String(crossesTen)}`).toBe(true)
+      if (!run.outcome.ok) continue
+      expect(run.outcome.sheet.verification, `${id}, přechod ${String(crossesTen)}`).toEqual({
+        ok: true,
+      })
+      expect(run.document, `${id}, přechod ${String(crossesTen)}`).not.toBeNull()
+    }
+  })
+
+  it.each(ids)('%s: odškrtnutý přechod se propíše do profilu', (id) => {
+    const config = configFor(id, initialActivityStates(), dvojka, 'prechod-do-profilu')
+    expect(config.payload.difficulty.crossesTen).toBe(false)
+    expect(sharedFromConfig(config).crossesTen).toBe(false)
+  })
+
+  it.each(ids)('%s: u vyššího ročníku se odškrtnutí neprojeví', (id) => {
+    // Zaškrtávátko je vidět jen u dvojky. Kdyby volba platila i jinde, měl by
+    // učitel neviditelný přepínač, který mu ořezává list — a nenašel by ho.
+    const config = configFor(
+      id,
+      initialActivityStates(),
+      { ...dvojka, grade: 5 },
+      'prechod-mimo-dvojku',
+    )
+    expect(config.payload.difficulty.crossesTen).toBe(true)
   })
 })

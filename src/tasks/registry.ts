@@ -9,6 +9,7 @@
 import type { TaskGenerator } from '../core/model/index.js'
 import { arithmeticGenerator } from './arithmetic/index.js'
 import { decimalGenerator } from './decimal/index.js'
+import { decompositionGenerator } from './decomposition/index.js'
 import { equationGenerator } from './equation/index.js'
 import {
   fractionProductsGenerator,
@@ -37,6 +38,9 @@ export const taskGenerators: readonly TaskGenerator[] = [
   fractionProductsGenerator,
   fractionQuotientsGenerator,
   equationGenerator,
+  // ⚠ Na KONEC pole, ne doprostřed. Losuje se z něj podle indexu, takže
+  //   vsunutí mezi dosavadní generátory přepíše výstup uložených seedů.
+  decompositionGenerator,
 ]
 
 export function findTaskGenerator(id: string): TaskGenerator | undefined {
