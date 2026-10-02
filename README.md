@@ -149,8 +149,9 @@ Umí pět aktivit — šifru se souřadnicovou i lineární tabulkou, list čís
 domino a bingo — pro **2. až 8. ročník**. Vedle čtyř základních operací zvládne rozklad na desítky
 a jednotky (`3 · 10 + 7`), pořadí operací a závorky,
 celá čísla, mocniny a odmocniny, desetinná čísla (`3,5 · 4`), procenta (`25 % z 80`),
-zlomky (`3/4 z 80`, ve hrách i `1/2 + 1/4`, `2/3 · 3/5` a `1/2 : 1/4`) a rovnice
-s chybějícím číslem (`? + 15 = 40`).
+zlomky (`3/4 z 80`, ve hrách i `1/2 + 1/4`, `2/3 · 3/5` a `1/2 : 1/4`), rovnice
+s chybějícím číslem (`? + 15 = 40`) a od 3. ročníku věty s pojmy („Kolik je součin čísel
+6 a 7?“, „Které číslo je pětkrát menší než 40?“).
 K tomu klamná písmena, tisk, soubory `.sifra` a diplom ke stažení.
 
 Devátý ročník se schválně nenabízí: chybí mu rovnice a lomené výrazy, a dát deváťákovi

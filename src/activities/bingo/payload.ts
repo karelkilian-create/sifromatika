@@ -22,6 +22,9 @@ const GENERATORS = [
   'fraction-quotients',
   'equation',
   'decomposition',
+  'terms',
+  'terms-products',
+  'terms-quotients',
 ]
 
 export function parseBingoPayload(raw: unknown): BingoConfig | null {

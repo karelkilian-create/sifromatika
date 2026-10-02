@@ -56,6 +56,7 @@ const initialState: DominoEditorState = {
   fractions: true,
   equations: true,
   decomposition: true,
+  terms: true,
 }
 
 export const dominoModule = {

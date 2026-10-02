@@ -11,7 +11,12 @@
 
 import { describe, expect, it } from 'vitest'
 import { gradeProfile } from '../core/constraints/index.js'
-import { decompositionAvailable, generatorMixFromTopics, topicsFromGeneratorMix } from './mix.js'
+import {
+  decompositionAvailable,
+  generatorMixFromTopics,
+  termsAvailable,
+  topicsFromGeneratorMix,
+} from './mix.js'
 import type { TopicSelection } from './mix.js'
 
 const NOTHING: TopicSelection = {
@@ -23,6 +28,7 @@ const NOTHING: TopicSelection = {
   fractions: false,
   equations: false,
   decomposition: false,
+  terms: false,
 }
 
 /** Id, na která se rozpadá jedno zaškrtávátko „Zlomky". */
@@ -61,6 +67,7 @@ describe('generatorMixFromTopics', () => {
         fractions: true,
         equations: true,
         decomposition: true,
+        terms: true,
       },
       gradeProfile(7),
     )
@@ -115,5 +122,36 @@ describe('rozklad na desítky a jednotky', () => {
   it('váha se překládá tam i zpátky', () => {
     expect(topicsFromGeneratorMix({ decomposition: 12 }).decomposition).toBe(true)
     expect(topicsFromGeneratorMix({ arithmetic: 12 }).decomposition).toBe(false)
+  })
+})
+
+/**
+ * Věty s pojmy: jedno zaškrtávátko, tři rodiny — „o kolik“, násobení
+ * a dělení. Bez vlastních zásob by dělení na kartičkách skoro nebylo.
+ */
+describe('věty s pojmy', () => {
+  it('nabízí se od třetí třídy', () => {
+    expect(termsAvailable(gradeProfile(2))).toBe(false)
+    expect(termsAvailable(gradeProfile(3))).toBe(true)
+    expect(termsAvailable(gradeProfile(8))).toBe(true)
+  })
+
+  it('váha tématu se dělí mezi tři rodiny, nedostane ji každá celou', () => {
+    const mix = generatorMixFromTopics({ ...NOTHING, arithmetic: true, terms: true }, gradeProfile(3))
+    const terms = mix.terms! + mix['terms-products']! + mix['terms-quotients']!
+    expect(terms).toBe(mix.arithmetic)
+    expect(mix.terms).toBe(mix['terms-quotients'])
+  })
+
+  it('ve druhé třídě vypadne z mixu, i když zůstane zaškrtnuté', () => {
+    const mix = generatorMixFromTopics({ ...NOTHING, arithmetic: true, terms: true }, gradeProfile(2))
+    expect(Object.keys(mix)).toEqual(['arithmetic'])
+  })
+
+  it('kterákoli rodina v souboru znamená zaškrtnuté téma', () => {
+    for (const id of ['terms', 'terms-products', 'terms-quotients']) {
+      expect(topicsFromGeneratorMix({ [id]: 4 }).terms, id).toBe(true)
+    }
+    expect(topicsFromGeneratorMix({ arithmetic: 12 }).terms).toBe(false)
   })
 })

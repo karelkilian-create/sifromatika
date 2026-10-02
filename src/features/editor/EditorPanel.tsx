@@ -25,6 +25,7 @@ import {
 import {
   decompositionAvailable,
   hasUsableTopic,
+  termsAvailable,
   usableTopics,
   type TopicSelection,
 } from '../../tasks/mix.js'
@@ -37,6 +38,12 @@ function czechLetterWord(count: number): string {
   if (count >= 2 && count <= 4) return 'písmena'
   return 'písmen'
 }
+
+/**
+ * Popisek zaškrtávátka vět s pojmy. Vyjmenovává obsah, protože samotné
+ * „Matematické pojmy“ učiteli neřekne, co dostane.
+ */
+const TERMS_LABEL = 'Pojmy: součet, součin, o kolik, kolikrát'
 
 const OPERATION_LABELS: Record<OperationTag, string> = {
   add: 'Sčítání',
@@ -470,6 +477,16 @@ export function EditorPanel({
                     Desítky a jednotky
                   </label>
                 )}
+                {termsAvailable(profile) && (
+                  <label className="checkbox">
+                    <input
+                      type="checkbox"
+                      checked={cipher.terms}
+                      onChange={() => patchCipher({ terms: !cipher.terms })}
+                    />
+                    {TERMS_LABEL}
+                  </label>
+                )}
                 <p className="hint">
                   Řada („4 10 16 22 ?“), desetinná čísla („3,5 · 4“), procenta („25 % z 80“),
                   zlomky („3/4 z 80“) i rovnice („? + 15 = 40“) jsou samostatné volby
@@ -482,6 +499,14 @@ export function EditorPanel({
                   <p className="hint">
                     Desítky a jednotky („3 · 10 + 7“) se objeví i bez zaškrtnutého násobení —
                     „· 10“ tu není násobilka, ale zápis desítek.
+                  </p>
+                )}
+                {termsAvailable(profile) && (
+                  <p className="hint">
+                    Věty s pojmy („Kolik je součin čísel 6 a 7?“) se objeví, jen když jsou
+                    zaškrtnuté všechny operace, které dítě u věty použije. „Kolikrát“ a „pětkrát
+                    menší“ na šifře nebudou: vychází z nich číslo do deseti a kód políčka začíná
+                    jedenáctkou. Najdete je ve hrách.
                   </p>
                 )}
               </>
@@ -566,6 +591,16 @@ export function EditorPanel({
                     Desítky a jednotky
                   </label>
                 )}
+                {termsAvailable(profile) && (
+                  <label className="checkbox">
+                    <input
+                      type="checkbox"
+                      checked={topics.terms}
+                      onChange={() => toggleTopic('terms')}
+                    />
+                    {TERMS_LABEL}
+                  </label>
+                )}
                 {/*
                     Ukázka u KAŽDÉHO tématu, ne jen u mocnin. Bez ní se učitel
                     z názvu nedozví, co téma vyrobí — a u řad se navíc pletlo
@@ -588,8 +623,10 @@ export function EditorPanel({
                     : ''}, rovnice
                   s chybějícím číslem („? + 15 = 40“)
                   {decompositionAvailable(profile)
-                    ? ' a rozklad na desítky a jednotky („3 · 10 + 7“)'
-                    : ''}. Zaškrtnutá
+                    ? ', rozklad na desítky a jednotky („3 · 10 + 7“)'
+                    : ''}
+                  {termsAvailable(profile) ? ' a věty s pojmy („Kolik je součin čísel 6 a 7?“)' : ''}.
+                  Zaškrtnutá
                   témata se míchají rovnoměrně; necháte-li zaškrtnuté jediné, bude z něj celé{' '}
                   {isBingo ? 'bingo' : isDomino ? 'domino' : 'pexeso'}. Operace platí zároveň
                   {profile.powers ? ', ale holé mocniny se objeví i bez nich' : ''}

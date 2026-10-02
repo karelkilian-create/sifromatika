@@ -20,6 +20,7 @@ import type {
 } from '../model/index.js'
 import { REQUIRE_WHOLE_RESULTS } from '../model/index.js'
 import { fitsPlaces, formatValue, isPrintable, isWholeNumber, roundToPrintable } from '../number/index.js'
+import { readPhrase } from '../phrase/index.js'
 import { inferMissing, parseSequence, SequenceError } from '../sequence/index.js'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -766,6 +767,49 @@ function checkResultRules(
   return []
 }
 
+/**
+ * Ověření věty s matematickými pojmy („Kolik je součin čísel 6 a 7?“).
+ *
+ * Větu přečte `core/phrase` vlastní tabulkou pojmů. Věta mimo šablony je
+ * vada zápisu, ne neshoda výsledku: generátor napsal něco, čemu list
+ * nerozumí, a dítě by tomu nerozumělo taky.
+ */
+function verifyPhrase(slot: SheetSlot, label: string, rules: TaskRules): VerificationFailure[] {
+  const reading = readPhrase(slot.taskText)
+  if (reading.kind === 'unreadable') {
+    return [{ code: 'malformed-notation', message: `${label} nejde přečíst: ${reading.reason}.` }]
+  }
+  if (reading.kind === 'invalid') {
+    return [
+      {
+        code: 'task-value-mismatch',
+        message: `${label} nemá smysl: ${reading.reason}. Dítě by na ni nemělo co odpovědět.`,
+      },
+    ]
+  }
+
+  if (rules.maxPromptLength !== undefined && slot.taskText.length > rules.maxPromptLength) {
+    return [
+      {
+        code: 'prompt-too-long',
+        message: `${label} má ${slot.taskText.length} znaků a na kartičku se jich vejde ${rules.maxPromptLength}.`,
+      },
+    ]
+  }
+
+  const numeric = checkResultRules(reading.value, label, rules)
+  if (numeric.length > 0) return numeric
+
+  return reading.value === slot.declaredValue
+    ? []
+    : [
+        {
+          code: 'task-value-mismatch',
+          message: `${label} dává ${reading.value}, generátor tvrdí ${slot.declaredValue}.`,
+        },
+      ]
+}
+
 /** Přepočet jedné úlohy. Vrací prázdné pole, když je všechno v pořádku. */
 function verifySlot(
   slot: SheetSlot,
@@ -807,6 +851,10 @@ function verifySlot(
               },
             ]
     }
+  }
+
+  if (slot.kind === 'phrase') {
+    return verifyPhrase(slot, label, rules)
   }
 
   if (slot.kind === 'equation') {
@@ -973,6 +1021,10 @@ function readPrintedValue(text: string): number | null {
 /** Spočítá pravou půlku. `null` = nejde vyhodnotit nebo má víc řešení. */
 function computePrinted(text: string, kind: PromptNode['kind'] | undefined): number | null {
   if (kind === 'equation') return solveEquation(text)
+  if (kind === 'phrase') {
+    const reading = readPhrase(text)
+    return reading.kind === 'value' ? reading.value : null
+  }
   if (kind === 'sequence') {
     try {
       const inference = inferMissing(parseSequence(text))

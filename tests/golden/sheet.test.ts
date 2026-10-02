@@ -823,3 +823,101 @@ describe('druhá třída', () => {
     `)
   })
 })
+
+/**
+ * Věty s matematickými pojmy. Jediný druh zadání, který je česká věta,
+ * a ne výraz — a čte ho jiná čtečka (`core/phrase`) než všechno ostatní.
+ * Bez snímku by změna šablony nebo pořadí losování prošla nepozorovaně.
+ */
+/** Samotné pojmy tak, jak je pošle formulář her: tři rodiny, jedno téma. */
+const POJMY = generatorMixFromTopics(
+  {
+    arithmetic: false,
+    sequences: false,
+    decimals: false,
+    percents: false,
+    powers: false,
+    fractions: false,
+    equations: false,
+    decomposition: false,
+    terms: true,
+  },
+  gradeProfile(3),
+)
+
+describe('DoD 0.1 bod 7 — zmrazené pojmy', () => {
+  it('šifra s pojmy, 3. ročník', () => {
+    const config = defaultConfig('POJMY', 3, 'golden-pojmy')
+    config.payload.generatorMix = { arithmetic: 3, terms: 0.5, 'terms-products': 0.5 }
+    const outcome = generateCipherGrid(config)
+    if (!outcome.ok) throw new Error(outcome.reason)
+    expect(outcome.sheet.verification).toEqual({ ok: true })
+    expect(render(outcome.sheet)).toMatchInlineSnapshot(`
+      "mřížka 9×9
+        1 | C M O Y A I S H J
+        2 | M E M N N A H C N
+        3 | I J I A A R I A A
+        4 | O E V S S D T R D
+        5 | N A C K A O N A I
+        6 | N T J Y A O J P T
+        7 | V V S D N D R E O
+        8 | N O A M J E P Y A
+        9 | I N I C V D M I O
+         1. 13 + 55 = 68
+         2. Které číslo je o 3 menší než 82? = 79
+         3. 9 · 7 = 63
+         4. 46 : 2 = 23
+         5. 60 + 4 = 64
+      součet c6dd7d43"
+    `)
+  })
+
+  it('pexeso ze samých pojmů, 3. ročník', () => {
+    const config = defaultPexesoConfig(3, 'golden-pexeso-pojmy', 12)
+    config.payload.generatorMix = POJMY
+    const outcome = generatePexeso(config)
+    if (!outcome.ok) throw new Error(outcome.reason)
+    expect(outcome.sheet.verification).toEqual({ ok: true })
+    expect(renderPairs(outcome.sheet)).toMatchInlineSnapshot(`
+      "Pexeso — 3. třída
+         1. Kolikrát je podíl čísel 32 a 8 menší než jejich rozdíl? = 6
+         2. O kolik je rozdíl čísel 64 a 28 menší než jejich součet? = 56
+         3. Které číslo je osmkrát menší než 32? = 4
+         4. Kolik je součet čísel 26 a 61? = 87
+         5. Kolik je podíl čísel 30 a 3? = 10
+         6. Které číslo je o 6 menší než 89? = 83
+         7. Kolik je součin čísel 10 a 6? = 60
+         8. Kolik je rozdíl čísel 98 a 6? = 92
+         9. Kolik je součin čísel 9 a 9? = 81
+        10. Kolikrát je součin čísel 3 a 6 větší než jejich součet? = 2
+        11. O kolik je podíl čísel 70 a 7 menší než jejich rozdíl? = 53
+        12. Které číslo je o 26 větší než 63? = 89
+      součet 0b5d556d"
+    `)
+  })
+
+  /** Domino nesmí dostat porovnání dvou pojmů — na půlku kamene se nevejde. */
+  it('domino ze samých pojmů, 3. ročník', () => {
+    const config = defaultDominoConfig(3, 'golden-domino-pojmy', 12)
+    config.payload.generatorMix = POJMY
+    const outcome = generateDomino(config)
+    if (!outcome.ok) throw new Error(outcome.reason)
+    expect(outcome.sheet.verification).toEqual({ ok: true })
+    expect(renderTiles(outcome.sheet)).toMatchInlineSnapshot(`
+      "Domino — 3. třída
+         1. 9 | Kolik je podíl čísel 16 a 2?   (v kruhu 7.)
+         2. 86 | Které číslo je desetkrát větší než 2?   (v kruhu 3.)
+         3. 4 | Které číslo je třikrát menší než 9?   (v kruhu 9.)
+         4. 8 | Kolik je podíl čísel 40 a 10?   (v kruhu 8.)
+         5. 5 | Které číslo je osmkrát větší než 9?   (v kruhu 5.)
+         6. 20 | Které číslo je sedmkrát menší než 35?   (v kruhu 4.)
+         7. 10 | Které číslo je o 33 větší než 8?   (v kruhu 12.)
+         8. 72 | Kolik je podíl čísel 36 a 4?   (v kruhu 6.)
+         9. 7 | Kolik je součet čísel 3 a 83?   (v kruhu 2.)
+        10. 41 | Kolik je podíl čísel 35 a 5?   (v kruhu 1.)
+        11. 3 | Které číslo je dvakrát menší než 12?   (v kruhu 10.)
+        12. 6 | Kolik je podíl čísel 100 a 10?   (v kruhu 11.)
+      součet 947e31e1"
+    `)
+  })
+})

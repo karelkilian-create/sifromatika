@@ -89,6 +89,7 @@ describe('.sifra — uložení a načtení', () => {
             fractions: false,
             equations: false,
             decomposition: false,
+            terms: false,
             distinctCellPerOccurrence: false,
             printTitleOnWorksheet: true,
           },
@@ -103,6 +104,7 @@ describe('.sifra — uložení a načtení', () => {
             fractions: false,
             equations: false,
             decomposition: false,
+            terms: false,
           },
           domino: {
             tileCount: 12,
@@ -114,6 +116,7 @@ describe('.sifra — uložení a načtení', () => {
             fractions: false,
             equations: false,
             decomposition: false,
+            terms: false,
           },
           bingo: {
             cardCount: 12,
@@ -125,6 +128,7 @@ describe('.sifra — uložení a načtení', () => {
             fractions: false,
             equations: false,
             decomposition: false,
+            terms: false,
           },
         },
       },

@@ -48,7 +48,22 @@ export function MathText({ text }: { text: string }) {
   return <span className="math">{typeset(text)}</span>
 }
 
-function typeset(text: string) {
+/**
+ * Jednopísmenné předložky a spojky (`o`, `a`, `z`…) nesmí zůstat na konci
+ * řádku. Věta „Které číslo je o 11 větší než 69?“ se na kartičce pexesa
+ * zalomila za „o“ a česká sazba to nepřipouští.
+ *
+ * Nezlomitelná mezera se přidává až TADY, ne v generátoru: text úlohy se
+ * hashuje a verifikuje a mezera v něm má zůstat obyčejná.
+ */
+const ONE_LETTER_WORD = /(^|\s)([AIKOSUVZaikosuvz]) /gu
+
+function bindOneLetterWords(text: string): string {
+  return text.replace(ONE_LETTER_WORD, '$1$2\u00A0')
+}
+
+function typeset(raw: string) {
+  const text = bindOneLetterWords(raw)
   if (!text.includes('√') && !text.includes('/')) return text
 
   const parts: (string | ReactElement)[] = []

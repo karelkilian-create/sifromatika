@@ -20,6 +20,7 @@ import {
 import { percentGenerator } from './percent/index.js'
 import { powersGenerator } from './powers/index.js'
 import { sequenceGenerator } from './sequence/index.js'
+import { termProductsGenerator, termQuotientsGenerator, termsGenerator } from './terms/index.js'
 
 /**
  * ⚠ Samotné přidání generátoru do tohohle pole NESMÍ změnit výstup dosud
@@ -41,6 +42,10 @@ export const taskGenerators: readonly TaskGenerator[] = [
   // ⚠ Na KONEC pole, ne doprostřed. Losuje se z něj podle indexu, takže
   //   vsunutí mezi dosavadní generátory přepíše výstup uložených seedů.
   decompositionGenerator,
+  // Věty s pojmy: jedno zaškrtávátko, tři rodiny. Viz `familyGenerator`.
+  termsGenerator,
+  termProductsGenerator,
+  termQuotientsGenerator,
 ]
 
 export function findTaskGenerator(id: string): TaskGenerator | undefined {

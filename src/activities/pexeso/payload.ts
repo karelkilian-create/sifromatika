@@ -26,6 +26,9 @@ const GENERATORS = [
   'fraction-quotients',
   'equation',
   'decomposition',
+  'terms',
+  'terms-products',
+  'terms-quotients',
 ]
 
 export function parsePexesoPayload(raw: unknown): PexesoConfig | null {

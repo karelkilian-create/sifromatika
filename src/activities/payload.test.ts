@@ -35,6 +35,7 @@ const ALL_TOPICS: TopicSelection = {
   fractions: true,
   equations: true,
   decomposition: true,
+  terms: true,
 }
 
 /** Osmá třída umí ze všech ročníků nejvíc témat, takže prosívá nejšíř. */
@@ -80,11 +81,15 @@ describe('zaškrtnuté téma přežije cestu přes payload', () => {
     // Celá rodina „zlomek jako výsledek" chybí z tvrdšího důvodu: výsledek
     // šifry je kód políčka v mřížce a zlomek nemá kam ukázat, takže by pro ni
     // ty generátory nevyrobily ani jednu úlohu (`TaskRules.fractionResults`).
+    //
+    // Z vět s pojmy chybí dělení ze stejného důvodu: „pětkrát menší“ dává
+    // číslo do deseti a souřadnicový kód začíná jedenáctkou.
     const {
       powers: _powers,
       'fraction-sums': _sums,
       'fraction-products': _products,
       'fraction-quotients': _quotients,
+      'terms-quotients': _termQuotients,
       ...cipherMix
     } = mix
     const config = defaultConfig('ZLOMEK', GRADE, 'payload-sifra')

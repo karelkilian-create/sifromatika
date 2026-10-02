@@ -59,6 +59,8 @@ export interface TopicSelection {
   equations: boolean
   /** Rozklad na desítky a jednotky (`3 · 10 + 7`). Do 3. ročníku. */
   decomposition: boolean
+  /** Věty s pojmy (`Kolik je součin čísel 6 a 7?`). Od 3. ročníku. */
+  terms: boolean
 }
 
 /**
@@ -116,6 +118,16 @@ export function generatorMixFromTopics(
     mix['fraction-products'] = share
     mix['fraction-quotients'] = share
   }
+  // Věty s pojmy: totéž ze stejného důvodu. „Pětkrát menší“ a „kolikrát“
+  // dávají jen výsledky do deseti, součet a rozdíl celou stovku — s jedním
+  // id by z dvanácti kartiček nebyla dělení ani jedna. Viz `familyGenerator`
+  // v `tasks/terms`.
+  if (usable.terms) {
+    const share = TOPIC_WEIGHT / 3
+    mix.terms = share
+    mix['terms-products'] = share
+    mix['terms-quotients'] = share
+  }
   return Object.keys(mix).length > 0 ? mix : { arithmetic: TOPIC_WEIGHT }
 }
 
@@ -157,6 +169,21 @@ export function decompositionAvailable(profile: DifficultyProfile): boolean {
 }
 
 /**
+ * Nabízí se v tomhle ročníku věty s matematickými pojmy?
+ *
+ * Od trojky. Druhák čte slabikovaně a věta „O kolik je součet čísel 12 a 4
+ * větší než jejich rozdíl?“ by pro něj byla čtení, ne matematika. Shora meze
+ * není — ve vyšších ročnících je to opakování.
+ *
+ * Funkce ze stejného důvodu jako `decompositionAvailable`: ptá se formulář
+ * i `usableTopics` a nesmí se rozejít. Generátor si tutéž mez drží ve svém
+ * `supports`.
+ */
+export function termsAvailable(profile: DifficultyProfile): boolean {
+  return profile.grade >= 3
+}
+
+/**
  * Zaškrtnutá témata omezená na ta, která ročník opravdu umí.
  *
  * Potřebuje to i formulář, ne jen převod na konfiguraci: zaškrtnutá „Procenta"
@@ -181,6 +208,7 @@ export function usableTopics(topics: TopicSelection, profile: DifficultyProfile)
     //   ročník, zaškrtávátko by tu slibovalo téma, ze kterého nic nevypadne.
     equations: topics.equations,
     decomposition: topics.decomposition && decompositionAvailable(profile),
+    terms: topics.terms && termsAvailable(profile),
   }
 }
 
@@ -213,5 +241,6 @@ export function topicsFromGeneratorMix(
       enabled('fraction-quotients'),
     equations: enabled('equation'),
     decomposition: enabled('decomposition'),
+    terms: enabled('terms') || enabled('terms-products') || enabled('terms-quotients'),
   }
 }

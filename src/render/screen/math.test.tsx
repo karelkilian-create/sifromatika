@@ -26,7 +26,14 @@ describe('MathText', () => {
   })
 
   it('zachová mezeru mezi zlomkem a předložkou', () => {
-    expect(markup('3/4 z 80')).toContain('</span> z 80')
+    // Za `z` je nezlomitelná mezera, viz test o jednopísmenných slovech.
+    expect(markup('3/4 z 80')).toContain('</span> z\u00A080')
+  })
+
+  it('jednopísmenná předložka ani spojka nezůstane na konci řádku', () => {
+    expect(markup('Které číslo je o 11 větší než 69?')).toContain('je o\u00A011')
+    // Mezera PŘED spojkou zůstává obyčejná — tam se zalomit smí.
+    expect(markup('Kolik je součet čísel 47 a 7?')).toContain('47 a\u00A07')
   })
 
   it('zachová mezeru mezi odmocninou a operátorem', () => {

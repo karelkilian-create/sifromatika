@@ -41,6 +41,8 @@ export type SkillTag =
   | 'zlom.scitani-odcitani'
   | 'zlom.nasobeni-deleni'
   | 'rov.chybejici-cislo'
+  | 'pojm.nazvy-vysledku'
+  | 'pojm.o-kolik-kolikrat'
   | 'rady.konstantni-krok'
   | 'rady.stridavy-krok'
   | 'rady.rostouci-krok'
@@ -103,6 +105,15 @@ export type PromptNode =
    *   téhož generátoru, ne nový druh zadání.
    */
   | { kind: 'equation'; text: string }
+  /**
+   * Věta s matematickými pojmy: „Kolik je součin čísel 6 a 7?“.
+   *
+   * Zase jen text. Verifikace v něm pozná šablonu a spočítá ho vlastní
+   * tabulkou pojmů (`core/phrase`), ne tou, kterou má generátor.
+   *
+   * Rovnítko za větou nepatří — končí otazníkem.
+   */
+  | { kind: 'phrase'; text: string }
 
 export interface Task {
   id: string
@@ -464,6 +475,16 @@ export interface TaskRules {
    * zápisu a rozlišuje se deklarací, stejně jako `SheetSlot.kind`.
    */
   fractionResults: boolean
+  /**
+   * Nejvýš kolik znaků smí mít zadání. Chybí-li, délka se nehlídá.
+   *
+   * Týká se zatím jen vět (`PromptNode` druhu `phrase`): výraz se do
+   * kartičky vejde vždycky, kdežto „O kolik je součet čísel 12 a 4 větší
+   * než jejich rozdíl?“ má přes padesát znaků a na půlku dominového kamene
+   * se nevejde. Je to vlastnost LISTU, stejně jako pravidla o výsledku —
+   * a ptá se na ni generátor i verifikace ze stejného důvodu.
+   */
+  maxPromptLength?: number
 }
 
 /**
@@ -553,6 +574,11 @@ export interface VerificationFailure {
     | 'ambiguous-equation'
     /** Chybný matematický zápis, například dva operátory vedle sebe. */
     | 'malformed-notation'
+    /**
+     * Zadání je delší, než kolik unese kartička (`TaskRules.maxPromptLength`).
+     * Správně spočítané, ale na papíře by se rozlezlo přes okraj.
+     */
+    | 'prompt-too-long'
     /**
      * Výsledek není celé číslo, takže nemůže sloužit jako kód políčka.
      * Týká se úloh s desetinnými operandy: `0,3 · 7` dává 2,1.

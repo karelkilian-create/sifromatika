@@ -33,6 +33,8 @@ const GENERATORS = [
   'fractions',
   'equation',
   'decomposition',
+  'terms',
+  'terms-products',
 ]
 
 export function parseCipherGridPayload(raw: unknown): CipherGridConfig | null {

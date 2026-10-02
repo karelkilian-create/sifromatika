@@ -351,6 +351,7 @@ describe('formulář → konfigurace', () => {
     fractions: false,
     equations: false,
     decomposition: false,
+    terms: false,
   }
 
   it('zaškrtnuté téma se propíše do vah, a to rovnoměrně', () => {
@@ -381,6 +382,7 @@ describe('formulář → konfigurace', () => {
       fractions: false,
       equations: false,
       decomposition: false,
+      terms: false,
     })
   })
 })

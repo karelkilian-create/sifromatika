@@ -57,6 +57,7 @@ const initialState: PexesoEditorState = {
   fractions: true,
   equations: true,
   decomposition: true,
+  terms: true,
 }
 
 export const pexesoModule = {

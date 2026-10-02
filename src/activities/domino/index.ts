@@ -25,6 +25,7 @@ import type {
   Grade,
   RelaxationLog,
   Task,
+  TaskRules,
   VerificationFailure,
   VerificationReport,
 } from '../../core/model/index.js'
@@ -39,6 +40,20 @@ import {
 import { pickGenerator, profileForMix } from '../../tasks/mix.js'
 import { taskGenerators } from '../../tasks/registry.js'
 import { APP_VERSION, GENERATOR_VERSION } from '../../version.js'
+
+/**
+ * Co smí vyjít a co se vejde na půlku kamene.
+ *
+ * Výsledek jako u ostatních her. Navíc strop délky zadání: půlka měří 42 mm
+ * a sází se 16 pt, takže věta „Které číslo je čtyřikrát menší než 40?“ (38
+ * znaků) je na hraně a porovnání dvou pojmů („O kolik je součet čísel 12 a 4
+ * větší než jejich rozdíl?“, přes padesát) se nevejde. Čtyřicet ty dva druhy
+ * vět čistě odděluje — viz `docs/navrh-matematicke-pojmy.md` §6.
+ *
+ * ⚠ Výrazů ostatních témat se strop netýká: čte ho jen generátor vět
+ *   a verifikace ho hlídá jen u vět.
+ */
+const DOMINO_RULES: TaskRules = { ...ALLOW_DECIMAL_RESULTS, maxPromptLength: 40 }
 
 /**
  * Jeden kámen.
@@ -168,7 +183,7 @@ function generateOnce(config: DominoProject): DominoOutcome {
     pools.set(
       generator.id,
       rng.shuffle([
-        ...generator.reachableValues(difficulty, payload.taskMix, ALLOW_DECIMAL_RESULTS),
+        ...generator.reachableValues(difficulty, payload.taskMix, DOMINO_RULES),
       ]),
     )
   }
@@ -182,7 +197,7 @@ function generateOnce(config: DominoProject): DominoOutcome {
     profile: difficulty,
     mix: payload.taskMix,
     usedExpressions,
-    rules: ALLOW_DECIMAL_RESULTS,
+    rules: DOMINO_RULES,
   }
 
   const maxAttempts = payload.tileCount * 20
@@ -262,7 +277,7 @@ function generateOnce(config: DominoProject): DominoOutcome {
           })),
           // Celý výsledek je požadavek ŠIFRY (kód políčka v mřížce), ne
           // tohohle listu. Viz `TaskRules` v `core/model`.
-          ALLOW_DECIMAL_RESULTS,
+          DOMINO_RULES,
         ),
         verifyDistinctValues(tasks),
         // Z konstrukce výš to vyjít má; ověřuje se to stejně. Verifikace je

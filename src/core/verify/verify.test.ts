@@ -674,3 +674,81 @@ describe('rovnice s chybějícím číslem', () => {
     ).toEqual({ ok: true })
   })
 })
+
+describe('věty s matematickými pojmy', () => {
+  const slot = (taskText: string, declaredValue: number) => ({
+    taskText,
+    declaredValue,
+    kind: 'phrase' as const,
+  })
+  const codeOf = (report: ReturnType<typeof verifyTasks>) =>
+    report.ok ? null : report.failures[0]?.code
+
+  it('přečte každou šablonu', () => {
+    const cases: [string, number][] = [
+      ['Kolik je součet čísel 45 a 37?', 82],
+      ['Kolik je rozdíl čísel 45 a 37?', 8],
+      ['Kolik je součin čísel 6 a 7?', 42],
+      ['Kolik je podíl čísel 42 a 6?', 7],
+      ['O kolik je součet čísel 12 a 4 větší než jejich rozdíl?', 8],
+      ['O kolik je rozdíl čísel 12 a 4 menší než jejich součet?', 8],
+      ['Kolikrát je součet čísel 12 a 4 větší než jejich rozdíl?', 2],
+      ['Kolikrát je podíl čísel 8 a 2 menší než jejich součin?', 4],
+      ['Které číslo je o 7 větší než 35?', 42],
+      ['Které číslo je o 7 menší než 35?', 28],
+      ['Které číslo je pětkrát větší než 8?', 40],
+      ['Které číslo je pětkrát menší než 40?', 8],
+    ]
+    for (const [text, value] of cases) {
+      expect(verifyTasks([slot(text, value)], ALLOW_DECIMAL_RESULTS), text).toEqual({ ok: true })
+    }
+  })
+
+  it('pětkrát menší než 40 není 200 — přesně tahle záměna se procvičuje', () => {
+    const report = verifyTasks([slot('Které číslo je pětkrát menší než 40?', 200)], ALLOW_DECIMAL_RESULTS)
+    expect(codeOf(report)).toBe('task-value-mismatch')
+  })
+
+  it('o kolik a kolikrát se nezamění', () => {
+    // Součet 16, rozdíl 8: o 8 větší, ale jen dvakrát větší.
+    const text = 'Kolikrát je součet čísel 12 a 4 větší než jejich rozdíl?'
+    expect(codeOf(verifyTasks([slot(text, 8)], ALLOW_DECIMAL_RESULTS))).toBe('task-value-mismatch')
+  })
+
+  it('věta mimo šablony je vada zápisu, ne neshoda výsledku', () => {
+    const report = verifyTasks([slot('Jaký je součet čísel 45 a 37?', 82)], ALLOW_DECIMAL_RESULTS)
+    expect(codeOf(report)).toBe('malformed-notation')
+    expect(
+      codeOf(verifyTasks([slot('Které číslo je 5krát menší než 40?', 8)], ALLOW_DECIMAL_RESULTS)),
+    ).toBe('malformed-notation')
+  })
+
+  it('věta, která tvrdí nesmysl, neprojde', () => {
+    // Rozdíl, který by vyšel záporně, podíl se zbytkem, „větší“, které je menší.
+    for (const text of [
+      'Kolik je rozdíl čísel 3 a 5?',
+      'Kolik je podíl čísel 10 a 3?',
+      'O kolik je rozdíl čísel 12 a 4 větší než jejich součet?',
+      'Kolikrát je součet čísel 5 a 3 větší než jejich rozdíl?',
+      'Které číslo je pětkrát menší než 12?',
+      'Které číslo je o 50 menší než 20?',
+    ]) {
+      expect(codeOf(verifyTasks([slot(text, 1)], ALLOW_DECIMAL_RESULTS)), text).toBe('task-value-mismatch')
+    }
+  })
+
+  it('dlouhá věta se nevejde na kartičku, která má strop', () => {
+    const text = 'O kolik je součet čísel 12 a 4 větší než jejich rozdíl?'
+    const rules = { ...ALLOW_DECIMAL_RESULTS, maxPromptLength: 40 }
+    expect(codeOf(verifyTasks([slot(text, 8)], rules))).toBe('prompt-too-long')
+    expect(verifyTasks([slot(text, 8)], ALLOW_DECIMAL_RESULTS)).toEqual({ ok: true })
+  })
+
+  it('domino větu vyřeší, ne jen ověří', () => {
+    const report = verifyChain([
+      { left: '8', right: 'Kolik je součin čísel 6 a 7?', kind: 'phrase' },
+      { left: '42', right: 'Které číslo je pětkrát menší než 40?', kind: 'phrase' },
+    ])
+    expect(report).toEqual({ ok: true })
+  })
+})
