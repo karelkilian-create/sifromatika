@@ -418,6 +418,33 @@ a nesmí záviset na Reactu. Kandidát je `core/text`, vedle
 `CZECH_LETTER_WEIGHTS`, nebo vlastní `src/words/`. Tematické slovníky patří
 k příběhům. Rozhodne se při implementaci podle toho, co řekne `npm run arch`.
 
+### Kde je v aplikaci (Karel, 2. 10. 2026)
+
+**Navenek samostatná záložka „Úniková hra“ vedle „Pracovní listy“
+a „Diplom“, uvnitř aktivita v registru jako ostatní.**
+
+Do „Pracovních listů“ nepatří. Ta záložka slibuje pracovní list a list
+s řešením, kdežto únikovka vyrobí stanoviště, karty skupin, přehled pro
+učitele a zámek. Učitel ji navíc ve třídě spouští a řídí, nejen tiskne.
+Vlastní záložka je i přirozené místo pro upozornění na tabuli (§5), které
+učitel musí vidět dřív, než začne vyplňovat.
+
+Samostatná záložka ale **neznamená samostatnou aplikaci** jako u diplomu.
+Diplom má vlastní obrazovku, protože není aktivita (nemá seed, obtížnost
+ani řešení). Únikovka aktivita je a z registru dostane editor ročníku
+a operací, sdílení odkazem, `.sifra` i verifikaci. Mimo registr by se
+tohle všechno psalo podruhé.
+
+V kódu to znamená:
+
+- `AppView` v `App.tsx` dostane třetí hodnotu, `escape`, s vlastním
+  popiskem a podtitulem;
+- katalog v „Pracovních listech“ únikovku neukazuje a záložka „Úniková
+  hra“ neukazuje nic jiného. Rozlišení patří do záznamu aktivity
+  v registru, ne do `if (activity === 'escape')` v shellu;
+- sdílený odkaz a zapamatované nastavení s aktivitou `escape` otevřou
+  rovnou tuhle záložku.
+
 ### Zámek a kontrakt aktivity
 
 ⚠ Tohle je jediné místo, kde se návrh odchyluje od pravidla „přidání aktivity
