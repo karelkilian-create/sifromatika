@@ -139,6 +139,15 @@
  *        `.sifra` a sdílené odkazy vytisknou jiný list a ohlásí nesouhlasící
  *        kontrolní součet. Karel to 31. 8. odsouhlasil s tím, že uložené
  *        listy zatím skoro nikdo nemá.
+ *
+ *  Výjimka bez inkrementu (2. 10. 2026): porovnání dvou pojmů („O kolik je
+ *  součet čísel 12 a 4 větší než jejich rozdíl?“) až od 4. ročníku. Mění
+ *  listy s pojmy ve 3. ročníku, a to jen ty — téma bylo venku jediný den.
+ *  Inkrement by přelosoval všechny listy všech ročníků, tedy i odkazy,
+ *  které už ve třídách kolují. Dotčené odkazy na neshodu upozorní i tak:
+ *  `App.tsx` porovnává kontrolní součet, ne číslo verze. Karel to
+ *  odsouhlasil. Precedens to není — výjimka obstojí jen u změny, která
+ *  zasáhne listy, jež skoro nikdo nemá.
  */
 export const GENERATOR_VERSION = 12
 export const APP_VERSION = '0.1.0-dev'

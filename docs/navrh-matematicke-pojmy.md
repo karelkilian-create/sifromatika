@@ -196,3 +196,10 @@ nezlomitelnou mezeru. Text úlohy se nemění. Týká se to i `z` ve „3/4 z 80
 
 **Rozložení na kartičkách** (golden pexeso, 3. ročník): ve dvanácti
 dvojicích jsou všechny čtyři pojmy, „o kolik“, „kolikrát“ i „krát menší“.
+
+**Dodatek 2. 10. 2026 — typ 2 až od 4. ročníku.** Karel bod 2 z §9
+dorozhodl po prvním pohledu: porovnání dvou pojmů je dvoukroková úloha
+v souvětí přes padesát znaků a na třeťáka je to moc. Ve 3. ročníku
+zůstávají typy 1 a 3, tedy přesně záměna pojmů a „o kolik“ × „kolikrát“.
+Mez je `PAIR_MIN_GRADE` v `tasks/terms`. `GENERATOR_VERSION` zůstal 12
+jako vědomá výjimka, důvod je v historii v `src/version.ts`.

@@ -45,7 +45,7 @@ describe('věty s matematickými pojmy', () => {
   })
 
   it('každá ze dvanácti šablon vyrobí aspoň jednu větu', () => {
-    const texts = allTasks(3).map((task) => task.prompt.text)
+    const texts = allTasks(4).map((task) => task.prompt.text)
     const patterns = [
       /^Kolik je součet /u,
       /^Kolik je rozdíl /u,
@@ -109,8 +109,13 @@ describe('věty s matematickými pojmy', () => {
     }
   })
 
+  it('porovnání dvou pojmů až od čtvrté třídy', () => {
+    expect(allTasks(3).some((task) => task.prompt.text.includes('jejich'))).toBe(false)
+    expect(allTasks(4).some((task) => task.prompt.text.includes('jejich'))).toBe(true)
+  })
+
   it('porovnání dvou pojmů nese operace obou pojmů i vztahu', () => {
-    const task = allTasks(3).find((candidate) =>
+    const task = allTasks(4).find((candidate) =>
       /^Kolikrát je součet .* než jejich rozdíl/u.test(candidate.prompt.text),
     )
     expect(task?.didactic.operations).toEqual(['add', 'sub', 'div'])
@@ -131,7 +136,7 @@ describe('věty s matematickými pojmy', () => {
 
   it('strop délky zadání vyřadí porovnání dvou pojmů, nic jiného', () => {
     const rules = { ...ALLOW_DECIMAL_RESULTS, maxPromptLength: 40 }
-    const short = allTasks(3, ALL, rules)
+    const short = allTasks(4, ALL, rules)
     expect(short.length).toBeGreaterThan(0)
     for (const task of short) {
       expect(task.prompt.text.length).toBeLessThanOrEqual(40)
@@ -139,7 +144,7 @@ describe('věty s matematickými pojmy', () => {
     }
     // Strop nesmí sebrat žádnou jinou šablonu — jinak by domino přišlo o víc,
     // než se na kartičku nevejde.
-    const long = allTasks(3).filter((task) => !task.prompt.text.includes('jejich'))
+    const long = allTasks(4).filter((task) => !task.prompt.text.includes('jejich'))
     expect(long.every((task) => task.prompt.text.length <= 40)).toBe(true)
   })
 

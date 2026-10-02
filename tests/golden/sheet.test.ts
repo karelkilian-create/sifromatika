@@ -880,19 +880,19 @@ describe('DoD 0.1 bod 7 — zmrazené pojmy', () => {
     expect(outcome.sheet.verification).toEqual({ ok: true })
     expect(renderPairs(outcome.sheet)).toMatchInlineSnapshot(`
       "Pexeso — 3. třída
-         1. Kolikrát je podíl čísel 32 a 8 menší než jejich rozdíl? = 6
-         2. O kolik je rozdíl čísel 64 a 28 menší než jejich součet? = 56
+         1. Kolik je podíl čísel 54 a 9? = 6
+         2. Kolik je součet čísel 46 a 12? = 58
          3. Které číslo je osmkrát menší než 32? = 4
-         4. Kolik je součet čísel 26 a 61? = 87
-         5. Kolik je podíl čísel 30 a 3? = 10
-         6. Které číslo je o 6 menší než 89? = 83
+         4. Kolik je součet čísel 27 a 62? = 89
+         5. Kolik je podíl čísel 27 a 3? = 9
+         6. Které číslo je o 6 menší než 91? = 85
          7. Kolik je součin čísel 10 a 6? = 60
-         8. Kolik je rozdíl čísel 98 a 6? = 92
+         8. Kolik je rozdíl čísel 99 a 5? = 94
          9. Kolik je součin čísel 9 a 9? = 81
-        10. Kolikrát je součin čísel 3 a 6 větší než jejich součet? = 2
-        11. O kolik je podíl čísel 70 a 7 menší než jejich rozdíl? = 53
-        12. Které číslo je o 26 větší než 63? = 89
-      součet 0b5d556d"
+        10. Kolik je podíl čísel 14 a 2? = 7
+        11. Které číslo je o 27 větší než 28? = 55
+        12. Které číslo je o 26 větší než 65? = 91
+      součet 75621dc1"
     `)
   })
 
@@ -905,19 +905,19 @@ describe('DoD 0.1 bod 7 — zmrazené pojmy', () => {
     expect(outcome.sheet.verification).toEqual({ ok: true })
     expect(renderTiles(outcome.sheet)).toMatchInlineSnapshot(`
       "Domino — 3. třída
-         1. 9 | Kolik je podíl čísel 16 a 2?   (v kruhu 7.)
-         2. 86 | Které číslo je desetkrát větší než 2?   (v kruhu 3.)
-         3. 4 | Které číslo je třikrát menší než 9?   (v kruhu 9.)
+         1. 3 | Kolik je podíl čísel 16 a 2?   (v kruhu 7.)
+         2. 88 | Které číslo je desetkrát větší než 2?   (v kruhu 3.)
+         3. 4 | Které číslo je třikrát menší než 6?   (v kruhu 9.)
          4. 8 | Kolik je podíl čísel 40 a 10?   (v kruhu 8.)
          5. 5 | Které číslo je osmkrát větší než 9?   (v kruhu 5.)
          6. 20 | Které číslo je sedmkrát menší než 35?   (v kruhu 4.)
-         7. 10 | Které číslo je o 33 větší než 8?   (v kruhu 12.)
-         8. 72 | Kolik je podíl čísel 36 a 4?   (v kruhu 6.)
-         9. 7 | Kolik je součet čísel 3 a 83?   (v kruhu 2.)
-        10. 41 | Kolik je podíl čísel 35 a 5?   (v kruhu 1.)
-        11. 3 | Které číslo je dvakrát menší než 12?   (v kruhu 10.)
-        12. 6 | Kolik je podíl čísel 100 a 10?   (v kruhu 11.)
-      součet 947e31e1"
+         7. 9 | Které číslo je o 35 větší než 8?   (v kruhu 12.)
+         8. 72 | Kolik je podíl čísel 12 a 4?   (v kruhu 6.)
+         9. 10 | Kolik je součet čísel 3 a 85?   (v kruhu 2.)
+        10. 43 | Kolik je podíl čísel 50 a 5?   (v kruhu 1.)
+        11. 2 | Které číslo je dvakrát menší než 12?   (v kruhu 10.)
+        12. 6 | Kolik je podíl čísel 90 a 10?   (v kruhu 11.)
+      součet 7cc4c22b"
     `)
   })
 })

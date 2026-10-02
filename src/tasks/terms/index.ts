@@ -44,6 +44,16 @@ import { SYMBOL } from '../shapes.js'
 export const MIN_GRADE = 3
 
 /**
+ * Od kterého ročníku se porovnávají dva pojmy — „O kolik je součet čísel
+ * 12 a 4 větší než jejich rozdíl?“.
+ *
+ * Je to dvoukroková úloha schovaná v souvětí o padesáti znacích: spočítat
+ * dvě hodnoty a pak je porovnat. Třeťák má dost na tom, aby pojem přeložil
+ * na operaci a nespletl si „o kolik“ s „kolikrát“ (Karel, 2. 10. 2026).
+ */
+export const PAIR_MIN_GRADE = 4
+
+/**
  * Strop pro sčítání a odčítání, ve všech ročnících stejný. Předmětem je
  * slovo „součet“, ne počítání s tisíci.
  */
@@ -335,6 +345,7 @@ function build(profile: DifficultyProfile): Map<number, Candidate[]> {
         const candidate = single(term, a, b, profile)
         if (candidate !== null) all.push(candidate)
       }
+      if (profile.grade < PAIR_MIN_GRADE) continue
       for (const first of TERMS) {
         for (const second of TERMS) {
           if (first !== second) all.push(...pair(first, second, a, b, profile))
@@ -360,7 +371,7 @@ function build(profile: DifficultyProfile): Map<number, Candidate[]> {
 const cache = new Map<string, Map<number, Candidate[]>>()
 
 function catalogue(profile: DifficultyProfile): Map<number, Candidate[]> {
-  const key = `${ceiling(profile)}|${profile.multiplicationTables.join(',')}`
+  const key = `${ceiling(profile)}|${profile.multiplicationTables.join(',')}|${profile.grade >= PAIR_MIN_GRADE}`
   let built = cache.get(key)
   if (built === undefined) {
     built = build(profile)
