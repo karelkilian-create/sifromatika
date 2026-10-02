@@ -317,6 +317,24 @@ paměť prohlížeče. Žákovský odkaz bez řešení je potřeba až pro table
 Hra ve třídě nepotřebuje síť. Aplikace se načte jako dnes; pak už zámek
 nic nestahuje.
 
+### Upozornění před výběrem (Karel, 2. 10. 2026)
+
+Učitel se musí dozvědět, že hra potřebuje tabuli, **dřív, než si ji vybere**,
+ne až u tlačítka „Spustit zámek“ po vytištění. Jinak si hru připraví,
+vytiskne, a ve třídě zjistí, že ji nedohraje. Upozornění proto patří:
+
+- do popisku aktivity v katalogu (`ActivityInfo.tagline` nebo věta pod ním),
+- na začátek editoru únikové hry,
+- do „Jak na to“.
+
+Znění má říkat, co hra opravdu potřebuje: **obrazovku, kterou vidí celá
+třída, a počítač, na kterém se zadávají slova.** Interaktivní tabule je
+nejpohodlnější, ale stačí i projektor s počítačem, protože zámek ovládá
+i fyzická klávesnice. Napsat „jen pro interaktivní tabuli“ by odradilo
+i učitele, kteří hru odehrát můžou. Kdo nemá ani projektor, tomu zbývá
+hra napůl podle přehledu pro učitele (§12, bod 8), a upozornění to má
+říct jednou větou.
+
 ---
 
 ## 6. Příběh
