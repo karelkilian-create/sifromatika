@@ -51,7 +51,14 @@ osmáckou matematiku, ne pátou třídu s přelepeným číslem. Proto se devát
 nenabízí — chybí mu rovnice a lomené výrazy.
 
 Z toho plyne trojice trvalých závazků, které nejsou technická volba, ale součást vize:
-**běží celé v prohlížeči, bez účtu, a výstup je papír.**
+**běží celé v prohlížeči, bez účtu, a výstup je papír.** Obrazovka ve třídě smí papír
+doplnit, nikdy nahradit.
+
+Druhou větu přinesla úniková hra (2. 10. 2026): její zámek na tabuli je první výstup,
+který papír není — ale bez papíru se hrát nedá, protože slova, která děti do zámku
+zadávají, spočítaly na listech. Hra, která by šla odehrát bez papíru (tablety), tuhle
+hranici překračuje a je samostatné rozhodnutí. Viz
+[návrh únikové hry](docs/navrh-unikova-hra.md) §9.
 
 ## Jak vznikají nové moduly
 
