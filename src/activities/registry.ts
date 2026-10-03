@@ -19,14 +19,17 @@
  */
 
 import type { DocumentModel } from '../core/document/index.js'
+import type { ScreenModel } from '../core/screen/index.js'
 import type { ActivityId, ProjectBase, ProjectConfig } from '../core/model/index.js'
 import { bingoModule } from './bingo/module.js'
 import { cipherGridModule } from './cipher-grid/module.js'
 import { dominoModule } from './domino/module.js'
+import { escapeModule } from './escape/module.js'
 import { pexesoModule } from './pexeso/module.js'
 import { sequenceSheetModule } from './sequence-sheet/module.js'
 import type {
   ActivityInfo,
+  ActivitySection,
   ActivitySheet,
   AnyActivityModule,
   CatalogId,
@@ -34,7 +37,7 @@ import type {
   SharedEditorState,
 } from './contract.js'
 
-export type { ActivityInfo, CatalogId } from './contract.js'
+export type { ActivityInfo, ActivitySection, CatalogId } from './contract.js'
 
 export const activityModules = {
   'cipher-grid': cipherGridModule,
@@ -42,6 +45,7 @@ export const activityModules = {
   pexeso: pexesoModule,
   domino: dominoModule,
   bingo: bingoModule,
+  escape: escapeModule,
 } satisfies Record<ActivityId, AnyActivityModule>
 
 type ActivityModules = typeof activityModules
@@ -66,6 +70,16 @@ export const activityCatalog: readonly ActivityInfo[] = [
   ...Object.values(activityModules).map((module) => module.info),
   ...plannedActivities,
 ]
+
+/** Záložka, ve které aktivita žije. */
+export function sectionOf(id: ActivityId): ActivitySection {
+  return activityModules[id].info.section
+}
+
+/** Katalog jedné záložky. */
+export function catalogFor(section: ActivitySection): readonly ActivityInfo[] {
+  return activityCatalog.filter((activity) => activity.section === section)
+}
 
 export function isAvailableActivity(id: CatalogId): id is ActivityId {
   return activityCatalog.some((activity) => activity.id === id && activity.available)
@@ -94,6 +108,11 @@ export interface ActivityRun {
    * jak proklouznout do náhledu ani do tisku.
    */
   document: DocumentModel | null
+  /**
+   * Obrazovka ve třídě, nebo `null`, když ji aktivita nemá nebo se list
+   * nepovedl. Stejná brána jako u dokumentu: neověřená hra se nespustí.
+   */
+  screen: ScreenModel | null
 }
 
 /**
@@ -130,6 +149,7 @@ export function runActivity(
     config,
     outcome,
     document: outcome.ok && verified ? module.toDocument(outcome.sheet) : null,
+    screen: outcome.ok && verified && module.toScreen ? module.toScreen(outcome.sheet) : null,
   }
 }
 

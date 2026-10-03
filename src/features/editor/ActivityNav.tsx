@@ -10,7 +10,7 @@
  * porušila kliknutím do prázdna.
  */
 
-import { activityCatalog } from '../../activities/registry.js'
+import { catalogFor } from '../../activities/registry.js'
 import type { ActivityId } from '../../core/model/index.js'
 
 export interface ActivityNavProps {
@@ -22,7 +22,8 @@ export function ActivityNav({ value, onChange }: ActivityNavProps) {
   return (
     <nav className="activity-nav no-print" aria-label="Typ aktivity">
       <ul className="activity-nav__list">
-        {activityCatalog.map((activity) => {
+        {/* Únikovka má vlastní záložku, tady by slibovala pracovní list. */}
+        {catalogFor('worksheets').map((activity) => {
           const selected = activity.available && activity.id === value
           return (
             <li key={activity.id}>

@@ -33,6 +33,8 @@ function textOfBlock(block: DocumentBlock): string[] {
       return [block.text]
     case 'task-list':
       return block.items.map((item) => item.text)
+    case 'choice-list':
+      return block.items.flatMap((item) => [item.text, ...item.options.map((option) => option.text)])
     case 'table':
       return block.rows.flatMap((row) => [...row])
     case 'answer-row':

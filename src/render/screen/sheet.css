@@ -193,6 +193,59 @@
  * „18 + 6“) a sloupec na dvousloupcové A4 má jen asi 85 mm. Menší stupeň
  * a nezalomitelné zadání ji tam udrží vcelku; zalomená řada je nečitelná.
  */
+/*
+ * Výběr odpovědí. Pro druhou třídu: větší písmo a vzduch mezi řádky, aby
+ * šlo kroužkovat, a odpovědi ve sloupcích pod sebou.
+ */
+.choice-list {
+  display: grid;
+  grid-template-columns: 8mm auto repeat(3, 26mm);
+  /* Bez toho se sloupec se zadáním roztáhne přes celou šířku a odpovědi
+     odjedou ke kraji listu, daleko od příkladu, ke kterému patří. */
+  justify-content: start;
+  align-items: baseline;
+  row-gap: 7mm;
+  column-gap: 8mm;
+  margin: 2mm 0 9mm;
+  padding: 0;
+  list-style: none;
+}
+
+.choice-list__item {
+  display: contents;
+}
+
+.choice-list__number {
+  font-size: 11pt;
+  font-weight: 700;
+}
+
+.choice-list__prompt {
+  font-size: 15pt;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.choice-list__option {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2mm;
+  font-size: 15pt;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Písmeno v rámečku, aby se nepletlo s číslem. */
+.choice-list__letter {
+  display: inline-block;
+  min-width: 5mm;
+  padding: 0 0.8mm;
+  border: 0.3mm solid var(--sheet-rule);
+  border-radius: 1mm;
+  font-size: 11pt;
+  font-weight: 700;
+  text-align: center;
+}
+
 .task-list__item--sequence .task-list__prompt {
   font-size: 11pt;
   white-space: nowrap;

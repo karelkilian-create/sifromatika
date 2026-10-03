@@ -15,6 +15,7 @@
  */
 
 import type { DocumentModel } from '../core/document/index.js'
+import type { ScreenModel } from '../core/screen/index.js'
 import type {
   ActivityId,
   Grade,
@@ -48,7 +49,18 @@ export interface ActivityInfo {
   tagline: string
   /** `false` = v katalogu je vidět, ale vybrat ji nejde. */
   available: boolean
+  /**
+   * Záložka aplikace, ve které aktivita žije.
+   *
+   * Úniková hra slibuje něco jiného než pracovní list — stanoviště, karty
+   * skupin a zámek na tabuli — a učitel ji ve třídě řídí, nejen tiskne.
+   * Proto má vlastní záložku (docs/navrh-unikova-hra.md §8). Rozhoduje to
+   * záznam aktivity, ne `if` na id v shellu.
+   */
+  section: ActivitySection
 }
+
+export type ActivitySection = 'worksheets' | 'escape'
 
 /**
  * Pole formuláře, která má každá aktivita.
@@ -136,6 +148,14 @@ export interface ActivityModule<Id extends ActivityId, State, Cfg, Sheet extends
    * modul přiřaditelný na `AnyActivityModule` uvnitř registru.
    */
   toDocument(sheet: Sheet): DocumentModel
+  /**
+   * Obrazovka ve třídě — dnes zámek únikové hry, příště třeba vyvolávač
+   * binga. Nepovinná: aktivita bez ní je jen papír.
+   *
+   * Stejně jako `toDocument` vrací data, ne JSX, a stejně jako on se volá
+   * jen na ověřený list. Vize: obrazovka papír doplňuje, nikdy nenahrazuje.
+   */
+  toScreen?(sheet: Sheet): ScreenModel
 }
 
 /**

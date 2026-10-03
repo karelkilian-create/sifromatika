@@ -39,6 +39,12 @@ import {
   sheetChecksum as pexesoChecksum,
 } from '../../src/activities/pexeso/index.js'
 import type { PexesoSheet } from '../../src/activities/pexeso/index.js'
+import {
+  defaultEscapeConfig,
+  escapeChecksum,
+  generateEscape,
+} from '../../src/activities/escape/index.js'
+import type { EscapeSheet } from '../../src/activities/escape/index.js'
 import { generatorMixFromTopics } from '../../src/tasks/mix.js'
 import { gradeProfile } from '../../src/core/constraints/index.js'
 import { printedResult } from '../../src/core/number/index.js'
@@ -918,6 +924,56 @@ describe('DoD 0.1 bod 7 — zmrazené pojmy', () => {
         11. 2 | Které číslo je dvakrát menší než 12?   (v kruhu 10.)
         12. 6 | Kolik je podíl čísel 90 a 10?   (v kruhu 11.)
       součet 7cc4c22b"
+    `)
+  })
+})
+
+describe('DoD 0.1 bod 7 — zmrazená úniková hra', () => {
+  /*
+   * Zachytí i změnu slovníku nebo vět příběhu, ne jen generátoru: podle
+   * návrhu (§3) je každá úprava slovníku inkrement `GENERATOR_VERSION`.
+   */
+  function renderEscape(sheet: EscapeSheet): string {
+    const stations = sheet.stations.map((station) => {
+      const group = sheet.groups[station.group]!.name
+      const tasks = station.slots
+        .map((slot) => {
+          const options = slot.options.map((option) => `${option.letter}${option.value}`).join(' ')
+          return `${slot.task.prompt.text} = ${slot.code}${options === '' ? '' : ` [${options}]`}`
+        })
+        .join(' | ')
+      return `  ${group} ${station.numberInGroup}. ${station.word.letters} → ${station.picks.join('')}: ${tasks}`
+    })
+    return [sheet.message.original, ...stations, `součet ${escapeChecksum(sheet)}`].join('\n')
+  }
+
+  it('střední hra ve třech skupinách, 4. ročník', () => {
+    const outcome = generateEscape(defaultEscapeConfig(4, 'golden-unikovka', 'medium', 'groups'))
+    if (!outcome.ok) throw new Error(outcome.reason)
+    expect(outcome.sheet.verification).toEqual({ ok: true })
+    expect(renderEscape(outcome.sheet)).toMatchInlineSnapshot(`
+      "POKLAD JE NÁŠ
+        Modrá 1. KAJUTA → JA: 54 − 36 = 18 | 95 − 37 = 58 | 96 − 61 = 35 | 14 + 31 = 45 | 69 − 28 = 41 | 51 − 30 = 21
+        Modrá 2. ZAMEK → EK: 94 − 23 = 71 | 41 + 14 = 55 | 6 + 48 = 54 | 6 + 5 = 11 | 88 − 5 = 83
+        Zelená 1. DUKAT → D: 91 − 9 = 82 | 77 + 17 = 94 | 96 : 3 = 32 | 40 − 21 = 19 | 7 · 8 = 56
+        Zelená 2. MINCE → N: 61 + 10 = 71 | 56 + 23 = 79 | 13 + 3 = 16 | 74 : 2 = 37 | 79 − 7 = 72
+        Žlutá 1. UTES → S: 46 + 21 = 67 | 72 + 15 = 87 | 92 − 28 = 64 | 4 + 12 = 16
+        Žlutá 2. LOPATA → OPL: 63 + 11 = 74 | 86 − 24 = 62 | 54 : 3 = 18 | 4 + 8 = 12 | 52 + 42 = 94 | 96 − 37 = 59
+      součet de12c12d"
+    `)
+  })
+
+  it('krátká hra s výběrem odpovědí, 2. ročník', () => {
+    const outcome = generateEscape(defaultEscapeConfig(2, 'golden-vyber', 'short', 'class'))
+    if (!outcome.ok) throw new Error(outcome.reason)
+    expect(outcome.sheet.verification).toEqual({ ok: true })
+    expect(renderEscape(outcome.sheet)).toMatchInlineSnapshot(`
+      "POKLAD
+        Třída 1. KORAL → OKA: 20 − 19 = 1 [K1 A39 I19] | 5 · 5 = 25 [O25 V30 A20] | 22 + 25 = 47 [M48 R47 A57] | 12 : 3 = 4 [E9 O3 A4] | 85 − 6 = 79 [Y91 L79 E81]
+        Třída 2. TRUHLA → L: 9 + 4 = 13 [B3 S5 T13] | 7 · 4 = 28 [A21 E11 R28] | 64 − 18 = 46 [Z54 K82 U46] | 16 : 4 = 4 [I3 H4 K5] | 80 + 14 = 94 [L94 O66 U93] | 3 · 5 = 15 [C12 A15 M8]
+        Třída 3. PALMA → P: 38 + 6 = 44 [Y32 L34 P44] | 5 · 7 = 35 [K12 U30 A35] | 93 − 14 = 79 [N80 L79 S81] | 4 : 4 = 1 [J4 M1 L2] | 14 + 11 = 25 [D3 A25 E35]
+        Třída 4. DELO → D: 7 · 3 = 21 [P10 K14 D21] | 21 : 3 = 7 [E7 V8 D3] | 96 − 10 = 86 [L86 D76 V87] | 10 + 87 = 97 [N87 O97 V96]
+      součet 3262602e"
     `)
   })
 })

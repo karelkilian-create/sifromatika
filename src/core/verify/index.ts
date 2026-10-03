@@ -1246,3 +1246,184 @@ export function verifySheet(sheet: VerifiableSheet): VerificationReport {
 
   return failures.length === 0 ? { ok: true } : { ok: false, failures }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Úniková hra — řetěz od stanovišť k zámku
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Celá úniková hra tak, jak ji uvidí tabule. Jen písmena a slova — kontrola
+ * nepotřebuje vědět nic o příbězích ani o šifře stanoviště, tu ověřuje
+ * `verifySheet` pro každé stanoviště zvlášť.
+ *
+ * Všechno je v A–Z bez diakritiky, jak to dítě zadá do zámku.
+ */
+export interface EscapeChain {
+  /** Písmena finální tajenky v pořadí, bez mezer. */
+  messageLetters: readonly string[]
+  /** Slova finální tajenky — slovo stanoviště nesmí být žádné z nich. */
+  messageWords: readonly string[]
+  /** Slova, která smí na stanoviště přijít. */
+  dictionary: ReadonlySet<string>
+  /** Stanoviště v pořadí hry: slovo a písmena, která z něj tabule vezme. */
+  stations: readonly { word: string; picks: readonly string[] }[]
+  /** Indexy stanovišť po skupinách. Režim „celá třída" je jedna skupina. */
+  groups: readonly (readonly number[])[]
+  /** Nejvýš kolik písmen smí tabule vzít z jednoho slova. */
+  maxPicks: number
+}
+
+/**
+ * Kontroly celé hry z docs/navrh-unikova-hra.md §9.
+ *
+ * Nestačí, že je v pořádku každé stanoviště zvlášť: šest správně spočítaných
+ * listů může dát tajenku, ve které chybí `Š`. To odhalí až poslední kontrola
+ * — přehraje zámek tak, jak ho přehraje třída, a porovná výsledek.
+ */
+export function verifyEscapeChain(chain: EscapeChain): VerificationReport {
+  const failures: VerificationFailure[] = []
+  const messageWords = new Set(chain.messageWords)
+  const seenWords = new Map<string, number>()
+  const supplier = new Map<string, number>()
+
+  chain.stations.forEach((station, index) => {
+    const label = `Stanoviště č. ${index + 1} (${station.word})`
+
+    if (!chain.dictionary.has(station.word)) {
+      failures.push({ code: 'station-word-unknown', message: `${label}: slovo není ve slovníku příběhu.` })
+    }
+    if (messageWords.has(station.word)) {
+      failures.push({
+        code: 'station-word-in-tajenka',
+        message: `${label}: slovo je zároveň v tajence a prozradilo by kus finále.`,
+      })
+    }
+
+    const twin = seenWords.get(station.word)
+    if (twin !== undefined) {
+      failures.push({
+        code: 'duplicate-station-word',
+        message: `Stanoviště č. ${twin + 1} a ${index + 1} mají stejné slovo ${station.word}.`,
+      })
+    } else {
+      seenWords.set(station.word, index)
+    }
+
+    const distinctPicks = new Set(station.picks)
+    if (distinctPicks.size === 0 || distinctPicks.size > chain.maxPicks || distinctPicks.size !== station.picks.length) {
+      failures.push({
+        code: 'station-picks-out-of-range',
+        message: `${label}: tabule z něj bere ${station.picks.length} písmen, smí jedno až ${chain.maxPicks} různá.`,
+      })
+    }
+
+    for (const letter of station.picks) {
+      if (!station.word.includes(letter)) {
+        failures.push({
+          code: 'picked-letter-not-in-word',
+          message: `${label}: písmeno ${letter} ve slově není.`,
+        })
+      }
+      const other = supplier.get(letter)
+      if (other !== undefined && other !== index) {
+        failures.push({
+          code: 'letter-duplicate',
+          message: `Písmeno ${letter} dodávají stanoviště č. ${other + 1} i ${index + 1}.`,
+        })
+      } else {
+        supplier.set(letter, index)
+      }
+    }
+  })
+
+  for (const letter of new Set(chain.messageLetters)) {
+    if (!supplier.has(letter)) {
+      failures.push({ code: 'letter-uncovered', message: `Písmeno ${letter} tajenky nedodá žádné slovo.` })
+    }
+  }
+
+  chain.groups.forEach((stations, index) => {
+    if (stations.length === 0) {
+      failures.push({ code: 'group-empty', message: `Skupina č. ${index + 1} nemá žádné stanoviště.` })
+    }
+  })
+
+  // Přehrání zámku: rámečky začínají prázdné, každé slovo doplní svá
+  // písmena na všechna místa, kde v tajence jsou (šibenice).
+  const boxes: (string | null)[] = chain.messageLetters.map(() => null)
+  for (const station of chain.stations) {
+    for (const letter of station.picks) {
+      if (!station.word.includes(letter)) continue
+      chain.messageLetters.forEach((target, position) => {
+        if (target === letter) boxes[position] = letter
+      })
+    }
+  }
+  const unlocked = boxes.map((box) => box ?? '_').join('')
+  const expected = chain.messageLetters.join('')
+  const extra = chain.stations.flatMap((station) => station.picks).filter((letter) => !expected.includes(letter))
+  if (unlocked !== expected || extra.length > 0) {
+    failures.push({
+      code: 'lock-mismatch',
+      message:
+        extra.length > 0
+          ? `Tabule bere písmena ${extra.join(', ')}, která v tajence nejsou.`
+          : `Zámek by po všech slovech ukázal ${unlocked}, očekáváno ${expected}.`,
+    })
+  }
+
+  return failures.length === 0 ? { ok: true } : { ok: false, failures }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Výběr odpovědí — stanoviště únikové hry pro mladší děti
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface ChoiceSlot extends SheetSlot {
+  /** Nabídnuté odpovědi v pořadí na papíře. */
+  options: readonly { letter: string; value: number }[]
+}
+
+export interface VerifiableChoiceSheet {
+  slots: readonly ChoiceSlot[]
+  /** Slovo, které má vyjít z písmen správných odpovědí. A–Z. */
+  expectedMessage: string
+}
+
+/**
+ * Ověří list s výběrem odpovědí.
+ *
+ * Úloha se přepočítá stejně jako u šifry (`verifyTasks`). Nad tím: správný
+ * výsledek je mezi odpověďmi **právě jednou**, žádné dvě odpovědi nemají
+ * stejnou hodnotu ani stejné písmeno, a písmena správných odpovědí dají
+ * slovo. Dvě odpovědi se stejným písmenem by dítěti daly slovo i za
+ * špatný výsledek — samokontrola by přestala fungovat.
+ */
+export function verifyChoiceSheet(sheet: VerifiableChoiceSheet): VerificationReport {
+  const tasks = verifyTasks(sheet.slots)
+  const failures: VerificationFailure[] = tasks.ok ? [] : [...tasks.failures]
+  const decoded: string[] = []
+
+  sheet.slots.forEach((slot, index) => {
+    const label = `Úloha č. ${index + 1} (${slot.taskText})`
+    const correct = slot.options.filter((option) => option.value === slot.declaredValue)
+    if (correct.length === 0) {
+      failures.push({ code: 'choice-missing-answer', message: `${label}: mezi odpověďmi chybí výsledek ${slot.declaredValue}.` })
+    }
+    const values = new Set(slot.options.map((option) => option.value))
+    const letters = new Set(slot.options.map((option) => option.letter))
+    if (values.size !== slot.options.length || letters.size !== slot.options.length) {
+      failures.push({ code: 'choice-ambiguous', message: `${label}: dvě odpovědi mají stejnou hodnotu nebo stejné písmeno.` })
+    }
+    decoded.push(correct[0]?.letter ?? '?')
+  })
+
+  const word = decoded.join('')
+  if (word !== sheet.expectedMessage) {
+    failures.push({
+      code: 'decoded-message-mismatch',
+      message: `Ze správných odpovědí vyšlo ${JSON.stringify(word)}, očekáváno ${JSON.stringify(sheet.expectedMessage)}.`,
+    })
+  }
+  return failures.length === 0 ? { ok: true } : { ok: false, failures }
+}

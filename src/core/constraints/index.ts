@@ -328,6 +328,41 @@ export function clampPairCount(value: unknown): number {
 export const ONE_PAGE_LETTERS = 20
 
 
+/**
+ * Úniková hra: kolik stanovišť má která délka hry.
+ *
+ * Stanoviště = jedno slovo = čtyři až šest příkladů. Odhady času jsou od
+ * stolu (docs/navrh-unikova-hra.md §4); rozhodne třída.
+ */
+export const ESCAPE_STATIONS = { short: 4, medium: 6, long: 8 } as const
+
+/**
+ * Nejvýš kolik různých písmen tajenky dodá jedno slovo stanoviště.
+ *
+ * Víc než tři písmena z pětipísmenného slova už je skoro celé slovo a hra se
+ * mění v přepisování. Odtud i horní mez tajenky: trojnásobek stanovišť.
+ */
+export const ESCAPE_MAX_PICKS = 3
+
+/** Délka slova stanoviště. Jedno písmeno je jeden příklad. */
+export const ESCAPE_WORD_LENGTH = { min: 4, max: 6 } as const
+
+/** Kolik skupin. Šest je velká třída po čtyřech; míň než dvě je „celá třída". */
+export const ESCAPE_GROUP_LIMITS = { min: 2, max: 6, fallback: 3 } as const
+
+/**
+ * Kolik znaků smí mít tajenka únikové hry. Mez tabule, ne hry: počet
+ * stanovišť hlídá počet RŮZNÝCH písmen, ale text se musí vejít do rámečků
+ * čitelných z poslední lavice.
+ */
+export const ESCAPE_MESSAGE_MAX_CHARS = 40
+
+export function clampGroupCount(value: unknown): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return ESCAPE_GROUP_LIMITS.fallback
+  const rounded = Math.round(value)
+  return Math.min(Math.max(rounded, ESCAPE_GROUP_LIMITS.min), ESCAPE_GROUP_LIMITS.max)
+}
+
 export function clampTaskCount(value: unknown): number {
   if (typeof value !== 'number' || !Number.isFinite(value)) return TASK_COUNT_LIMITS.fallback
   const rounded = Math.round(value)

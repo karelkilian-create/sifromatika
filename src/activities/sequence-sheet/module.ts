@@ -41,6 +41,7 @@ export const sequenceSheetModule = {
     label: 'Číselné řady',
     tagline: 'Doplň posloupnost',
     available: true,
+    section: 'worksheets',
   },
 
   initialState,

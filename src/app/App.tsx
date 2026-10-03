@@ -13,12 +13,15 @@
  */
 
 import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
-import { checksumForConfig, checksumOfRun, runActivity } from '../activities/registry.js'
+import { checksumForConfig, checksumOfRun, runActivity, sectionOf } from '../activities/registry.js'
+import type { ActivityId } from '../core/model/index.js'
 import { randomSeed } from '../core/rng/index.js'
 import { SifromatikaMark } from '../render/brand/index.js'
+import { LockScreen } from '../render/lock/LockScreen.js'
 import { DocumentView } from '../render/screen/index.js'
 import { DiplomaScreen } from '../features/diploma/DiplomaScreen.js'
 import { ActivityNav } from '../features/editor/ActivityNav.js'
+import { EscapeEditor } from '../features/escape/EscapeEditor.js'
 import { QuickGuide } from '../features/help/QuickGuide.js'
 import { EditorPanel } from '../features/editor/EditorPanel.js'
 import { INITIAL_EDITOR_STATE, fromConfig, type EditorState } from '../features/editor/state.js'
@@ -144,19 +147,29 @@ function forgetShareLink(): void {
  *
  * Diplom není aktivita — nemá seed, obtížnost ani řešení — a proto nepatří
  * do `ActivityNav` vedle šifry a řad. Je to druhá obrazovka téhož nástroje.
+ *
+ * Úniková hra aktivita JE, jen žije ve vlastní záložce: slibuje stanoviště
+ * a zámek na tabuli, ne pracovní list (docs/navrh-unikova-hra.md §8). Kam
+ * která aktivita patří, říká registr (`sectionOf`), ne podmínka tady.
  */
-type AppView = 'worksheets' | 'diploma'
+type AppView = 'worksheets' | 'escape' | 'diploma'
 
 const VIEW_LABELS: Record<AppView, string> = {
   worksheets: 'Pracovní listy',
+  escape: 'Úniková hra',
   diploma: 'Diplom',
 }
 
 const VIEW_SUBTITLES: Record<AppView, string> = {
   worksheets:
     'Pracovní listy z matematiky na pár kliknutí — vyber aktivitu a ročník, zadej téma a vytiskni pracovní list a list s řešením.',
+  escape:
+    'Matematická úniková hra za minutu — děti počítají na stanovištích, slova zadávají do zámku na tabuli a skládají z nich tajné heslo.',
   diploma: 'Diplom pro žáky, kteří se prokousali až na konec. Ke stažení a vyplnění ve Wordu.',
 }
+
+/** Aktivita, kterou dostane záložka „Pracovní listy", když přichází z únikovky. */
+const FIRST_WORKSHEET: ActivityId = 'cipher-grid'
 
 /** Šířka listu (210 mm) v CSS pixelech — CSS počítá 96 px na palec. */
 const SHEET_WIDTH_PX = (210 * 96) / 25.4
@@ -198,8 +211,19 @@ function Preview({ children }: { children: ReactNode }) {
 
 export function App() {
   const [initial] = useState(initialApp)
-  const [view, setView] = useState<AppView>('worksheets')
+  // Sdílený odkaz nebo zapamatovaná únikovka otevřou rovnou její záložku.
+  const [view, setView] = useState<AppView>(() => sectionOf(initial.state.activity))
   const [state, setState] = useState<EditorState>(initial.state)
+  /**
+   * Která aktivita byla v „Pracovních listech" naposled. Únikovka je aktivita
+   * jako ostatní, takže přepnutí na její záložku přepíše `state.activity`;
+   * po návratu má učitel najít svou šifru nebo pexeso, ne výchozí šifru.
+   */
+  const lastWorksheet = useRef<ActivityId>(
+    sectionOf(initial.state.activity) === 'worksheets' ? initial.state.activity : FIRST_WORKSHEET,
+  )
+  /** Běží zámek na tabuli? */
+  const [locked, setLocked] = useState(false)
   const [seed, setSeed] = useState(initial.seed)
   const [fileNotice, setFileNotice] = useState<FileNotice | null>(initial.notice)
   /** Odkaz k ručnímu zkopírování — třetí plán sdílení, viz `handleShare`. */
@@ -333,6 +357,10 @@ export function App() {
     const restored = fromConfig(parsed.file.config)
     setState(restored.state)
     setSeed(restored.seed)
+    // Soubor s únikovkou otevře její záložku, list zase pracovní listy.
+    const section = sectionOf(restored.state.activity)
+    if (section === 'worksheets') lastWorksheet.current = restored.state.activity
+    setView(section)
     setShareLink(null)
     forgetShareLink()
     // Soubor otevřel učitel sám, to je jeho práce — pamatuje se hned.
@@ -350,6 +378,33 @@ export function App() {
       return
     }
     setFileNotice({ level: 'info', message: `Otevřeno: ${file.name}` })
+  }
+
+  /** Přepnutí záložky. Aktivitu mění jen přechod mezi listy a únikovkou. */
+  const changeView = (next: AppView) => {
+    setView(next)
+    if (next === 'diploma') return
+    const current = sectionOf(state.activity)
+    if (current === next) return
+    if (current === 'worksheets') lastWorksheet.current = state.activity
+    setState({ ...state, activity: next === 'escape' ? 'escape' : lastWorksheet.current })
+    afterEdit()
+  }
+
+  /**
+   * Zámek přes celou obrazovku. O celou obrazovku se žádá tady, v gestu
+   * učitele — prohlížeč ji jinak nepovolí. Když ji nepovolí vůbec (iPad,
+   * zakázaná politika), zámek běží v okně a hrát se dá stejně.
+   */
+  const startLock = () => {
+    if (generated.screen === null) return
+    document.documentElement.requestFullscreen?.().catch(() => {})
+    setLocked(true)
+  }
+
+  const stopLock = () => {
+    setLocked(false)
+    if (document.fullscreenElement) void document.exitFullscreen().catch(() => {})
   }
 
   return (
@@ -373,7 +428,7 @@ export function App() {
                 type="button"
                 className={`view-nav__item${view === id ? ' view-nav__item--selected' : ''}`}
                 aria-current={view === id ? 'page' : undefined}
-                onClick={() => setView(id)}
+                onClick={() => changeView(id)}
               >
                 {VIEW_LABELS[id]}
               </button>
@@ -413,7 +468,33 @@ export function App() {
             onOpen={() => fileInput.current?.click()}
             canPrint={verified}
           />
+        </>
+      )}
 
+      {view === 'escape' && (
+        <EscapeEditor
+          state={state}
+          onChange={(next) => {
+            setState(next)
+            afterEdit()
+          }}
+          onReroll={() => {
+            setSeed(randomSeed())
+            afterEdit()
+          }}
+          onPrint={() => window.print()}
+          onSave={handleSave}
+          onShare={handleShare}
+          onOpen={() => fileInput.current?.click()}
+          onStartLock={startLock}
+          canPrint={verified && generated.screen !== null}
+        />
+      )}
+
+      {/* Hlášky a náhled mají listy i únikovka stejné — shell je nečte
+          podle aktivity, jen podle výsledku generování. */}
+      {view !== 'diploma' && (
+        <>
           <input
             ref={fileInput}
             className="no-print"
@@ -482,6 +563,8 @@ export function App() {
           )}
         </>
       )}
+
+      {locked && generated.screen !== null && <LockScreen model={generated.screen} onClose={stopLock} />}
     </div>
   )
 }

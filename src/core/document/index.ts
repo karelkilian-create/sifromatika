@@ -70,6 +70,19 @@ export interface TaskListItem {
   kind?: PromptNode['kind']
 }
 
+/** Jedna nabídnutá odpověď u příkladu s výběrem. */
+export interface ChoiceOption {
+  /** Písmeno, které dítě opíše, když odpověď zakroužkuje. A–Z. */
+  letter: string
+  /** Vytištěný výsledek. */
+  text: string
+}
+
+/** Příklad s výběrem odpovědí. Které je správná, list neříká. */
+export interface ChoiceListItem extends TaskListItem {
+  options: readonly ChoiceOption[]
+}
+
 /**
  * Blok obsahu.
  *
@@ -89,6 +102,15 @@ export type DocumentBlock =
    */
   | { kind: 'callout'; text: string }
   | { kind: 'task-list'; columns: 1 | 2; items: readonly TaskListItem[] }
+  /**
+   * Příklady s výběrem odpovědí: zadání a za ním několik výsledků, každý
+   * s písmenem. Dítě zakroužkuje správný a opíše jeho písmeno.
+   *
+   * Vlastní blok, ne `task-list` s nepovinným polem: list úloh s linkou na
+   * odpověď a list s kroužkováním se sázejí jinak, a renderer, který by
+   * jeden z nich neuměl, má spadnout při překladu.
+   */
+  | { kind: 'choice-list'; items: readonly ChoiceListItem[] }
   /**
    * Šifrovací tabulka.
    *

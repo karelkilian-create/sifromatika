@@ -1,0 +1,434 @@
+/*
+ * Zámek na tabuli.
+ *
+ * Měřítko je poslední lavice a projektor se slabou lampou: tmavé písmo na
+ * světlém podkladu (tmavý podklad projektor rozsvítí do šeda), velké písmo
+ * odvozené od výšky obrazovky a tlačítka pro prst — žádný hover, na
+ * interaktivní tabuli nic takového není.
+ */
+
+.lock {
+  --lock-ink: #10172a;
+  --lock-muted: #4a5163;
+  --lock-paper: #fffdf7;
+  --lock-box: #fff;
+  --lock-line: #10172a;
+  --lock-accent: #c1560d;
+  --lock-ok: #17783a;
+
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5vh;
+  padding: 2vh 3vw 3vh;
+  overflow-y: auto;
+  background: var(--lock-paper);
+  color: var(--lock-ink);
+  font-family: 'Segoe UI', 'Noto Sans', system-ui, sans-serif;
+  font-size: clamp(16px, 2.6vh, 34px);
+}
+
+.lock__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  font-weight: 600;
+  color: var(--lock-muted);
+}
+
+.lock__time {
+  font-variant-numeric: tabular-nums;
+  font-size: 1.4em;
+  color: var(--lock-ink);
+}
+
+/* Učitelské ovládání: malé, v rohu, aby ho děti nebraly jako součást hry. */
+.lock__teacher {
+  position: relative;
+}
+
+.lock__teacher-toggle {
+  padding: 0.3em 0.8em;
+  border: 1px solid var(--lock-muted);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--lock-muted);
+  font: inherit;
+  font-size: 0.7em;
+}
+
+.lock__teacher-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.3em);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+  min-width: 14em;
+  padding: 0.5em;
+  border: 2px solid var(--lock-ink);
+  border-radius: 8px;
+  background: #fff;
+  font-size: 0.75em;
+  z-index: 1;
+}
+
+.lock__teacher-menu button {
+  padding: 0.6em 0.8em;
+  border: 1px solid #c9ccd3;
+  border-radius: 6px;
+  background: #f4f5f7;
+  color: var(--lock-ink);
+  font: inherit;
+  text-align: left;
+}
+
+.lock__teacher-menu button:disabled {
+  opacity: 0.45;
+}
+
+/* ── Rámečky tajenky ─────────────────────────────────────────────── */
+
+.lock__boxes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6em 1.4em;
+  margin-top: 1vh;
+}
+
+.lock__word {
+  display: flex;
+  gap: 0.25em;
+}
+
+.lock__box {
+  display: grid;
+  place-items: center;
+  width: 1.9em;
+  height: 2.3em;
+  border: 3px solid var(--lock-line);
+  border-radius: 6px;
+  background: var(--lock-box);
+  font-size: 1.5em;
+  font-weight: 800;
+}
+
+.lock__box--filled {
+  background: #fff2c2;
+  animation: lock-fill 0.6s ease-out;
+}
+
+.lock__boxes--open .lock__box {
+  border-color: var(--lock-ok);
+  background: #dff3e4;
+}
+
+@keyframes lock-fill {
+  from {
+    transform: translateY(-1.2em) scale(1.4);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+.lock__motto {
+  margin: 0;
+  font-style: italic;
+  color: var(--lock-muted);
+  text-align: center;
+}
+
+/* ── Hlavní plocha ───────────────────────────────────────────────── */
+
+.lock__stage {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  flex: 1;
+}
+
+.lock__panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.6vh;
+  max-width: 46em;
+  text-align: center;
+}
+
+.lock__story {
+  margin: 0;
+  font-size: 1.15em;
+  line-height: 1.45;
+}
+
+.lock__prompt {
+  margin: 0;
+  font-size: 1.2em;
+  font-weight: 700;
+}
+
+.lock__ok {
+  margin: 0;
+  font-size: 1.5em;
+  font-weight: 800;
+  color: var(--lock-ok);
+}
+
+.lock__picks {
+  margin: 0;
+  font-size: 1.2em;
+}
+
+.lock__picks strong {
+  color: var(--lock-accent);
+  font-size: 1.2em;
+}
+
+.lock__big-button {
+  min-height: 2.6em;
+  padding: 0.5em 1.6em;
+  border: none;
+  border-radius: 10px;
+  background: var(--brand-navy, #17233f);
+  color: #fff;
+  font: inherit;
+  font-size: 1.1em;
+  font-weight: 700;
+}
+
+.lock__link {
+  border: none;
+  background: none;
+  color: var(--lock-muted);
+  font: inherit;
+  font-size: 0.8em;
+  text-decoration: underline;
+}
+
+/* ── Zadávání ────────────────────────────────────────────────────── */
+
+.lock__input {
+  min-width: 8em;
+  min-height: 1.6em;
+  padding: 0.2em 0.6em;
+  border-bottom: 4px solid var(--lock-ink);
+  font-size: 2em;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+}
+
+.lock__input[data-shake] {
+  animation: lock-shake 0.45s;
+}
+
+@keyframes lock-shake {
+  0%,
+  100% {
+    transform: none;
+  }
+  20%,
+  60% {
+    transform: translateX(-0.4em);
+  }
+  40%,
+  80% {
+    transform: translateX(0.4em);
+  }
+}
+
+.lock__placeholder {
+  color: #9aa0ac;
+  font-weight: 400;
+  font-size: 0.5em;
+  letter-spacing: normal;
+}
+
+.lock__keyboard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35em;
+}
+
+.lock__keys {
+  display: flex;
+  gap: 0.35em;
+}
+
+.lock__key {
+  width: 2.4em;
+  height: 2.4em;
+  border: 2px solid var(--lock-ink);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--lock-ink);
+  font: inherit;
+  font-weight: 700;
+  touch-action: manipulation;
+}
+
+.lock__key:active {
+  background: #e3e6ec;
+}
+
+.lock__key--wide {
+  width: auto;
+  padding: 0 1.2em;
+}
+
+.lock__key--submit {
+  background: var(--lock-ok);
+  border-color: var(--lock-ok);
+  color: #fff;
+}
+
+/* ── Skupiny ─────────────────────────────────────────────────────── */
+
+.lock__groups {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(7em, 1fr));
+  gap: 0.6em;
+}
+
+.lock__group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2em;
+  padding: 0.8em 1em;
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font: inherit;
+  font-size: 1.1em;
+  font-weight: 800;
+}
+
+.lock__group:disabled {
+  opacity: 0.5;
+}
+
+.lock__group-state {
+  font-size: 0.7em;
+  font-weight: 600;
+}
+
+/* Barvy tmavé dost na bílé písmo; žlutá proto nese tmavý text. */
+.lock__group--blue,
+.lock__reveal-item--blue {
+  --group: #1f5fbf;
+}
+.lock__group--green,
+.lock__reveal-item--green {
+  --group: #17783a;
+}
+.lock__group--yellow,
+.lock__reveal-item--yellow {
+  --group: #e8b10c;
+}
+.lock__group--red,
+.lock__reveal-item--red {
+  --group: #c0262d;
+}
+.lock__group--purple,
+.lock__reveal-item--purple {
+  --group: #6b3fa8;
+}
+.lock__group--orange,
+.lock__reveal-item--orange {
+  --group: #c1560d;
+}
+
+.lock__group {
+  background: var(--group);
+}
+
+.lock__group--yellow {
+  color: var(--lock-ink);
+}
+
+.lock__reveal {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 1.3em;
+}
+
+.lock__reveal-item {
+  padding: 0.15em 0.6em;
+  border-left: 0.4em solid var(--group, var(--lock-ink));
+  animation: lock-fill 0.6s ease-out;
+}
+
+/* ── Otevření ────────────────────────────────────────────────────── */
+
+.lock__message {
+  margin: 0;
+  font-size: 2em;
+  font-weight: 800;
+  color: var(--lock-ok);
+}
+
+.lock__final-time {
+  margin: 0;
+  font-weight: 700;
+}
+
+/* Visací zámek z CSS: tělo a třmen, který se při otevření zvedne a pootočí. */
+.lock__padlock {
+  position: relative;
+  /* Místo pro třmen, který se při otevření zvedne nad tělo zámku. */
+  margin-top: 1.2em;
+  width: 3em;
+  height: 3.6em;
+}
+
+.lock__padlock::before {
+  content: '';
+  position: absolute;
+  left: 0.6em;
+  top: 0;
+  width: 1.8em;
+  height: 2em;
+  border: 0.35em solid var(--lock-ink);
+  border-bottom: none;
+  border-radius: 1em 1em 0 0;
+  transform-origin: 85% 100%;
+}
+
+.lock__padlock::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 3em;
+  height: 2.1em;
+  border-radius: 0.4em;
+  background: var(--lock-accent);
+}
+
+.lock__padlock--open::before {
+  animation: lock-open 1.2s ease-out forwards;
+}
+
+@keyframes lock-open {
+  to {
+    transform: translateY(-0.6em) rotate(25deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lock *,
+  .lock *::before {
+    animation-duration: 0.01ms !important;
+  }
+}

@@ -374,10 +374,58 @@ export interface BingoConfig {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Aktivita „úniková hra"
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Délka hry. Určuje počet stanovišť, ne délku tajenky — viz
+ * docs/navrh-unikova-hra.md §4. Kolik stanovišť je která, říká
+ * `ESCAPE_STATIONS` v `core/constraints`.
+ */
+export type EscapeLength = 'short' | 'medium' | 'long'
+
+/**
+ * Kdo které stanoviště řeší. Generování i ověření je pro oba režimy totéž;
+ * liší se jen rozdělení stanovišť a to, kdy tabule ukáže písmena (§2).
+ */
+export type EscapeMode = 'class' | 'groups'
+
+/**
+ * Jak stanoviště zašifruje své slovo.
+ *
+ * `grid`: souřadnicová tabulka 9 × 9 jako u šifry. `choice`: u každého
+ * příkladu tři odpovědi s písmeny a dítě opíše písmeno té správné. Výběr je
+ * pro druhou třídu — souřadnice čte hůř a výsledek nemusí být kód políčka
+ * (11–99), takže se do hry dostane i dělení. Samokontrola zůstává: kdo
+ * počítá špatně, tomu nevyjde slovo.
+ */
+export type EscapeStationKind = 'grid' | 'choice'
+
+/**
+ * Úniková hra: stanoviště jsou mini-šifry, jejichž tajenky jsou slova
+ * z příběhu, a slova se na tabuli skládají do finální tajenky.
+ *
+ * `message` se ukládá i tehdy, když ji jen nabídl příběh — příběh se může
+ * v budoucí verzi změnit a uložená hra musí dál dávat totéž (§8).
+ */
+export interface EscapeConfig {
+  /** Id příběhu. Neznámé id ze souboru se odmítne, ne převede. */
+  story: string
+  length: EscapeLength
+  message: string
+  mode: EscapeMode
+  /** Počet skupin. V režimu „celá třída" se nepoužije, ale ukládá se. */
+  groupCount: number
+  stationKind: EscapeStationKind
+  difficulty: DifficultyProfile
+  taskMix: Partial<Record<OperationTag, number>>
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Projekt
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type ActivityId = 'cipher-grid' | 'sequence-sheet' | 'pexeso' | 'domino' | 'bingo'
+export type ActivityId = 'cipher-grid' | 'sequence-sheet' | 'pexeso' | 'domino' | 'bingo' | 'escape'
 
 /**
  * Společná hlavička každé uložené aktivity — vše kromě `activity` a `payload`.
@@ -419,6 +467,8 @@ export type DominoProject = Project<'domino', DominoConfig>
 
 export type BingoProject = Project<'bingo', BingoConfig>
 
+export type EscapeProject = Project<'escape', EscapeConfig>
+
 /**
  * Uložitelná aktivita. Rozlišená unie podle `activity` — přidání další hry
  * je nový člen, ne další volitelná pole v jednom společném objektu.
@@ -429,6 +479,7 @@ export type ProjectConfig =
   | PexesoProject
   | DominoProject
   | BingoProject
+  | EscapeProject
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Výstup generování
@@ -644,5 +695,34 @@ export interface VerificationFailure {
      * neodhalí žádná kontrola jednotlivé úlohy, protože každá je správně.
      */
     | 'broken-chain'
+    /*
+     * Úniková hra — kontroly celé hry nad rámec jednotlivých stanovišť.
+     * Viz docs/navrh-unikova-hra.md §9.
+     */
+    /** Slovo stanoviště není ve slovníku příběhu. */
+    | 'station-word-unknown'
+    /** Písmeno, které má tabule ze slova vzít, ve slově není. */
+    | 'picked-letter-not-in-word'
+    /** Stanoviště, ze kterého se nebere žádné písmeno, nebo víc než tři. */
+    | 'station-picks-out-of-range'
+    /** Různé písmeno tajenky, které nedodá žádné slovo. */
+    | 'letter-uncovered'
+    /** Různé písmeno tajenky, které dodají dvě slova. Při šibenici dodá každé jen jedno. */
+    | 'letter-duplicate'
+    /** Slovo stanoviště je zároveň slovem tajenky a prozradilo by kus finále. */
+    | 'station-word-in-tajenka'
+    /** Skupina bez stanoviště. */
+    | 'group-empty'
+    /** Stejné slovo na dvou stanovištích. */
+    | 'duplicate-station-word'
+    /**
+     * Slova všech stanovišť, zadaná do zámku a doplněná jako šibenice,
+     * nedají přesně finální tajenku. Kontrola, která dělá celou hru.
+     */
+    | 'lock-mismatch'
+    /** Výběr odpovědí: žádná z nabídnutých odpovědí není správný výsledek. */
+    | 'choice-missing-answer'
+    /** Výběr odpovědí: dvě odpovědi mají stejnou hodnotu nebo stejné písmeno. */
+    | 'choice-ambiguous'
   message: string
 }

@@ -67,6 +67,7 @@ export const dominoModule = {
     label: 'Domino',
     tagline: 'Navazuj úlohy',
     available: true,
+    section: 'worksheets',
   },
 
   initialState,

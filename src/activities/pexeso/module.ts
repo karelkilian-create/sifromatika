@@ -68,6 +68,7 @@ export const pexesoModule = {
     label: 'Pexeso',
     tagline: 'Hledej dvojice',
     available: true,
+    section: 'worksheets',
   },
 
   initialState,

@@ -58,8 +58,14 @@ export function QuickGuide() {
           U <strong>šifry</strong> je výsledek vždy kladné celé číslo — ukazuje na políčko
           v tabulce. Ve hrách vyjde i 2,5 nebo 3/4.
         </li>
+        {/* Upozornění na obrazovku i tady, ne až v záložce únikovky — §5 návrhu. */}
         <li>
-          <strong>Diplom</strong> je druhá záložka nahoře. Stáhne se jako <code>.docx</code>{' '}
+          <strong>Úniková hra</strong> má vlastní záložku nahoře. Potřebuje obrazovku, kterou vidí
+          celá třída (interaktivní tabuli, nebo projektor s počítačem) — děti na ni zadávají slova
+          ze stanovišť.
+        </li>
+        <li>
+          <strong>Diplom</strong> je další záložka nahoře. Stáhne se jako <code>.docx</code>{' '}
           a vyplní ve Wordu.
         </li>
       </ul>

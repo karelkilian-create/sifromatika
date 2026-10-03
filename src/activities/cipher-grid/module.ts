@@ -75,6 +75,7 @@ export const cipherGridModule = {
     label: 'Šifra',
     tagline: 'Najdi tajenku',
     available: true,
+    section: 'worksheets',
   },
 
   initialState,

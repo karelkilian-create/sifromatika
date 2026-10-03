@@ -65,6 +65,7 @@ export const bingoModule = {
     label: 'Bingo',
     tagline: 'Vypočti a škrtni',
     available: true,
+    section: 'worksheets',
   },
 
   initialState,

@@ -18,6 +18,7 @@ import { useLayoutEffect } from 'react'
 
 import type {
   CardFace,
+  ChoiceListItem,
   TaskListItem,
   DocumentBlock,
   DocumentModel,
@@ -81,6 +82,9 @@ function BlockView({ block }: { block: DocumentBlock }) {
 
     case 'task-list':
       return <TaskListView columns={block.columns} items={block.items} />
+
+    case 'choice-list':
+      return <ChoiceListView items={block.items} />
 
     case 'cipher-table':
       return (
@@ -274,6 +278,36 @@ function TaskListView({
             {item.showEquals ? ' =' : ''}
           </span>
           <span className="task-list__blank" />
+        </li>
+      ))}
+    </ol>
+  )
+}
+
+/**
+ * Příklady s výběrem odpovědí. Mřížka, ne seznam: odpovědi stojí pod sebou
+ * ve sloupcích, takže je oko najde na stejném místě u každého příkladu.
+ *
+ * Písmeno je vidět u každé odpovědi a nic neprozrazuje, která je správná —
+ * to je ta samokontrola: kdo zakroužkuje špatně, opíše špatné písmeno
+ * a slovo mu nevyjde.
+ */
+function ChoiceListView({ items }: { items: readonly ChoiceListItem[] }) {
+  return (
+    <ol className="choice-list">
+      {items.map((item, index) => (
+        <li className="choice-list__item" key={index}>
+          <span className="choice-list__number">{index + 1}.</span>
+          <span className="choice-list__prompt">
+            <MathText text={item.text} />
+            {item.showEquals ? ' =' : ''}
+          </span>
+          {item.options.map((option) => (
+            <span className="choice-list__option" key={option.letter}>
+              <span className="choice-list__letter">{option.letter}</span>
+              <MathText text={option.text} />
+            </span>
+          ))}
         </li>
       ))}
     </ol>
