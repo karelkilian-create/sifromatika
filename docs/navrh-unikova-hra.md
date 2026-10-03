@@ -358,6 +358,7 @@ vznikal u učitele a nikdo by ho před třídou nečetl.
 | úvod | tabule na začátku, karta skupiny |
 | tři nabízené tajenky, jedna na každou délku hry | formulář, učitel smí přepsat |
 | tematický slovník | slova stanovišť |
+| heslo („Jedna posádka, jedno heslo…") | tabule pod rámečky tajenky po celou hru |
 | věta ke každému slovu („Na víku truhly je vyryto…") | nahoře na listu stanoviště |
 | věta po uznání slova („Truhla povolila. Uvnitř…") | tabule |
 | závěr | tabule po finále |
