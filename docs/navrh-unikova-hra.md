@@ -266,7 +266,8 @@ Meze, obě hlídané hláškou, ne potichu upravenou hrou:
   v přepisování.
 
 Délka textu tajenky se neomezuje, jen to, aby se vešla na tabuli.
-- **Stanovišť je aspoň tolik, kolik je skupin** — každá skupina aspoň jedno.
+- ~~**Stanovišť je aspoň tolik, kolik je skupin**~~ — od 3. 10. 2026 to
+  zajišťuje zaokrouhlení ve skupinách (níž), hláška odpadla.
 
 Hláška má říct, co s tím („Na krátkou hru má tajenka moc různých písmen —
 zvolte delší hru, nebo tajenku zkraťte."). A i uvnitř mezí se může stát, že
@@ -275,6 +276,44 @@ slovník vlastní tajenku nepostaví; pak totéž, s radou zkusit jinou délku.
 Počty stanovišť, délka slov a strop tří písmen jsou konstanty
 v `core/constraints`, jako `BINGO_POOL_RATIO`. Odhady v tabulce jsou od stolu;
 rozhodne třída.
+
+### Stejně práce pro každou skupinu (Karel, 3. 10. 2026)
+
+První implementace rozdávala stanoviště skupinám dokola. Když počet
+stanovišť nešel dělit počtem skupin (4 na 3, 6 na 4 nebo 5, 8 na 3, 5 nebo 6),
+dostala jedna skupina o stanoviště víc — a s délkami slov 4–6 to bylo **až
+trojnásobek příkladů**. Týkalo se to šesti ze třinácti kombinací. Ani tam,
+kde dělit šlo, nebyla práce stejná: šestipísmenné slovo proti čtyřpísmennému
+je o polovinu víc.
+
+Rozhodnutí, obojí:
+
+1. **Ve skupinách se počet stanovišť zaokrouhlí nahoru na násobek počtu
+   skupin.** Krátká hra pro 3 skupiny má 6 stanovišť, dvě na skupinu.
+   Hru to neprodlouží: ve skupinách trvá tak dlouho, jak dlouho pracuje
+   nejvytíženější skupina, a ta má tolik stanovišť jako předtím — ostatní
+   jen nečekají. Tím zmizela i hláška „skupin je víc než stanovišť":
+   krátká hra pro 6 skupin má 6 stanovišť, jedno na skupinu.
+2. **Generátor vybere rozdělení s nejpodobnějším počtem příkladů.** Zkusí
+   jich až osm a stanoviště rozdá od nejdelšího slova ke skupině, která má
+   zatím nejméně příkladů.
+
+Výsledek přes všechny kombinace délky a 2–6 skupin, 40 seedů na každou:
+rozdíl mezi skupinami nejvýš jedna úloha, kromě případů, kdy má každá
+skupina jediné stanoviště — tam zbývá 4 proti 6 (1,5×), protože víc
+vyrovnat jedno slovo nejde.
+
+Cena: **„délka hry" ve skupinách neznamená počet vytištěných stanovišť**,
+ale počet stanovišť na skupinu, a tiskne se víc papíru. Formulář proto ve
+skupinách ukazuje stanoviště na skupinu („2 stanoviště na skupinu"), ne
+součet. A u tajenky `POKLAD` na šesti stanovištích dá každé slovo přesně
+jedno písmeno, takže se střídání jednoho až tří písmen ztratí. Meze z výše
+(nejméně tolik různých písmen, kolik je stanovišť) platí pro zaokrouhlený
+počet; všechny tři nabízené tajenky Pokladu se do nich vejdou pro každý
+počet skupin.
+
+Hlídá to test v `escape.test.ts`: každá kombinace délky a počtu skupin,
+stejný počet stanovišť na skupinu a rozdíl nejvýš dvě úlohy.
 
 ---
 
@@ -387,6 +426,44 @@ s tím nic dalšího nedělá — jak moc to vadí, ukáže až třída.
 3. **Přehled pro učitele** — tabulka: skupina, stanoviště, slovo a která
    písmena se z něj berou (`TRUHLA` → `L`, `A`). Plus řešení všech stanovišť
    a pět řádků návodu, jak hru spustit.
+
+### Výběr odpovědí místo tabulky (Karel, 3. 10. 2026)
+
+Podnět: únikovky v Genially, kde dítě vybírá ze tří odpovědí na obrazovce.
+Na obrazovce by to porušilo vizi (obrazovka papír nenahrazuje) a odpověď
+by šla trefit zkoušením. **Na papíře** to ale funguje a samokontrola
+zůstane:
+
+```
+1.  5 · 7 =     [S] 40    [Z] 30    [T] 35
+2.  98 − 12 =   [S] 85    [N] 76    [R] 86
+…
+Vyšlo vám slovo:  [ ][ ][ ][ ][ ][ ]
+```
+
+Dítě zakroužkuje správný výsledek a opíše jeho písmeno. Kdo počítá špatně,
+opíše jiné písmeno a slovo mu nevyjde — stejně jako u tabulky.
+
+Proč hlavně pro **druhou třídu**: souřadnicová tabulka 9 × 9 je pro druháka
+těžší než samotné počítání, a výsledek tam musí být kód políčka 11–99. Podíl
+malé násobilky je jednociferný, takže se dělení do druhé třídy nedostalo
+vůbec. U výběru smí být výsledek jakékoli kladné číslo.
+
+- **Volba pro všechny ročníky**, výchozí „podle ročníku": druhá třída výběr,
+  ostatní tabulka. Do souboru se ukládá konkrétní druh, ne „podle ročníku".
+- **Špatné odpovědi z typických chyb** (`tasks/distractors.ts`): zaměněná
+  operace, zapomenutý přechod přes desítku (`27 + 15` → 32), menší od
+  většího v jednotkách (`15 − 8` → 13), o jedna nebo o deset vedle. Nikdy
+  nula, nikdy mimo obor ročníku (148 u druháka vyloučí i ten, kdo nepočítá).
+- **Kontrola** (`verifyChoiceSheet`): přepočet úlohy jako u šifry, správný
+  výsledek mezi odpověďmi právě jednou, žádné dvě odpovědi se stejnou
+  hodnotou ani písmenem, písmena správných odpovědí dají slovo.
+- Operace se na stanovišti střídají a příklad vyrobí právě ta operace, ze
+  které se losoval výsledek — jinak by se z podílu 1 stalo `20 − 19`.
+
+Co nevím: jestli druháci zvládnou opsat písmeno k zakroužkovanému číslu bez
+zmatku, a jestli tři odpovědi nejsou na jedno stanoviště moc čtení. Ukáže
+třída.
 
 Stanoviště se v režimu „celá třída" tisknou jednou na dítě nebo dvojici,
 ve skupinovém režimu jednou na skupinu. Kolik kopií, rozhodne učitel
