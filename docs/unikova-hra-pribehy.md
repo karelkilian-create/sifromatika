@@ -73,19 +73,26 @@ nabídka podle ročníku; učitel smí vybrat kterýkoli příběh.
 ## Slova témat
 
 Ke každému slovu později přibudou dvě věty (na list a na tabuli). Teď jde
-jen o to, jestli slova sedí dětem — **tohle je část, kterou projde autor.**
+jen o to, jestli slova sedí dětem.
 
-**Princezna a drak** (23): HRAD, RYTÍŘ, ŠTÍT, ZÁMEK, PRSTEN, KOČÁR, BRÁNA,
+**Autor slova prošel 3. 10. 2026.** Změny: `SKALA` → `SKÁLA` (překlep),
+`KAPRAĎ` → `TLAMA` (`KAPRADÍ` má 7 písmen), `TUBA` → `JÍDLO` (děti si
+vybaví nástroj), `MODUL` vyřazen, `VOJÁK` přidán. `SLUJ` zůstává, protože
+ji děti znají z pohádek; věta na listu ji musí vysvětlit („drak spí ve své
+sluji“). `VOJÁK` ji jistí, protože bez nich dvou nemá *Princezna* jiné `J`
+a dlouhá tajenka by nešla složit. `KURZ` zůstává (častější než `KURS`).
+
+**Princezna a drak** (24): HRAD, RYTÍŘ, ŠTÍT, ZÁMEK, PRSTEN, KOČÁR, BRÁNA,
 TRŮN, KOUZLO, KRÁL, KONÍK, PLÁŠŤ, SKLEP, STRÁŽ, OHEŇ, ŠUPINA, SLUJ, POHÁR,
-VÍLA, ŠAŠEK, BUBEN, SUKNĚ, DUDÁK
+VÍLA, ŠAŠEK, BUBEN, SUKNĚ, DUDÁK, VOJÁK
 
-**Kosmonaut** (20): RAKETA, MĚSÍC, HVĚZDA, KOMETA, MOTOR, ANTÉNA, PŘILBA,
-KRÁTER, LUNA, SLUNCE, MODUL, SONDA, KABINA, VESMÍR, ZEMĚ, TUBA, OBLEK, PULT,
+**Kosmonaut** (19): RAKETA, MĚSÍC, HVĚZDA, KOMETA, MOTOR, ANTÉNA, PŘILBA,
+KRÁTER, LUNA, SLUNCE, SONDA, KABINA, VESMÍR, ZEMĚ, JÍDLO, OBLEK, PULT,
 PALIVO, OKÉNKO
 
 **Poklad** (22): MAPA, TRUHLA, KOTVA, LOPATA, KOMPAS, ZÁMEK, OSTROV, PIRÁT,
 VLAJKA, DUKÁT, PÍSEK, LOĎKA, DĚLO, ÚTES, VLNA, KORÁL, PERLA, PALMA, MINCE,
-KLÍČ, KAJUTA, SKALA
+KLÍČ, KAJUTA, SKÁLA
 
 **Kouzelný les** (20): SOVA, JEŽEK, LIŠKA, KOŘEN, ŠIŠKA, POTOK, HNÍZDO,
 STROM, BOBR, HOUBA, JAHODA, KLÁDA, PAŘEZ, MOTÝL, ŽALUD, DATEL, KOPEC, ŽÁBA,
@@ -95,7 +102,7 @@ OSIKA, PUPEN
 VYDRA, TULEŇ, PUMA, KOZA, KLOKAN, TUČŇÁK, SOVA, OSEL, VÝBĚH, BANÁN, MRKEV,
 SENO, KRAJTA
 
-**Dinosauři** (18): KOSTRA, SOPKA, ZUBY, DRÁP, OCAS, BAŽINA, KAPRAĎ, VEJCE,
+**Dinosauři** (18): KOSTRA, SOPKA, ZUBY, DRÁP, OCAS, BAŽINA, TLAMA, VEJCE,
 PRAVĚK, LEBKA, JEZERO, STOPA, TRNY, PANCÍŘ, KŘÍDLO, KÁMEN, LÁVA, ŠUPINA
 
 **Laboratoř** (21): BAŇKA, KAPKA, PLYN, VZOREK, PIPETA, MIKROB, VIRUS, KYSLÍK,
