@@ -95,12 +95,33 @@ function HrobkaScene() {
       <path d="M210 332 q-22 -40 0 -70 h26 q22 30 0 70 z" fill="#b5532a" stroke="#6b2d14" strokeWidth="4" />
       <rect x="212" y="252" width="22" height="12" fill="#b5532a" stroke="#6b2d14" strokeWidth="4" />
       <path d="M216 296 h14" stroke="#e3c792" strokeWidth="5" />
-      <g fill="#1f3b5c">
-        <ellipse cx="600" cy="352" rx="22" ry="15" />
-        <circle cx="600" cy="332" r="9" />
-      </g>
-      <path d="M600 338 v28 M580 345 l-12 -6 M620 345 l12 -6 M580 360 l-12 6 M620 360 l12 6" stroke="#1f3b5c" strokeWidth="4" strokeLinecap="round" />
+      <Scarab x={610} y={330} />
     </svg>
+  )
+}
+
+/**
+ * Skarab, jak ho kreslili Egypťané: shora, krovky rozdělené čarou a nad
+ * hlavou sluneční kotouč. Paprskovité nohy kolem kulatého těla dělaly
+ * z prvního pokusu pavouka (Karel, 4. 10. 2026).
+ */
+function Scarab({ x, y }: { x: number; y: number }) {
+  const ink = '#134a54'
+  return (
+    <g stroke={ink} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+      {/* Přední nohy drží slunce, ostatní krátké a ohnuté dozadu */}
+      <path
+        d={`M${x - 12} ${y - 6} l-8 -14 M${x + 12} ${y - 6} l8 -14
+            M${x - 22} ${y + 14} l-12 -2 l-4 10 M${x + 22} ${y + 14} l12 -2 l4 10
+            M${x - 20} ${y + 30} l-8 8 l2 8 M${x + 20} ${y + 30} l8 8 l-2 8`}
+        fill="none"
+      />
+      <circle cx={x} cy={y - 30} r="13" fill="#e8a317" />
+      <path d={`M${x - 10} ${y - 10} q10 -14 20 0 z`} fill="#2a7f8f" />
+      <ellipse cx={x} cy={y} rx="20" ry="10" fill="#2a7f8f" />
+      <ellipse cx={x} cy={y + 26} rx="25" ry="20" fill="#2a7f8f" />
+      <path d={`M${x} ${y + 8} v37`} fill="none" />
+    </g>
   )
 }
 
