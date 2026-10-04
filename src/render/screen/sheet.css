@@ -424,6 +424,41 @@
   font-weight: 700;
 }
 
+/*
+ * Řešení po oddílech: dva sloupce, oddíl se nikdy nerozdělí. Písmo je stejné
+ * jako u `.solution-table` — úspora je v šířce, ne ve stupni písma.
+ */
+.table-sections {
+  columns: 2;
+  column-gap: 8mm;
+  font-size: 10pt;
+}
+
+.table-section {
+  width: 100%;
+  border-collapse: collapse;
+  break-inside: avoid;
+  margin-bottom: 2mm;
+}
+
+.table-section caption {
+  text-align: left;
+  font-weight: 700;
+  padding-bottom: 0.8mm;
+}
+
+.table-section td {
+  padding: 0.35mm 2mm;
+  border-bottom: 0.3mm solid var(--sheet-rule);
+  text-align: left;
+}
+
+.table-section td:last-child {
+  font-weight: 700;
+  text-align: center;
+  width: 8mm;
+}
+
 /* ── Kartičky k vystřižení ────────────────────────────────────────── */
 
 /*

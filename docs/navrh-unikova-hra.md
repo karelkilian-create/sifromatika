@@ -427,9 +427,15 @@ s tím nic dalšího nedělá — jak moc to vadí, ukáže až třída.
    „Až bude mít vaše skupina obě slova, jděte k tabuli, vyberte barvu
    skupiny a slova zadejte." Úvod se na list nepřesunul, opakoval by se na
    každém stanovišti.
-3. **Přehled pro učitele** — tabulka: skupina, stanoviště, slovo a která
-   písmena se z něj berou (`TRUHLA` → `L`, `A`). Plus řešení všech stanovišť
-   a pět řádků návodu, jak hru spustit.
+3. **Přehled pro učitele** — pět řádků návodu, jak hru spustit, a řešení
+   po stanovištích ve dvou sloupcích. Nadpis oddílu nese skupinu, slovo
+   a písmena, která bere tabule (`Modrá 1 — TRUHLA · tabule bere L, A`),
+   pod ním příklady s výsledkem a písmenem.
+   **Upraveno 4. 10. 2026** (Karel): dřív to byla zvlášť tabulka slov a
+   široká tabulka řešení s řádkem na příklad, a přehled měl vždy dvě
+   stránky. Teď se vejde na jednu až do dlouhé hry se třemi skupinami;
+   dlouhá hra se 4–6 skupinami (10–12 stanovišť) má dvě, protože víc
+   než šedesát příkladů se na stránku čitelně nevejde.
 
 ### Výběr odpovědí místo tabulky (Karel, 3. 10. 2026)
 

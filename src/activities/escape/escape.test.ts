@@ -476,9 +476,9 @@ describe('výběr odpovědí', () => {
     expect(kinds).not.toContain('cipher-table')
 
     const overview = pages[pages.length - 1]!
-    const solution = overview.blocks.filter((block) => block.kind === 'table').at(-1)
-    if (solution?.kind !== 'table') throw new Error('chybí tabulka řešení')
-    const letters = solution.rows.map((row) => row[3]).join('')
+    const solution = overview.blocks.find((block) => block.kind === 'table-sections')
+    if (solution?.kind !== 'table-sections') throw new Error('chybí řešení stanovišť')
+    const letters = solution.sections.flatMap((section) => section.rows.map((row) => row[2])).join('')
     expect(letters).toBe(sheet.stations.map((station) => station.word.letters).join(''))
   })
 

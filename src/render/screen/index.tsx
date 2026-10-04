@@ -24,6 +24,7 @@ import type {
   DocumentModel,
   DocumentPage,
   InlineRun,
+  TableSection,
 } from '../../core/document/index.js'
 import type { CipherTable } from '../../core/model/index.js'
 import { MathText } from './math.js'
@@ -100,6 +101,9 @@ function BlockView({ block }: { block: DocumentBlock }) {
 
     case 'table':
       return <TableView columns={block.columns} rows={block.rows} />
+
+    case 'table-sections':
+      return <TableSectionsView sections={block.sections} />
 
     case 'card-grid':
       return (
@@ -311,6 +315,29 @@ function ChoiceListView({ items }: { items: readonly ChoiceListItem[] }) {
         </li>
       ))}
     </ol>
+  )
+}
+
+function TableSectionsView({ sections }: { sections: readonly TableSection[] }) {
+  return (
+    <div className="table-sections">
+      {sections.map((section, sectionIndex) => (
+        <table className="table-section" key={sectionIndex}>
+          <caption>{section.title}</caption>
+          <tbody>
+            {section.rows.map((row, rowIndex) => (
+              <tr key={rowIndex}>
+                {row.map((cell, cellIndex) => (
+                  <td key={cellIndex}>
+                    <MathText text={cell} />
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ))}
+    </div>
   )
 }
 

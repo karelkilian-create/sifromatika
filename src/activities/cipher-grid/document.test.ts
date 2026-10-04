@@ -37,6 +37,8 @@ function textOfBlock(block: DocumentBlock): string[] {
       return block.items.flatMap((item) => [item.text, ...item.options.map((option) => option.text)])
     case 'table':
       return block.rows.flatMap((row) => [...row])
+    case 'table-sections':
+      return block.sections.flatMap((section) => [section.title, ...section.rows.flat()])
     case 'answer-row':
       return [...(block.letters ?? [])]
     case 'cipher-table':

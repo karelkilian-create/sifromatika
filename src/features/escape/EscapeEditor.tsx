@@ -299,9 +299,9 @@ export function EscapeEditor({
 
       <p className="editor__print-hint">
         {escape.mode === 'groups'
-          ? 'Vytiskněte jednou na skupinu. Listy vylezou po balíčcích, skupina po skupině.'
-          : 'Stanoviště vytiskněte jednou na dítě nebo dvojici; přehled pro učitele stačí jednou.'}{' '}
-        Kolik kopií, nastavíte v dialogu tisku.
+          ? 'Vytiskněte jednou — listy všech skupin jsou v tisku už rozdělené, skupina po skupině.'
+          : 'Stanoviště vytiskněte jednou na dítě nebo dvojici; přehled pro učitele stačí jednou.' +
+            ' Kolik kopií, nastavíte v dialogu tisku.'}
       </p>
 
       <details className="editor__advanced">

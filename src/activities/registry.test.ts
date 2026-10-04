@@ -92,7 +92,8 @@ describe('kontrakt aktivity', () => {
 
     const last = pages[pages.length - 1]!
     expect(
-      last.blocks.some((block) => block.kind === 'table'),
+      // Únikovka má řešení po stanovištích (`table-sections`), ostatní jednu tabulku.
+      last.blocks.some((block) => block.kind === 'table' || block.kind === 'table-sections'),
       `poslední stránka „${last.label}" nemá tabulku s výsledky`,
     ).toBe(true)
   })

@@ -83,6 +83,12 @@ export interface ChoiceListItem extends TaskListItem {
   options: readonly ChoiceOption[]
 }
 
+/** Oddíl bloku `table-sections`: nadpis a řádky bez záhlaví sloupců. */
+export interface TableSection {
+  title: string
+  rows: readonly (readonly string[])[]
+}
+
 /**
  * Blok obsahu.
  *
@@ -129,6 +135,15 @@ export type DocumentBlock =
   | { kind: 'answer-row'; wordLengths: readonly number[]; letters?: readonly string[] }
   /** Tabulka s pevným záhlavím. Buňky jsou hotový text, ne čísla k formátování. */
   | { kind: 'table'; columns: readonly string[]; rows: readonly (readonly string[])[] }
+  /**
+   * Malé tabulky s nadpisem, sázené do dvou sloupců — řešení po oddílech.
+   *
+   * Vlastní blok, ne `table` s příznakem: jedna široká tabulka s řádkem na
+   * příklad zabrala u únikovky dvě stránky a nadpis oddílu (stanoviště a jeho
+   * slovo) by v ní neměl kde stát. Oddíl se mezi sloupci nikdy nerozdělí.
+   * Poslední buňka řádku je výsledek, který učitel hledá očima — tučně.
+   */
+  | { kind: 'table-sections'; sections: readonly TableSection[] }
   /**
    * Mřížka kartiček k vystřižení.
    *

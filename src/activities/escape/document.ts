@@ -107,15 +107,10 @@ function overviewPage(sheet: EscapeSheet): DocumentPage {
   const groups = sheet.config.payload.mode === 'groups'
   const pickList = (station: EscapeStation) => station.picks.join(', ')
 
-  const overviewColumns = groups
-    ? ['Skupina', 'Stanoviště', 'Slovo', 'Tabule bere']
-    : ['Stanoviště', 'Slovo', 'Tabule bere']
-  const overviewRows = sheet.stations.map((station) => {
-    const cells = [String(station.numberInGroup), station.word.story.word, pickList(station)]
-    return groups ? [sheet.groups[station.group]!.name, ...cells] : cells
-  })
-
-  const solutionRows = sheet.stations.flatMap((station) => {
+  // Řešení po stanovištích ve dvou sloupcích: v nadpisu oddílu je slovo,
+  // takže učitel u skupiny, které slovo nevyšlo, najde stanoviště i chybný
+  // příklad na jednom místě. Jedna široká tabulka zabrala dvě stránky.
+  const solutionSections = sheet.stations.map((station) => {
     // Písmeno správné odpovědi: u tabulky z políčka, u výběru z odpovědí
     // TÉHOŽ příkladu — špatná odpověď jednoho může mít hodnotu správné
     // odpovědi jiného, takže hledat přes celé stanoviště nejde.
@@ -126,13 +121,11 @@ function overviewPage(sheet: EscapeSheet): DocumentPage {
         : letterByCode.get(slot.code)
     const label = groups
       ? `${sheet.groups[station.group]!.name} ${station.numberInGroup}`
-      : String(station.numberInGroup)
-    return station.slots.map((slot, index) => [
-      index === 0 ? label : '',
-      slot.task.prompt.text,
-      String(slot.task.value),
-      letterOf(slot) ?? '?',
-    ])
+      : `Stanoviště ${station.numberInGroup}`
+    return {
+      title: `${label} — ${station.word.story.word} · tabule bere ${pickList(station)}`,
+      rows: station.slots.map((slot) => [slot.task.prompt.text, String(slot.task.value), letterOf(slot) ?? '?']),
+    }
   })
 
   const steps = groups
@@ -159,14 +152,12 @@ function overviewPage(sheet: EscapeSheet): DocumentPage {
           {
             text:
               'Bez obrazovky, kterou vidí celá třída, se dá hrát jen napůl: slova zkontrolujete' +
-              ' podle tabulky níž a písmena tajenky dopíšete na tabuli sami.',
+              ' podle řešení níž a písmena tajenky dopíšete na tabuli sami.',
           },
         ],
       },
-      { kind: 'heading', level: 2, text: 'Slova a písmena do tajenky' },
-      { kind: 'table', columns: overviewColumns, rows: overviewRows },
       { kind: 'heading', level: 2, text: 'Řešení stanovišť' },
-      { kind: 'table', columns: ['Stanoviště', 'Příklad', 'Výsledek', 'Písmeno'], rows: solutionRows },
+      { kind: 'table-sections', sections: solutionSections },
     ],
   }
 }
