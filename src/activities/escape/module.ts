@@ -16,6 +16,7 @@ import type {
   EscapeMode,
   EscapeProject,
   EscapeStationKind,
+  Grade,
 } from '../../core/model/index.js'
 import {
   defaultEscapeConfig,
@@ -28,17 +29,23 @@ import {
 import { parseEscapePayload } from './payload.js'
 import { escapeDocument } from './document.js'
 import { escapeScreen } from './screen.js'
-import { DEFAULT_STORY_ID } from './stories.js'
+import { defaultStoryId } from './stories.js'
 
 /** Pole formuláře, která patří jen únikové hře. */
 export interface EscapeEditorState {
-  story: string
+  /**
+   * Příběh. `auto` = podle ročníku (mladší Poklad, starší Hrobka), stejně
+   * jako druh stanoviště. Ročník je sdílený a pamatuje se, takže kdo přijde
+   * z šestkového listu, nesmí v únikovce najít pirátskou truhlu.
+   */
+  story: 'auto' | string
   length: EscapeLength
   /**
-   * Tajenka. Nabídne ji příběh podle délky hry; učitel ji smí přepsat.
-   * Změna délky ji přepíše jen tehdy, když je pořád ta nabídnutá (§3).
+   * Tajenka. `null` = ta, kterou nabízí příběh k délce hry (§3). Změna
+   * délky, příběhu nebo ročníku ji tak přepíše jen tehdy, když ji učitel
+   * nepsal sám.
    */
-  message: string
+  message: string | null
   mode: EscapeMode
   groupCount: number
   /**
@@ -54,12 +61,17 @@ export interface EscapeEditorState {
  * Typ vypsaný kvůli literálům — jinak by `length` nešlo přestavit.
  */
 const initialState: EscapeEditorState = {
-  story: DEFAULT_STORY_ID,
+  story: 'auto',
   length: 'short',
-  message: offeredMessage(DEFAULT_STORY_ID, 'short'),
+  message: null,
   mode: 'class',
   groupCount: ESCAPE_GROUP_LIMITS.fallback,
   stationKind: 'auto',
+}
+
+/** Příběh, který hra opravdu použije: zvolený, nebo ten podle ročníku. */
+export function resolveStory(state: EscapeEditorState, grade: Grade): string {
+  return state.story === 'auto' ? defaultStoryId(grade) : state.story
 }
 
 export const escapeModule = {
@@ -77,8 +89,11 @@ export const escapeModule = {
 
   toConfig(state, shared, seed): EscapeProject {
     const config = applyShared(defaultEscapeConfig(shared.grade, seed, state.length, state.mode), shared)
-    config.payload.story = state.story
-    config.payload.message = state.message
+    // Do souboru jde vždy konkrétní příběh a tajenka, ze stejného důvodu
+    // jako druh stanoviště níž.
+    const story = resolveStory(state, shared.grade)
+    config.payload.story = story
+    config.payload.message = state.message ?? offeredMessage(story, state.length)
     config.payload.groupCount = state.groupCount
     // Do souboru jde vždy konkrétní druh, ne `auto`: uložená hra se musí
     // otevřít stejná, i kdyby se výchozí druh pro ročník jednou změnil.
@@ -90,9 +105,9 @@ export const escapeModule = {
   fromConfig(config): EscapeEditorState {
     const payload = config.payload
     return {
-      story: payload.story,
+      story: payload.story === defaultStoryId(payload.difficulty.grade) ? 'auto' : payload.story,
       length: payload.length,
-      message: payload.message,
+      message: payload.message === offeredMessage(payload.story, payload.length) ? null : payload.message,
       mode: payload.mode,
       groupCount: payload.groupCount,
       // Shoduje-li se s výchozím druhem ročníku, vrací se jako `auto` —

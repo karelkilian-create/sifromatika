@@ -25,12 +25,14 @@ import {
   escapeStationCount,
   generateEscape,
   messageWords,
+  offeredMessage,
   plainWord,
   type EscapeSheet,
 } from './index.js'
 import { parseEscapePayload } from './payload.js'
 import { escapeScreen } from './screen.js'
-import { STORIES } from './stories.js'
+import { escapeModule } from './module.js'
+import { STORIES, defaultStoryId } from './stories.js'
 
 const LENGTHS: EscapeLength[] = ['short', 'medium', 'long']
 
@@ -40,12 +42,17 @@ function game(
   options: {
     mode?: EscapeMode
     grade?: Grade
+    story?: string
     message?: string
     groupCount?: number
     stationKind?: EscapeStationKind
   } = {},
 ) {
   const config = defaultEscapeConfig(options.grade ?? 4, seed, length, options.mode ?? 'class')
+  if (options.story !== undefined) {
+    config.payload.story = options.story
+    config.payload.message = offeredMessage(options.story, length)
+  }
   if (options.stationKind !== undefined) config.payload.stationKind = options.stationKind
   if (options.message !== undefined) config.payload.message = options.message
   if (options.groupCount !== undefined) config.payload.groupCount = options.groupCount
@@ -121,7 +128,7 @@ describe.each(STORIES.map((story) => [story.id, story] as const))('příběh %s'
   it.each(LENGTHS)('%s hra se postaví a dává různé hry', (length) => {
     const variants = new Set<string>()
     for (let seed = 0; seed < 25; seed++) {
-      const sheet = sheetOf(game(length, `rezerva-${seed}`))
+      const sheet = sheetOf(game(length, `rezerva-${seed}`, { story: story.id }))
       expect(sheet.verification).toEqual({ ok: true })
       variants.add(
         sheet.stations
@@ -131,6 +138,50 @@ describe.each(STORIES.map((story) => [story.id, story] as const))('příběh %s'
       )
     }
     expect(variants.size).toBeGreaterThanOrEqual(10)
+  })
+
+  /*
+   * Ve skupinách se počet stanovišť zaokrouhluje na násobek skupin, takže
+   * krátká hra má při třech skupinách šest stanovišť a tajenka šest různých
+   * písmen. `FARAON` s pěti tudy neprošel (4. 10. 2026).
+   */
+  it.each(LENGTHS)('%s hra se postaví pro každý počet skupin', (length) => {
+    for (let groupCount = ESCAPE_GROUP_LIMITS.min; groupCount <= ESCAPE_GROUP_LIMITS.max; groupCount++) {
+      const sheet = sheetOf(game(length, `skupiny-${groupCount}`, { story: story.id, mode: 'groups', groupCount }))
+      expect(sheet.verification, `${groupCount} skupin`).toEqual({ ok: true })
+    }
+  })
+})
+
+describe('příběh podle ročníku', () => {
+  it('první stupeň dostane Poklad, druhý Hrobku', () => {
+    expect(defaultStoryId(2)).toBe('poklad')
+    expect(defaultStoryId(5)).toBe('poklad')
+    expect(defaultStoryId(6)).toBe('hrobka')
+    expect(defaultStoryId(8)).toBe('hrobka')
+  })
+
+  it('výchozí stav vybere příběh i tajenku podle ročníku', () => {
+    const shared = {
+      grade: 7 as Grade,
+      title: '',
+      operations: { add: true, sub: true, mul: true, div: true },
+      crossesTen: true,
+    }
+    const config = escapeModule.toConfig(escapeModule.initialState, shared, 'seed')
+    expect(config.payload.story).toBe('hrobka')
+    expect(config.payload.message).toBe('KLETBA')
+  })
+
+  it('soubor se vrátí jako „podle ročníku", jen když se s ročníkem shoduje', () => {
+    const own = defaultEscapeConfig(7, 'seed', 'medium')
+    own.payload.story = 'poklad'
+    own.payload.message = 'VÝLET'
+    expect(escapeModule.fromConfig(own)).toMatchObject({ story: 'poklad', message: 'VÝLET' })
+    expect(escapeModule.fromConfig(defaultEscapeConfig(7, 'seed', 'medium'))).toMatchObject({
+      story: 'auto',
+      message: null,
+    })
   })
 })
 

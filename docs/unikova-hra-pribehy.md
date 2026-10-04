@@ -21,7 +21,7 @@ kratší, takže je to pořád tatáž věta:
 
 | Délka hry | Stanovišť | Různých písmen v tajence | Příklad |
 |---|---|---|---|
-| krátká | 4 | 5–9 | `POKLAD` |
+| krátká | 4 | 6–9 | `POKLAD` |
 | střední | 6 | 10–12 | `POKLAD JE NÁŠ` |
 | dlouhá | 8 | 12–16 | `POKLAD JE NÁŠ, KAPITÁNE` |
 
@@ -30,6 +30,12 @@ dvanáct různých písmen (tři ze slova), a to jen tehdy, když každé slovo 
 přesně tři — v praxi skoro nikdy. Dlouhá hra naopak potřebuje aspoň osm
 různých písmen, jedno na stanoviště. Rozsahy v tabulce jsou to, co v testu
 níž prošlo s rezervou.
+
+⚠ **Krátká tajenka potřebuje aspoň šest různých písmen** (4. 10. 2026).
+Od 3. 10. se počet stanovišť ve skupinách zaokrouhluje na násobek skupin,
+takže krátká hra má při třech nebo šesti skupinách šest stanovišť. Pětipísmenné
+krátké tajenky ze seznamu (`FARAON`, `HESLO`) proto ve skupinách neprojdou;
+*Hrobka* dostala `KLETBA`, *Tajného agenta* bude potřeba přepsat.
 
 **Slova:**
 

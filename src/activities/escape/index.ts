@@ -49,7 +49,7 @@ import { buildGrid, coordScheme } from '../../ciphers/grid/index.js'
 import { distractorsFor } from '../../tasks/distractors.js'
 import { findTaskGenerator } from '../../tasks/registry.js'
 import { APP_VERSION, GENERATOR_VERSION } from '../../version.js'
-import { DEFAULT_STORY_ID, findStory, type Story, type StoryWord } from './stories.js'
+import { defaultStoryId, findStory, type Story, type StoryWord } from './stories.js'
 
 /** Slovo stanoviště v obou podobách a s větami příběhu. */
 export interface EscapeWord {
@@ -153,9 +153,9 @@ export function defaultEscapeConfig(
     seed,
     locale: 'cs',
     payload: {
-      story: DEFAULT_STORY_ID,
+      story: defaultStoryId(grade),
       length,
-      message: offeredMessage(DEFAULT_STORY_ID, length),
+      message: offeredMessage(defaultStoryId(grade), length),
       mode,
       groupCount: ESCAPE_GROUP_LIMITS.fallback,
       stationKind: defaultStationKind(grade),

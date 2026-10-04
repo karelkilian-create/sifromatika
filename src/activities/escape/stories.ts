@@ -3,7 +3,8 @@
  *
  * Text se tu NEGENERUJE. Každá věta prošla autorem projektu dřív, než se
  * dostala do repozitáře — text, který nikdo nečetl, nesmí před třídu
- * (docs/navrh-unikova-hra.md §6). Zdroj: docs/unikova-hra-poklad.md.
+ * (docs/navrh-unikova-hra.md §6). Zdroje: docs/unikova-hra-poklad.md
+ * a docs/unikova-hra-hrobka.md.
  *
  * ⚠ Změna slovníku nebo vět mění výstup uložených her. Každá úprava je proto
  *   inkrement `GENERATOR_VERSION` (§3) — golden test na to upozorní.
@@ -13,7 +14,7 @@
  * se otevře až ve finále. Hlídá to `escape.test.ts`, kde to stroj umí.
  */
 
-import type { EscapeLength } from '../../core/model/index.js'
+import type { EscapeLength, Grade } from '../../core/model/index.js'
 
 export interface StoryWord {
   /** Slovo s diakritikou, jak ho ukáže tabule. */
@@ -173,13 +174,140 @@ const POKLAD: Story = {
   ],
 }
 
-/**
- * Příběhy v pořadí nabídky. První verze má jediný (rozhodnuto 2. 10. 2026,
- * §13 bod 3); další přibudou, až se formát ověří ve třídě.
- */
-export const STORIES: readonly Story[] = [POKLAD]
+const HROBKA: Story = {
+  id: 'hrobka',
+  label: 'Hrobka faraona',
+  audience: 'older',
+  intro:
+    'Vaše výprava sestoupila do starověké hrobky. Sotva jste vešli, kamenný kvádr ' +
+    'za vámi zapadl a zavřel vchod. Nad ním je vytesaný nápis, ze kterého někdo ' +
+    'vysekal písmena. Kdo ho doplní, toho kámen pustí ven. Písmena jsou ukrytá ' +
+    'v číslech po všech komorách. Spočítejte příklady a najděte je!',
+  motto: 'Jedna výprava, jeden nápis. Každé písmeno se počítá.',
+  outro:
+    'Poslední písmeno zapadlo na své místo. Kvádr se se skřípotem odsunul a dovnitř ' +
+    'proniklo denní světlo. Jste venku — a nesete si příběh, kterému nikdo neuvěří. ' +
+    'Každé písmeno jste si vypočítali sami!',
+  messages: {
+    short: 'KLETBA',
+    medium: 'FARAONOVA KLETBA',
+    long: 'FARAONOVA KLETBA ZMIZELA',
+  },
+  words: [
+    {
+      word: 'MUMIE',
+      sheet: 'V kamenné rakvi leží někdo zabalený do pruhů plátna. Na obvazech jsou čísla.',
+      board: 'Mumie! Leží tu přes tři tisíce let a ani se nepohne. Doufejme.',
+    },
+    {
+      word: 'HROBKA',
+      sheet: 'Na stěně je vyrytý plánek podzemních síní a komor. U každé je číslo.',
+      board: 'Plánek ukazuje, že hrobka má mnohem víc místností, než jste čekali.',
+    },
+    {
+      word: 'SFINGA',
+      sheet: 'U zdi leží kamenný lev s lidskou hlavou. Na tlapách má vytesaná čísla.',
+      board: 'Sfinga mlčí a dívá se do tmy. Prý kdysi dávala poutníkům hádanky.',
+    },
+    {
+      word: 'PÍSEK',
+      sheet: 'Na podlaze je navátá vrstva drobných žlutých zrnek. Někdo do ní prstem napsal čísla.',
+      board: 'Písek sem vítr nanášel celá staletí. Kdo psal ta čísla, je záhada.',
+    },
+    {
+      word: 'AMULET',
+      sheet: 'Na krku sochy visí na šňůrce malý modrý přívěsek. Na zadní straně jsou čísla.',
+      board: 'Amulet měl chránit svého majitele před zlými duchy. Jestli chrání i vás, nevíte.',
+    },
+    {
+      word: 'MAPA',
+      sheet: 'Ve výklenku leží srolovaný papyrus. Jsou na něm cesty, šipky a čísla.',
+      board: 'Je to mapa! Některé cesty na ní končí naslepo.',
+    },
+    {
+      word: 'ZLATO',
+      sheet: 'Ve světle baterky se něco na zemi žlutě zatřpytí.',
+      board: 'Zlato! Celá hromada. Jenže ven vás nepustí.',
+    },
+    {
+      word: 'ŽEZLO',
+      sheet: 'O zeď je opřená zdobená hůl. Na rukojeti jsou čísla.',
+      board: 'Žezlo nosil jen vládce. Stačilo jím mávnout a všichni poslouchali.',
+    },
+    {
+      word: 'POUŠŤ',
+      sheet: 'Na stěně je namalovaná krajina: samé duny, slunce a ani kapka vody.',
+      board: 'Kolem hrobky jsou stovky kilometrů písku. Bez vody byste odsud daleko nedošli.',
+    },
+    {
+      word: 'OÁZA',
+      sheet: 'Na malbě roste uprostřed vyprahlé krajiny pár palem kolem jezírka.',
+      board: 'Oáza: jediné místo široko daleko, kde se dalo napít.',
+    },
+    {
+      word: 'KOBRA',
+      sheet: 'Z rohu se ozývá tiché syčení. Na koši, odkud vychází, jsou čísla.',
+      board: 'V koši je kobra. Naštěstí spí — couvejte pomalu.',
+    },
+    {
+      word: 'TRŮN',
+      sheet: 'Na vyvýšeném stupni stojí veliké zlacené křeslo. V opěradle jsou vyřezaná čísla.',
+      board: 'Je to trůn a je prázdný. Jeho majitel tu ale pořád někde je.',
+    },
+    {
+      word: 'LOTOS',
+      sheet: 'V nádobě u zdi stojí sušený květ s mnoha lístky. Na stonku visí štítek s čísly.',
+      board: 'Lotos byl pro Egypťany posvátný. Ráno rozkvétá a večer se zavírá.',
+    },
+    {
+      word: 'SOCHA',
+      sheet: 'Ve výklenku stojí kamenná postava v životní velikosti. Na podstavci jsou čísla.',
+      board: 'Socha má oči z modrého kamene. Jako by vás sledovaly.',
+    },
+    {
+      word: 'LAMPA',
+      sheet: 'Na polici stojí hliněná miska s knotem a zbytkem oleje.',
+      board: 'Lampa ještě hoří! Někdo tu musel být před vámi.',
+    },
+    {
+      word: 'KORUNA',
+      sheet: 'Na kamenném podstavci leží vysoká čepice, bílá a červená.',
+      board: 'Koruna Horního a Dolního Egypta. Kdo ji nosil, vládl celé zemi.',
+    },
+    {
+      word: 'SKARAB',
+      sheet: 'Po zemi leze velký černý brouk. Ne — je z kamene a na krovkách má čísla.',
+      board: 'Skarab, posvátný brouk. Egypťané věřili, že tlačí slunce po obloze.',
+    },
+    {
+      word: 'CHODBA',
+      sheet: 'Světlo baterky osvětlí úzký průlez, který se stáčí do tmy. Na stěně jsou čísla.',
+      board: 'Chodba vede dolů, hlouběji pod zem. Ze tmy táhne studený vzduch.',
+    },
+    {
+      word: 'PAST',
+      sheet: 'Jeden kámen v podlaze je trochu vyšší než ostatní. Je na něm vyryto číslo.',
+      board: 'Past! Kdo na ten kámen šlápne, spustí ze stropu písek. Obejděte ho.',
+    },
+    {
+      word: 'VÁZA',
+      sheet: 'V rohu stojí vysoká hliněná nádoba s uchem. Na hrdle jsou čísla.',
+      board: 'Ve váze je obilí. Egypťané dávali mrtvým jídlo na cestu do posmrtného života.',
+    },
+  ],
+}
 
-export const DEFAULT_STORY_ID = POKLAD.id
+/** Příběhy v pořadí nabídky: jeden pro mladší a jeden pro starší (4. 10. 2026). */
+export const STORIES: readonly Story[] = [POKLAD, HROBKA]
+
+/**
+ * Příběh, který hra nabídne, dokud učitel nevybere sám: podle ročníku
+ * (§6 návrhu). Mladší jsou první stupeň, starší druhý.
+ */
+export function defaultStoryId(grade: Grade): string {
+  const audience = grade <= 5 ? 'younger' : 'older'
+  return (STORIES.find((story) => story.audience === audience) ?? POKLAD).id
+}
 
 export function findStory(id: string): Story | undefined {
   return STORIES.find((story) => story.id === id)

@@ -23,8 +23,8 @@ import {
 import { hasUsableTopic, type TopicSelection } from '../../tasks/mix.js'
 import { normalizeMessage } from '../../core/text/index.js'
 import { defaultStationKind, escapeStationCount, offeredMessage } from '../../activities/escape/index.js'
-import type { EscapeEditorState } from '../../activities/escape/module.js'
-import { STORIES } from '../../activities/escape/stories.js'
+import { resolveStory, type EscapeEditorState } from '../../activities/escape/module.js'
+import { STORIES, defaultStoryId, findStory } from '../../activities/escape/stories.js'
 import type { EditorState } from '../editor/state.js'
 
 const LENGTH_NAMES: Record<EscapeLength, string> = { short: 'Krátká', medium: 'Střední', long: 'Dlouhá' }
@@ -93,8 +93,10 @@ export function EscapeEditor({
   canPrint,
 }: EscapeEditorProps) {
   const escape = state.byActivity.escape
-  const offered = offeredMessage(escape.story, escape.length)
-  const distinct = normalizeMessage(escape.message).histogram.size
+  const storyId = resolveStory(escape, state.shared.grade)
+  const offered = offeredMessage(storyId, escape.length)
+  const message = escape.message ?? offered
+  const distinct = normalizeMessage(message).histogram.size
   const totalStations = escapeStationCount(escape.length, escape.mode === 'groups' ? escape.groupCount : 1)
 
   const patchEscape = (changes: Partial<EscapeEditorState>) =>
@@ -102,15 +104,6 @@ export function EscapeEditor({
 
   const patchShared = (changes: Partial<SharedEditorState>) =>
     onChange({ ...state, shared: { ...state.shared, ...changes } })
-
-  /**
-   * Délka hry mění nabídnutou tajenku — ale jen tu nabídnutou. Vlastní
-   * tajenku učitele nepřepíše: co nastavil, se potichu nemění.
-   */
-  const changeLength = (length: EscapeLength) => {
-    const keepOwn = escape.message !== offered
-    patchEscape({ length, message: keepOwn ? escape.message : offeredMessage(escape.story, length) })
-  }
 
   /**
    * Ročník je sdílený, takže se přepne i hrám v „Pracovních listech". Táž
@@ -153,10 +146,9 @@ export function EscapeEditor({
           <select
             className="field__input"
             value={escape.story}
-            onChange={(event) =>
-              patchEscape({ story: event.target.value, message: offeredMessage(event.target.value, escape.length) })
-            }
+            onChange={(event) => patchEscape({ story: event.target.value, message: null })}
           >
+            <option value="auto">Podle ročníku — {findStory(defaultStoryId(state.shared.grade))?.label}</option>
             {STORIES.map((story) => (
               <option value={story.id} key={story.id}>
                 {story.label}
@@ -170,7 +162,7 @@ export function EscapeEditor({
           <select
             className="field__input"
             value={escape.length}
-            onChange={(event) => changeLength(event.target.value as EscapeLength)}
+            onChange={(event) => patchEscape({ length: event.target.value as EscapeLength })}
           >
             {(Object.keys(LENGTH_NAMES) as EscapeLength[]).map((length) => (
               <option value={length} key={length}>
@@ -185,9 +177,13 @@ export function EscapeEditor({
           <input
             className="field__input"
             type="text"
-            value={escape.message}
+            value={message}
             maxLength={ESCAPE_MESSAGE_MAX_CHARS}
-            onChange={(event) => patchEscape({ message: event.target.value })}
+            // Kdo dopíše přesně nabídnutou tajenku, dostane zpátky nabídku:
+            // změna délky nebo příběhu ji pak zase přepíše.
+            onChange={(event) =>
+              patchEscape({ message: event.target.value === offered ? null : event.target.value })
+            }
             placeholder={offered}
             autoComplete="off"
             spellCheck={false}
@@ -195,11 +191,11 @@ export function EscapeEditor({
           {/* Délku hry dělají RŮZNÁ písmena, ne délka textu (šibenice, §2). */}
           <span className="field__hint">
             {distinctLettersText(distinct)} na {stationsText(totalStations)}
-            {escape.message === offered ? ' · nabídl příběh' : ''}
-            {escape.message !== offered && (
+            {message === offered ? ' · nabídl příběh' : ''}
+            {message !== offered && (
               <>
                 {' · '}
-                <button type="button" className="link-button" onClick={() => patchEscape({ message: offered })}>
+                <button type="button" className="link-button" onClick={() => patchEscape({ message: null })}>
                   vrátit {offered}
                 </button>
               </>
