@@ -413,6 +413,8 @@ describe('papír a tabule', () => {
     expect(screen.stations.map((station) => station.word)).toEqual(sheet.stations.map((s) => s.word.letters))
     expect(screen.groups).toHaveLength(1)
     expect(screen.messageLetters.join('')).toBe('POKLAD')
+    // Obrázek k úvodu kreslí renderer podle id příběhu.
+    expect(screen.scene).toBe('poklad')
   })
 })
 

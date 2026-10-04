@@ -12,6 +12,7 @@ export function escapeScreen(sheet: EscapeSheet): LockScreenModel {
   return {
     kind: 'lock',
     mode: sheet.config.payload.mode,
+    scene: sheet.story.id,
     intro: sheet.story.intro,
     motto: sheet.story.motto,
     outro: sheet.story.outro,

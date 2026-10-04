@@ -395,6 +395,7 @@ vznikal u učitele a nikdo by ho před třídou nečetl.
 | Část | Kde se objeví |
 |---|---|
 | úvod | tabule na začátku (učitel čte nahlas) |
+| obrázek (4. 10. 2026, Karel: „děti si potrpí na obrázky“) | tabule u úvodu; kreslené SVG v `render/lock/scenes.tsx`, ne stažené — hra jede bez sítě a bez cizích licencí |
 | tři nabízené tajenky, jedna na každou délku hry | formulář, učitel smí přepsat |
 | tematický slovník | slova stanovišť |
 | heslo („Jedna posádka, jedno heslo…") | tabule pod rámečky tajenky po celou hru |

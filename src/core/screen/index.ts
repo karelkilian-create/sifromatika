@@ -44,6 +44,11 @@ export interface LockScreenModel {
    * `groups`: skupiny zadávají svá slova a písmena se ukážou naráz na konci.
    */
   mode: 'class' | 'groups'
+  /**
+   * Obrázek k úvodu — id příběhu. Kreslí ho renderer; neznámý = bez obrázku.
+   * Jen úvod: při zadávání slov by obrázek bral místo rámečkům a větám.
+   */
+  scene: string
   intro: string
   /** Heslo pod rámečky tajenky po celou hru. */
   motto: string

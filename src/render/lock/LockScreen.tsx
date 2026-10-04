@@ -19,6 +19,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { LockScreenModel } from '../../core/screen/index.js'
 import { normalizeMessage } from '../../core/text/index.js'
+import { Scene } from './scenes.js'
 import './lock.css'
 
 const KEYBOARD_ROWS = ['QWERTZUIOP', 'ASDFGHJKL', 'YXCVBNM'].map((row) => row.split(''))
@@ -228,6 +229,7 @@ export function LockScreen({ model, onClose }: LockScreenProps) {
       <main className="lock__stage">
         {phase === 'intro' && (
           <div className="lock__panel">
+            <Scene id={model.scene} />
             <p className="lock__story">{model.intro}</p>
             <button
               type="button"

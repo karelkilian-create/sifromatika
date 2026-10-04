@@ -164,6 +164,15 @@
   text-align: center;
 }
 
+.lock__scene {
+  display: block;
+  width: auto;
+  height: 38vh;
+  max-width: 100%;
+  border: 3px solid var(--lock-line);
+  border-radius: 10px;
+}
+
 .lock__story {
   margin: 0;
   font-size: 1.15em;
