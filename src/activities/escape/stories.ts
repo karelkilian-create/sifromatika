@@ -31,7 +31,7 @@ export interface Story {
   label: string
   /** Komu příběh sedí. Je to výchozí nabídka, ne zákaz. */
   audience: 'younger' | 'older'
-  /** Tabule na začátku a karta skupiny. */
+  /** Tabule na začátku; učitel ho čte nahlas. */
   intro: string
   /** Pod rámečky tajenky po celou hru. */
   motto: string

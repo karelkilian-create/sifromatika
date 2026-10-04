@@ -385,11 +385,26 @@ describe('papír a tabule', () => {
     expect(pages[pages.length - 1]!.label).toBe('Přehled pro učitele')
   })
 
-  it('ve skupinách jde karta skupiny před její stanoviště', () => {
+  it('ve skupinách jdou stanoviště po skupinách a každé říká, kdy k tabuli', () => {
     const sheet = sheetOf(game('short', 'karty', { mode: 'groups', groupCount: 2 }))
-    const labels = escapeDocument(sheet).pages.map((page) => page.label)
-    expect(labels[0]).toBe('Karta skupiny Modrá')
-    expect(labels[1]).toBe('Skupina Modrá · stanoviště 1 z 2')
+    const pages = escapeDocument(sheet).pages
+    // Karta skupiny je pryč (4. 10. 2026): jen stanoviště a přehled.
+    expect(pages.map((page) => page.label)).toEqual([
+      'Skupina Modrá · stanoviště 1 z 2',
+      'Skupina Modrá · stanoviště 2 z 2',
+      'Skupina Zelená · stanoviště 1 z 2',
+      'Skupina Zelená · stanoviště 2 z 2',
+      'Přehled pro učitele',
+    ])
+    const last = pages[0]!.blocks.at(-1)!
+    expect(last.kind === 'paragraph' && last.runs.map((run) => run.text).join('')).toBe(
+      'Až bude mít vaše skupina obě slova, jděte k tabuli, vyberte barvu skupiny (modrá) a slova zadejte.',
+    )
+  })
+
+  it('v celé třídě pokyn k tabuli na listu není', () => {
+    const pages = escapeDocument(sheetOf(game('short', 'trida'))).pages
+    expect(pages[0]!.blocks.at(-1)!.kind).toBe('answer-row')
   })
 
   it('zámek dostane slova i písmena všech stanovišť', () => {

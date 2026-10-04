@@ -31,7 +31,7 @@ Tajenky: `POKLAD` · `POKLAD JE NÁŠ` · `POKLAD JE NÁŠ, KAPITÁNE`.
 
 ## Úvod
 
-Tabule na začátku a karta skupiny.
+Tabule na začátku; učitel ho čte nahlas. (Karta skupiny, kde byl i na papíře, je od 4. 10. zrušená.)
 
 > Vaše loď přistála u malého ostrova. Říká se, že je tu zakopaná truhla.
 > Má zvláštní zámek: neotevře ho klíč, ale tajné heslo. Písmena hesla
@@ -97,7 +97,7 @@ Jen když učitel napíše vlastní tajenku a tematický slovník nestačí.
 
 ## Rozhodnuto (3. 10. 2026)
 
-- **Děti název příběhu nevidí.** Karta skupiny a tabule ukazují jen úvod;
+- **Děti název příběhu nevidí.** Tabule ukazuje jen úvod;
   „Poklad" je jen v katalogu pro učitele. Název by prozradil krátkou
   tajenku, a skoro každý jiný pirátský název obsahuje slovo ze slovníku.
 - **Kapitán se v textech neobjeví.** Tajenka `KAPITÁNE` stačí, oslovení

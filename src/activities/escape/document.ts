@@ -1,9 +1,12 @@
 /**
  * Úniková hra jako `DocumentModel` — to, co se tiskne (docs/navrh-unikova-hra.md §7).
  *
- * Pořadí stránek je pořadí balíčků: ve skupinách karta skupiny a za ní její
- * stanoviště, skupina po skupině, aby šly listy rozdat tak, jak vylezou
- * z tiskárny. Přehled pro učitele je poslední.
+ * Pořadí stránek je pořadí balíčků: stanoviště skupina po skupině, aby šly
+ * listy rozdat tak, jak vylezou z tiskárny. Přehled pro učitele je poslední.
+ *
+ * Karta skupiny tu byla do 4. 10. 2026 a Karel ji zrušil: úvod čte tabule,
+ * barvu nese nadpis stanoviště a rámečky na slova opakovaly ty pod tabulkou.
+ * Zbyl z ní jen pokyn, kdy jít k tabuli, a ten je na každém stanovišti.
  *
  * ⚠ Na listu stanoviště NIC nevyznačuje, které písmeno se bude počítat.
  *   Kdyby bylo, děti spočítají jen ten jeden příklad (§2). Písmena pro
@@ -77,36 +80,25 @@ function stationPage(sheet: EscapeSheet, station: EscapeStation): DocumentPage {
     { kind: 'heading', level: 2, text: 'Vyšlo vám slovo' },
     { kind: 'answer-row', wordLengths: [station.word.letters.length] },
   ]
+  if (sheet.config.payload.mode === 'groups') blocks.push(boardNote(sheet, station))
   return { label: stationHeading(sheet, station), blocks }
 }
 
-function groupCard(sheet: EscapeSheet, groupIndex: number): DocumentPage {
-  const group = sheet.groups[groupIndex]!
+/** Ve skupinách: kdy a s čím jít k tabuli. V „celé třídě" to řídí tabule. */
+function boardNote(sheet: EscapeSheet, station: EscapeStation): DocumentBlock {
+  const group = sheet.groups[station.group]!
   const count = group.stations.length
   return {
-    label: `Karta skupiny ${group.name}`,
-    blocks: [
-      { kind: 'heading', level: 1, text: `Skupina ${group.name}` },
-      { kind: 'paragraph', runs: [{ text: sheet.story.intro }] },
+    kind: 'paragraph',
+    runs: [
+      { text: 'Až bude mít vaše skupina ' },
+      // Skupina má jedno až čtyři stanoviště (nejdelší hra na dvě skupiny).
+      { text: count === 1 ? 'tohle slovo' : count === 2 ? 'obě slova' : `všechna ${count} slova`, strong: true },
       {
-        kind: 'paragraph',
-        runs: [
-          { text: 'Vaše skupina má ' },
-          { text: count === 1 ? 'jedno stanoviště' : `${count} stanoviště`, strong: true },
-          {
-            text:
-              '. Na každém vám vyjde jedno slovo. Až budete mít všechna slova, jděte k tabuli:' +
-              ` vyberte barvu skupiny (${group.name.toLowerCase()}) a slova zadejte.`,
-          },
-        ],
+        text:
+          `, jděte k tabuli, vyberte barvu skupiny (${group.name.toLowerCase()})` +
+          ` a ${count === 1 ? 'slovo' : 'slova'} zadejte.`,
       },
-      { kind: 'heading', level: 2, text: 'Naše slova' },
-      ...group.stations.map(
-        (index): DocumentBlock => ({
-          kind: 'answer-row',
-          wordLengths: [sheet.stations[index]!.word.letters.length],
-        }),
-      ),
     ],
   }
 }
@@ -144,7 +136,7 @@ function overviewPage(sheet: EscapeSheet): DocumentPage {
   })
 
   const steps = groups
-    ? '1. Každé skupině dejte její kartu a listy stanovišť. ' +
+    ? '1. Každé skupině dejte listy jejích stanovišť. ' +
       '2. Na počítači u tabule klikněte na „Spustit zámek" a přečtěte úvod. ' +
       '3. Skupina, která má všechna slova, jde k tabuli, vybere svou barvu a slova zadá. ' +
       '4. Písmena tajenky tabule ukáže, až budou mít slova všechny skupiny. ' +
@@ -181,8 +173,7 @@ function overviewPage(sheet: EscapeSheet): DocumentPage {
 
 export function escapeDocument(sheet: EscapeSheet): DocumentModel {
   const pages: DocumentPage[] = []
-  sheet.groups.forEach((group, groupIndex) => {
-    if (sheet.config.payload.mode === 'groups') pages.push(groupCard(sheet, groupIndex))
+  sheet.groups.forEach((group) => {
     for (const index of group.stations) pages.push(stationPage(sheet, sheet.stations[index]!))
   })
   pages.push(overviewPage(sheet))

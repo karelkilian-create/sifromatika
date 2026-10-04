@@ -394,7 +394,7 @@ vznikal u učitele a nikdo by ho před třídou nečetl.
 
 | Část | Kde se objeví |
 |---|---|
-| úvod | tabule na začátku, karta skupiny |
+| úvod | tabule na začátku (učitel čte nahlas) |
 | tři nabízené tajenky, jedna na každou délku hry | formulář, učitel smí přepsat |
 | tematický slovník | slova stanovišť |
 | heslo („Jedna posádka, jedno heslo…") | tabule pod rámečky tajenky po celou hru |
@@ -421,8 +421,12 @@ s tím nic dalšího nedělá — jak moc to vadí, ukáže až třída.
 1. **Stanoviště** — každé na samostatné stránce: věta příběhu, čtyři až šest
    příkladů, šifrovací tabulka, rámečky na slovo. **Žádné vyznačené políčko.**
    Sazba je dnešní šifra, jen s kratší tajenkou.
-2. **Karta skupiny** — barva, úvod příběhu, seznam stanovišť a „až budete mít
-   všechna slova, jděte k tabuli". V režimu „celá třída" se nevytiskne.
+2. ~~**Karta skupiny**~~ — **zrušena 4. 10. 2026** (Karel): úvod ukazuje
+   tabule, barvu nese nadpis stanoviště a rámečky na slova opakovaly ty pod
+   tabulkou. Ve skupinách je místo ní na konci každého stanoviště věta
+   „Až bude mít vaše skupina obě slova, jděte k tabuli, vyberte barvu
+   skupiny a slova zadejte." Úvod se na list nepřesunul, opakoval by se na
+   každém stanovišti.
 3. **Přehled pro učitele** — tabulka: skupina, stanoviště, slovo a která
    písmena se z něj berou (`TRUHLA` → `L`, `A`). Plus řešení všech stanovišť
    a pět řádků návodu, jak hru spustit.
@@ -479,7 +483,7 @@ Nová aktivita `escape` v registru, jako každá jiná:
 src/activities/escape/
   index.ts      rozdělení tajenky, výběr slov, stanoviště, verifikace řetězu
   module.ts     záznam do registru, stav formuláře
-  document.ts   stanoviště, karty skupin, přehled pro učitele
+  document.ts   stanoviště, přehled pro učitele
   payload.ts    validace payloadu z `.sifra`
   stories.ts    příběhové šablony: texty, tematické slovníky, nabízené tajenky
   escape.test.ts
@@ -502,7 +506,7 @@ k příběhům. Rozhodne se při implementaci podle toho, co řekne `npm run arc
 a „Diplom“, uvnitř aktivita v registru jako ostatní.**
 
 Do „Pracovních listů“ nepatří. Ta záložka slibuje pracovní list a list
-s řešením, kdežto únikovka vyrobí stanoviště, karty skupin, přehled pro
+s řešením, kdežto únikovka vyrobí stanoviště, přehled pro
 učitele a zámek. Učitel ji navíc ve třídě spouští a řídí, nejen tiskne.
 Vlastní záložka je i přirozené místo pro upozornění na tabuli (§5), které
 učitel musí vidět dřív, než začne vyplňovat.

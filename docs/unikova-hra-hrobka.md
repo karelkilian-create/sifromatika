@@ -35,7 +35,7 @@ nikde kromě závěru**, protože jsou v tajenkách. Panovník je proto v textec
 
 ## Úvod
 
-Tabule na začátku a karta skupiny.
+Tabule na začátku; učitel ho čte nahlas. (Karta skupiny, kde byl i na papíře, je od 4. 10. zrušená.)
 
 > Vaše výprava sestoupila do starověké hrobky. Sotva jste vešli, kamenný
 > kvádr za vámi zapadl a zavřel vchod. Nad ním je vytesaný nápis, ze kterého
