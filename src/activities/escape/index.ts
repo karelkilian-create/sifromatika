@@ -35,8 +35,10 @@ import type {
   EscapeProject,
   EscapeStationKind,
   Grade,
+  OperationTag,
   RelaxationLog,
   Task,
+  TaskGenerator,
   VerificationFailure,
   VerificationReport,
 } from '../../core/model/index.js'
@@ -47,7 +49,8 @@ import { ALPHABET, CZECH_LETTER_WEIGHTS, normalizeMessage, type NormalizedMessag
 import { verifyChoiceSheet, verifyEscapeChain, verifySheet } from '../../core/verify/index.js'
 import { buildGrid, coordScheme } from '../../ciphers/grid/index.js'
 import { distractorsFor } from '../../tasks/distractors.js'
-import { findTaskGenerator } from '../../tasks/registry.js'
+import { pickGenerator } from '../../tasks/mix.js'
+import { findTaskGenerator, taskGenerators } from '../../tasks/registry.js'
 import { APP_VERSION, GENERATOR_VERSION } from '../../version.js'
 import { defaultStoryId, findStory, type Story, type StoryWord } from './stories.js'
 
@@ -161,6 +164,7 @@ export function defaultEscapeConfig(
       stationKind: defaultStationKind(grade),
       difficulty: gradeProfile(grade),
       taskMix: { add: 1, sub: 1, mul: 1, div: 1 },
+      generatorMix: { arithmetic: 1 },
     },
   }
 }
@@ -324,25 +328,67 @@ function loadSpread(deal: readonly (readonly number[])[], lengths: readonly numb
 const STATION_ATTEMPTS = 6
 
 /**
+ * Generátory úloh, které hra smí použít (zaškrtnutá témata, která ročník
+ * umí), a jejich obory výsledků. Chybějící `generatorMix` = jen aritmetika,
+ * tedy hra uložená před tématy.
+ *
+ * Počítá se JEDNOU na hru, ne na stanoviště: obor desetinných čísel nebo
+ * zlomků v šesté třídě trvá desítky milisekund a stanovišť s pokusy je
+ * přes padesát. Bez téhle mezipaměti se hra generovala půldruhé sekundy.
+ */
+interface StationTasks {
+  generators: TaskGenerator[]
+  mix: Readonly<Record<string, number>>
+  /** Obor výsledků daných generátorů pro danou směs operací. */
+  reachable: (generators: readonly TaskGenerator[], taskMix: Partial<Record<OperationTag, number>>) => Set<number>
+}
+
+function stationTasks(config: EscapeProject): StationTasks {
+  const mix = config.payload.generatorMix ?? { arithmetic: 1 }
+  const supported = taskGenerators.filter(
+    (generator) => generator.supports(config.payload.difficulty) && (mix[generator.id] ?? 0) > 0,
+  )
+  const cache = new Map<string, Set<number>>()
+  const reachable: StationTasks['reachable'] = (generators, taskMix) => {
+    const key = `${generators.map((generator) => generator.id).join('+')}|${JSON.stringify(taskMix)}`
+    let values = cache.get(key)
+    if (values === undefined) {
+      values = new Set<number>()
+      for (const generator of generators) {
+        for (const value of generator.reachableValues(config.payload.difficulty, taskMix, REQUIRE_WHOLE_RESULTS)) {
+          values.add(value)
+        }
+      }
+      cache.set(key, values)
+    }
+    return values
+  }
+  return { generators: supported.length > 0 ? supported : [findTaskGenerator('arithmetic')!], mix, reachable }
+}
+
+/**
  * Šifra se slovem jako tajenkou.
  *
- * Totéž co `generateOnce` u šifry, jen menší: jediný generátor (aritmetika,
- * protože učitel volí jen operace) a slovo místo věty. Písmena se rozprostřou
- * mezi zaškrtnuté operace, aby čtyři příklady nebyly čtyři součty.
+ * Totéž co `generateOnce` u šifry, jen menší: slovo místo věty, žádný
+ * nadpis ani řešení. Písmena se rozprostřou mezi zaškrtnuté operace, aby
+ * čtyři příklady nebyly čtyři součty, a témata se losují ve stejném poměru
+ * jako na šifře (`gridGeneratorMix`).
  */
 function buildStation(
   word: string,
   config: EscapeProject,
+  tasks: StationTasks,
   rng: Rng,
 ): { table: CipherTable; slots: EscapeSlot[]; verification: VerificationReport } | { reason: string } {
   const payload = config.payload
-  const generator = findTaskGenerator('arithmetic')!
+  const { generators, mix } = tasks
   const message = normalizeMessage(word)
 
-  const reachable = generator.reachableValues(payload.difficulty, payload.taskMix, REQUIRE_WHOLE_RESULTS)
+  const reachableFor = (taskMix: Partial<Record<OperationTag, number>>) => tasks.reachable(generators, taskMix)
+  const reachable = reachableFor(payload.taskMix)
   const chosenOperations = ALL_OPERATIONS.filter((operation) => (payload.taskMix[operation] ?? 0) > 0)
   const reachablePools = (chosenOperations.length > 0 ? chosenOperations : ALL_OPERATIONS).map((operation) =>
-    generator.reachableValues(payload.difficulty, { [operation]: 1 }, REQUIRE_WHOLE_RESULTS),
+    reachableFor({ [operation]: 1 }),
   )
 
   const cipher = buildGrid(
@@ -356,9 +402,22 @@ function buildStation(
   const slots: EscapeSlot[] = []
   for (const code of cipher.artifact.requiredValues) {
     const context = { profile: payload.difficulty, mix: payload.taskMix, usedExpressions, rules: REQUIRE_WHOLE_RESULTS }
-    const task =
-      generator.generateForValue(code, context, rng) ??
-      generator.generateForValue(code, { ...context, usedExpressions: new Set<string>() }, rng)
+    // Pořadí pokusů je u samotné aritmetiky stejné jako před tématy (jeden
+    // generátor, `pickGenerator` nelosuje), takže uložené hry se nezmění.
+    let task = pickGenerator(generators, mix, rng).generateForValue(code, context, rng)
+    if (task === null && generators.length > 1) {
+      for (const generator of generators) {
+        task = generator.generateForValue(code, context, rng)
+        if (task !== null) break
+      }
+    }
+    if (task === null) {
+      const relaxed = { ...context, usedExpressions: new Set<string>() }
+      for (const generator of generators) {
+        task = generator.generateForValue(code, relaxed, rng)
+        if (task !== null) break
+      }
+    }
     if (task === null) return { reason: `Pro výsledek ${code} nelze v této obtížnosti vytvořit příklad.` }
     slots.push({ code, task, options: [] })
   }
@@ -390,33 +449,51 @@ const CHOICE_OPTIONS = 3
 function buildChoiceStation(
   word: string,
   config: EscapeProject,
+  tasks: StationTasks,
   rng: Rng,
 ): { table: null; slots: EscapeSlot[]; verification: VerificationReport } | { reason: string } {
   const payload = config.payload
-  const generator = findTaskGenerator('arithmetic')!
+  const { generators, mix } = tasks
+  const arithmetic = findTaskGenerator('arithmetic')!
   const chosen = ALL_OPERATIONS.filter((operation) => (payload.taskMix[operation] ?? 0) > 0)
+  const positiveValues = (generator: TaskGenerator, taskMix: Partial<Record<OperationTag, number>>) =>
+    [...tasks.reachable([generator], taskMix)]
+      .filter((value) => value > 0)
+      .sort((a, b) => a - b)
   // Ke každé operaci její obor výsledků. Příklad pak vyrobí právě ta
   // operace, ze které se cíl losoval — jinak by z podílu 1 bylo `20 − 19`
   // a dělení by se na list nedostalo, i když je zaškrtnuté.
   const pools = (chosen.length > 0 ? chosen : ALL_OPERATIONS)
     .map((operation) => ({
       mix: { [operation]: 1 },
-      values: [...generator.reachableValues(payload.difficulty, { [operation]: 1 }, REQUIRE_WHOLE_RESULTS)]
-        .filter((value) => value > 0)
-        .sort((a, b) => a - b),
+      values: positiveValues(arithmetic, { [operation]: 1 }),
     }))
     .filter((pool) => pool.values.length > 0)
   if (pools.length === 0) return { reason: 'Pro tuto obtížnost nejde vytvořit žádný příklad.' }
   const order = rng.shuffle(pools.map((_, index) => index))
+  // Obory ostatních témat, počítané až když je los poprvé vybere.
+  const topicValues = new Map<string, number[]>()
 
   const usedExpressions = new Set<string>()
   const slots: EscapeSlot[] = []
   for (const [position, letter] of [...word].entries()) {
     let task: Task | null = null
+    // Téma se losuje jen při víc než jednom generátoru — samotná aritmetika
+    // tak táhne náhodu stejně jako před tématy a uložené hry se nezmění.
+    const topic = pickGenerator(generators, mix, rng)
+    if (topic.id !== arithmetic.id) {
+      if (!topicValues.has(topic.id)) topicValues.set(topic.id, positiveValues(topic, payload.taskMix))
+      const values = topicValues.get(topic.id)!
+      const context = { profile: payload.difficulty, mix: payload.taskMix, usedExpressions, rules: REQUIRE_WHOLE_RESULTS }
+      for (let attempt = 0; attempt < 20 && task === null && values.length > 0; attempt++) {
+        task = topic.generateForValue(rng.pick(values), context, rng)
+      }
+    }
+    // Aritmetika, a záchrana pro téma, ze kterého nic nevypadlo.
     for (let attempt = 0; attempt < 20 && task === null; attempt++) {
       const pool = pools[order[(position + attempt) % order.length]!]!
       const context = { profile: payload.difficulty, mix: pool.mix, usedExpressions, rules: REQUIRE_WHOLE_RESULTS }
-      task = generator.generateForValue(rng.pick(pool.values), context, rng)
+      task = arithmetic.generateForValue(rng.pick(pool.values), context, rng)
     }
     if (task === null) return { reason: 'Pro tuto obtížnost nejde vytvořit dost různých příkladů.' }
 
@@ -557,6 +634,7 @@ export function generateEscape(config: EscapeProject): EscapeOutcome {
 
   const stations: EscapeStation[] = []
   const failures: VerificationFailure[] = []
+  const tasks = stationTasks(config)
   for (const [group, entries] of byGroup.entries()) {
     for (const [position, entry] of entries.entries()) {
       const word = words.find((candidate) => candidate.letters === entry.word)!
@@ -567,6 +645,7 @@ export function generateEscape(config: EscapeProject): EscapeOutcome {
         built = build(
           entry.word,
           config,
+          tasks,
           createRng(`${config.generatorVersion}|${config.seed}|stanoviste-${stationIndex}#${attempt}`),
         )
         if ('slots' in built && built.verification.ok) break

@@ -7,12 +7,29 @@
 
 import { ESCAPE_MESSAGE_MAX_CHARS, clampGroupCount } from '../../core/constraints/index.js'
 import type { EscapeConfig, EscapeLength, EscapeMode, EscapeStationKind } from '../../core/model/index.js'
-import { isRecord, parseDifficulty, parseTaskMix } from '../payload-utils.js'
+import { isRecord, parseDifficulty, parseGeneratorMix, parseTaskMix } from '../payload-utils.js'
 import { findStory } from './stories.js'
 
 const LENGTHS: EscapeLength[] = ['short', 'medium', 'long']
 const MODES: EscapeMode[] = ['class', 'groups']
 const STATION_KINDS: EscapeStationKind[] = ['grid', 'choice']
+
+/**
+ * Známá id generátorů úloh — tatáž jako u šifry, protože stanoviště je
+ * šifrovací tabulka (`gridGeneratorMix`). Vypsaná ručně ze stejného důvodu
+ * jako tam: parser nemá sahat do registru generátorů.
+ */
+const GENERATORS = [
+  'arithmetic',
+  'sequence',
+  'decimal',
+  'percent',
+  'fractions',
+  'equation',
+  'decomposition',
+  'terms',
+  'terms-products',
+]
 
 export function parseEscapePayload(raw: unknown): EscapeConfig | null {
   if (!isRecord(raw)) return null
@@ -30,6 +47,10 @@ export function parseEscapePayload(raw: unknown): EscapeConfig | null {
   const taskMix = parseTaskMix(raw.taskMix)
   if (taskMix === null) return null
 
+  // Chybí-li, hra vznikla dřív, než únikovka znala témata — a tehdy měla
+  // jen aritmetiku. Stejně jako u šifry.
+  const generatorMix = parseGeneratorMix(raw.generatorMix, GENERATORS)
+
   return {
     story: raw.story,
     length: raw.length as EscapeLength,
@@ -43,5 +64,6 @@ export function parseEscapePayload(raw: unknown): EscapeConfig | null {
       : 'grid',
     difficulty,
     taskMix,
+    generatorMix: Object.keys(generatorMix).length > 0 ? generatorMix : { arithmetic: 1 },
   }
 }

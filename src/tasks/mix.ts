@@ -244,3 +244,43 @@ export function topicsFromGeneratorMix(
     terms: enabled('terms') || enabled('terms-products') || enabled('terms-quotients'),
   }
 }
+
+/** Témata, která jdou na šifrovací tabulku: bez „Běžných příkladů" (ty jsou vždy) a bez mocnin. */
+export type GridTopics = Omit<TopicSelection, 'arithmetic' | 'powers'>
+
+/**
+ * Zaškrtávátka → váhy generátorů pro listy se šifrovací tabulkou: šifru
+ * a stanoviště únikové hry. Jiný poměr než `generatorMixFromTopics`, protože
+ * tady se počítání vypnout nedá.
+ *
+ * Poměr 3 : 1 ke každému zapnutému zpestření. Řada i procento zaberou
+ * dítěti víc času než příklad, takže „každá čtvrtá" je zhruba to, co udrží
+ * délku listu na jedné hodině.
+ *
+ * Mocniny tu zaškrtávátko nemají: osmá třída je dostane ve složených
+ * výrazech z profilu (`POWER_SHAPES`) a holé `7²` by na tabulce bylo
+ * kratší než ostatní úlohy.
+ *
+ * Sama aritmetika se zapisuje vahou 1, aby uložené soubory bez zpestření
+ * vypadaly přesně jako dřív — jinak by se listu změnil obsah.
+ */
+export function gridGeneratorMix(topics: GridTopics, profile: DifficultyProfile): Record<string, number> {
+  const usable = usableTopics({ ...topics, arithmetic: true, powers: false }, profile)
+  const mix: Record<string, number> = { arithmetic: 3 }
+  if (usable.sequences) mix.sequence = 1
+  if (usable.decimals) mix.decimal = 1
+  if (usable.percents) mix.percent = 1
+  if (usable.fractions) mix.fractions = 1
+  if (usable.equations) mix.equation = 1
+  if (usable.decomposition) mix.decomposition = 1
+  // Věty s pojmy jsou jedno téma o dvou id a dělí si jeho váhu. Třetí
+  // rodina (dělení: „pětkrát menší“, „kolikrát“) na tabulku nejde: vychází
+  // z ní číslo do deseti a souřadnicový kód začíná jedenáctkou. Losovaná
+  // by jen propadla na aritmetiku. Viz `familyGenerator` v `tasks/terms`.
+  if (usable.terms) {
+    mix.terms = 0.5
+    mix['terms-products'] = 0.5
+  }
+  return Object.keys(mix).length === 1 ? { arithmetic: 1 } : mix
+}
+

@@ -8,7 +8,7 @@
 
 import type { ActivityModule } from '../contract.js'
 import { applyShared } from '../shared-state.js'
-import { usableTopics } from '../../tasks/mix.js'
+import { gridGeneratorMix } from '../../tasks/mix.js'
 import type { CipherGridConfig, CipherGridProject } from '../../core/model/index.js'
 import {
   defaultConfig,
@@ -85,30 +85,8 @@ export const cipherGridModule = {
     // Téma, které ročník neumí, se do mixu nedostane, i kdyby ve formuláři
     // zůstalo zaškrtnuté. Generátory by ho stejně zahodily (`supports`),
     // ale uložený soubor a sdílený odkaz by pak slibovaly obsah, který na
-    // listu není. Šifra mocniny nemá, takže `powers` je tu vždycky vypnuté.
-    const usable = usableTopics({ ...state, arithmetic: true, powers: false }, config.payload.difficulty)
-    // Poměr 3 : 1 ke každému zapnutému zpestření. Řada i procento zaberou
-    // dítěti víc času než příklad, takže „každá čtvrtá" je zhruba to, co udrží
-    // délku listu na jedné hodině.
-    const generatorMix: Record<string, number> = { arithmetic: 3 }
-    if (usable.sequences) generatorMix.sequence = 1
-    if (usable.decimals) generatorMix.decimal = 1
-    if (usable.percents) generatorMix.percent = 1
-    if (usable.fractions) generatorMix.fractions = 1
-    if (usable.equations) generatorMix.equation = 1
-    if (usable.decomposition) generatorMix.decomposition = 1
-    // Věty s pojmy jsou jedno téma o dvou id a dělí si jeho váhu. Třetí
-    // rodina (dělení: „pětkrát menší“, „kolikrát“) na šifru nejde: vychází
-    // z ní číslo do deseti a souřadnicový kód začíná jedenáctkou. Losovaná
-    // by jen propadla na aritmetiku. Viz `familyGenerator` v `tasks/terms`.
-    if (usable.terms) {
-      generatorMix.terms = 0.5
-      generatorMix['terms-products'] = 0.5
-    }
-    // Sama aritmetika se zapisuje vahou 1, aby uložené soubory bez zpestření
-    // vypadaly přesně jako dřív — jinak by se listu změnil obsah.
-    config.payload.generatorMix =
-      Object.keys(generatorMix).length === 1 ? { arithmetic: 1 } : generatorMix
+    // listu není. Poměr témat viz `gridGeneratorMix`.
+    config.payload.generatorMix = gridGeneratorMix(state, config.payload.difficulty)
     config.payload.cipher.distinctCellPerOccurrence = state.distinctCellPerOccurrence
     config.payload.output.printTitleOnWorksheet = state.printTitleOnWorksheet
     return config

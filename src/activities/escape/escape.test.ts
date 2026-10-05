@@ -500,6 +500,74 @@ describe('výběr odpovědí', () => {
   })
 })
 
+/*
+ * Témata přibyla po první hře ve třídě (5. 10. 2026): sedmáci měli střední
+ * hru za 15 minut, protože samé běžné příklady s výsledkem 11–99 jim nedaly
+ * práci. Stanoviště se teď skládá ze stejných témat jako šifra.
+ */
+describe('témata', () => {
+  /** Hra tak, jak ji poskládá formulář: všechna témata zaškrtnutá. */
+  function fromForm(grade: Grade, seed: string, changes: Partial<typeof escapeModule.initialState> = {}) {
+    const shared = { grade, title: '', operations: { add: true, sub: true, mul: true, div: true }, crossesTen: true }
+    return generateEscape(escapeModule.toConfig({ ...escapeModule.initialState, ...changes }, shared, seed))
+  }
+
+  it.each(
+    ([2, 3, 4, 5, 6, 7, 8] as Grade[]).flatMap((grade) =>
+      (['grid', 'choice'] as const).map((kind) => [grade, kind] as [Grade, EscapeStationKind]),
+    ),
+  )('%i. třída, %s: dlouhá hra se všemi tématy projde kontrolou', (grade, stationKind) => {
+    for (let seed = 0; seed < 4; seed++) {
+      for (const mode of ['class', 'groups'] as const) {
+        const sheet = sheetOf(
+          fromForm(grade, `temata-${grade}-${seed}`, { length: 'long', mode, groupCount: 6, stationKind }),
+        )
+        expect(sheet.verification).toEqual({ ok: true })
+      }
+    }
+  })
+
+  it('sedmá třída dostane i jiné úlohy než běžné příklady, ale běžné převažují', () => {
+    const ids: string[] = []
+    for (let seed = 0; seed < 6; seed++) {
+      const sheet = sheetOf(fromForm(7, `sedma-${seed}`, { length: 'long' }))
+      ids.push(...sheet.stations.flatMap((station) => station.slots.map((slot) => slot.task.generatorId)))
+    }
+    const arithmetic = ids.filter((id) => id === 'arithmetic').length
+    expect(new Set(ids).size).toBeGreaterThan(3)
+    expect(arithmetic).toBeGreaterThan(ids.length / 4)
+    expect(arithmetic).toBeLessThan(ids.length * 3 / 4)
+  })
+
+  it('bez zaškrtnutých témat jsou jen běžné příklady', () => {
+    const none = { sequences: false, decimals: false, percents: false, fractions: false, equations: false, decomposition: false, terms: false }
+    const sheet = sheetOf(fromForm(7, 'bez-temat', { length: 'long', ...none }))
+    const ids = new Set(sheet.stations.flatMap((station) => station.slots.map((slot) => slot.task.generatorId)))
+    expect([...ids]).toEqual(['arithmetic'])
+  })
+
+  /*
+   * Hra, kterou Karel 4. 10. uložil a 5. 10. hrál v sedmé třídě. Vznikla
+   * před tématy, takže se musí otevřít beze změny — kontrolní součet je
+   * ten, který je v jejím souboru.
+   */
+  it('hra uložená před tématy se otevře stejná', () => {
+    const payload = parseEscapePayload({
+      story: 'hrobka',
+      length: 'medium',
+      message: 'FARAONOVA KLETBA',
+      mode: 'groups',
+      groupCount: 4,
+      stationKind: 'grid',
+      difficulty: { grade: 6 },
+      taskMix: { add: 1, sub: 1, mul: 1, div: 1 },
+    })
+    expect(payload).not.toBeNull()
+    const config = { ...defaultEscapeConfig(6, 'uypz5a', 'medium', 'groups'), generatorVersion: 12, payload: payload! }
+    expect(escapeChecksum(sheetOf(generateEscape(config)))).toBe('aa2a5131')
+  })
+})
+
 describe('payload', () => {
   const config = defaultEscapeConfig(5, 'payload', 'medium', 'groups')
   const clone = (value: unknown) => JSON.parse(JSON.stringify(value)) as unknown

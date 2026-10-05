@@ -419,6 +419,11 @@ export interface EscapeConfig {
   stationKind: EscapeStationKind
   difficulty: DifficultyProfile
   taskMix: Partial<Record<OperationTag, number>>
+  /**
+   * Viz `CipherGridConfig.generatorMix` — chybějící hodnota znamená
+   * aritmetiku. Témata přibyla po první hře ve třídě (5. 10. 2026).
+   */
+  generatorMix?: Readonly<Record<string, number>>
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

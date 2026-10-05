@@ -9,6 +9,7 @@
 
 import type { ActivityModule } from '../contract.js'
 import { applyShared } from '../shared-state.js'
+import { gridGeneratorMix, topicsFromGeneratorMix, type GridTopics } from '../../tasks/mix.js'
 import { ESCAPE_GROUP_LIMITS } from '../../core/constraints/index.js'
 import type {
   EscapeConfig,
@@ -31,8 +32,11 @@ import { escapeDocument } from './document.js'
 import { escapeScreen } from './screen.js'
 import { defaultStoryId } from './stories.js'
 
-/** Pole formuláře, která patří jen únikové hře. */
-export interface EscapeEditorState {
+/**
+ * Pole formuláře, která patří jen únikové hře. Témata (`GridTopics`) jsou
+ * tatáž jako u šifry, protože stanoviště je šifrovací tabulka.
+ */
+export interface EscapeEditorState extends GridTopics {
   /**
    * Příběh. `auto` = podle ročníku (mladší Poklad, starší Hrobka), stejně
    * jako druh stanoviště. Ročník je sdílený a pamatuje se, takže kdo přijde
@@ -67,6 +71,17 @@ const initialState: EscapeEditorState = {
   mode: 'class',
   groupCount: ESCAPE_GROUP_LIMITS.fallback,
   stationKind: 'auto',
+  // Všechna témata zapnutá, ze stejného důvodu jako u šifry. Navíc tu jde
+  // o obtížnost: sedmáci s 2 stanovišti na skupinu měli hru za 15 minut,
+  // protože samé běžné příklady s výsledkem 11–99 jsou pro ně lehké
+  // (Karel, 5. 10. 2026). Ročník rozhoduje, co se z toho opravdu použije.
+  sequences: true,
+  decimals: true,
+  percents: true,
+  fractions: true,
+  equations: true,
+  decomposition: true,
+  terms: true,
 }
 
 /** Příběh, který hra opravdu použije: zvolený, nebo ten podle ročníku. */
@@ -95,6 +110,7 @@ export const escapeModule = {
     config.payload.story = story
     config.payload.message = state.message ?? offeredMessage(story, state.length)
     config.payload.groupCount = state.groupCount
+    config.payload.generatorMix = gridGeneratorMix(state, config.payload.difficulty)
     // Do souboru jde vždy konkrétní druh, ne `auto`: uložená hra se musí
     // otevřít stejná, i kdyby se výchozí druh pro ročník jednou změnil.
     config.payload.stationKind =
@@ -104,7 +120,15 @@ export const escapeModule = {
 
   fromConfig(config): EscapeEditorState {
     const payload = config.payload
+    const topics = topicsFromGeneratorMix(payload.generatorMix)
     return {
+      sequences: topics.sequences,
+      decimals: topics.decimals,
+      percents: topics.percents,
+      fractions: topics.fractions,
+      equations: topics.equations,
+      decomposition: topics.decomposition,
+      terms: topics.terms,
       story: payload.story === defaultStoryId(payload.difficulty.grade) ? 'auto' : payload.story,
       length: payload.length,
       message: payload.message === offeredMessage(payload.story, payload.length) ? null : payload.message,

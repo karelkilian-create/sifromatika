@@ -20,7 +20,13 @@ import {
   crossesTenIsChoice,
   gradeProfile,
 } from '../../core/constraints/index.js'
-import { hasUsableTopic, type TopicSelection } from '../../tasks/mix.js'
+import {
+  decompositionAvailable,
+  hasUsableTopic,
+  termsAvailable,
+  type GridTopics,
+  type TopicSelection,
+} from '../../tasks/mix.js'
 import { normalizeMessage } from '../../core/text/index.js'
 import { defaultStationKind, escapeStationCount, offeredMessage } from '../../activities/escape/index.js'
 import { resolveStory, type EscapeEditorState } from '../../activities/escape/module.js'
@@ -54,6 +60,22 @@ const OPERATION_LABELS: Record<OperationTag, string> = {
   mul: 'Násobení',
   div: 'Dělení',
 }
+
+/**
+ * Témata stanovišť, v pořadí jako u šifry. `shown` = nabízí je ročník;
+ * téma, které ročník neumí, se nezobrazí, i když zůstane zaškrtnuté.
+ */
+const TOPICS: { key: keyof GridTopics; label: string; shown: (profile: ReturnType<typeof gradeProfile>) => boolean }[] = [
+  { key: 'sequences', label: 'Řady s chybějícím číslem', shown: () => true },
+  { key: 'decimals', label: 'Desetinná čísla', shown: (profile) => profile.decimals > 0 },
+  { key: 'percents', label: 'Procenta', shown: (profile) => profile.percents },
+  { key: 'fractions', label: 'Zlomky', shown: (profile) => profile.fractions },
+  { key: 'equations', label: 'Rovnice', shown: () => true },
+  { key: 'decomposition', label: 'Desítky a jednotky', shown: decompositionAvailable },
+  // Bez „kolikrát": vychází z něj číslo do deseti a kód políčka začíná
+  // jedenáctkou, takže ho `gridGeneratorMix` na tabulku nepouští.
+  { key: 'terms', label: 'Pojmy: součet, součin, o kolik', shown: termsAvailable },
+]
 
 /** „1 různé písmeno", „3 různá písmena", „7 různých písmen". */
 function distinctLettersText(count: number): string {
@@ -93,6 +115,7 @@ export function EscapeEditor({
   canPrint,
 }: EscapeEditorProps) {
   const escape = state.byActivity.escape
+  const profile = gradeProfile(state.shared.grade)
   const storyId = resolveStory(escape, state.shared.grade)
   const offered = offeredMessage(storyId, escape.length)
   const message = escape.message ?? offered
@@ -319,6 +342,28 @@ export function EscapeEditor({
                 {OPERATION_LABELS[operation]}
               </label>
             ))}
+
+            {/* Témata jako u šifry: běžné příklady jsou vždy, témata se
+                přimíchají v poměru 3 : 1 (`gridGeneratorMix`). Přibyla po
+                první hře ve třídě — samé běžné příklady s výsledkem 11–99
+                byly pro sedmáky lehké (Karel, 5. 10. 2026). */}
+            <p className="fieldset__subhead">Témata</p>
+            {TOPICS.filter((topic) => topic.shown(profile)).map((topic) => (
+              <label className="checkbox" key={topic.key}>
+                <input
+                  type="checkbox"
+                  checked={escape[topic.key]}
+                  onChange={() => patchEscape({ [topic.key]: !escape[topic.key] })}
+                />
+                {topic.label}
+              </label>
+            ))}
+            <p className="hint">
+              Běžné příklady jsou na stanovišti vždy a zaškrtnutá témata se k nim přimíchají.
+              Každé téma dostane zhruba třetinu toho, co běžné příklady, takže čím víc témat, tím
+              těžší a delší hra — v sedmé třídě se všemi tématy jsou běžné příklady asi na dvou
+              úlohách z pěti.
+            </p>
             <p className="hint">
               U šifrovací tabulky je výsledek souřadnice políčka, takže vyjde vždy celé číslo od 11
               do 99. Výběr odpovědí tuhle mez nemá — proto se do druhé třídy dostane i dělení.
