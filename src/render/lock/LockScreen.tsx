@@ -259,7 +259,7 @@ export function LockScreen({ model, onClose }: LockScreenProps) {
         {phase === 'play' && justAccepted === null && group === null && (
           <div className="lock__panel">
             <p className="lock__prompt">Která skupina jde zadat slova?</p>
-            <div className="lock__groups">
+            <div className={`lock__groups${model.groups.length > 4 ? ' lock__groups--two-rows' : ''}`}>
               {model.groups.map((candidate, index) => {
                 const done = candidate.stations.every((station) => acceptedSet.has(station))
                 return (

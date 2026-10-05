@@ -302,10 +302,25 @@
 
 /* ── Skupiny ─────────────────────────────────────────────────────── */
 
+/*
+ * Do čtyř skupin jedna řada, pět a šest po třech na řádek — vždy na střed.
+ * Mřížka po třech dávala u čtyř skupin tři nahoře a osamělou červenou
+ * vlevo dole (Karel, 5. 10. 2026).
+ */
 .lock__groups {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(7em, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 0.6em;
+}
+
+.lock__groups--two-rows {
+  /* Tři tlačítka a dvě mezery; tlačítko má `font-size: 1.1em`, proto 9,9em. */
+  max-width: calc(3 * 9.9em + 2 * 0.6em);
+}
+
+.lock__groups .lock__group {
+  flex: 0 0 9em;
 }
 
 .lock__group {

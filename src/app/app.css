@@ -259,6 +259,16 @@ body {
   gap: 0.75rem;
 }
 
+/*
+ * Únikovka má dva řádky polí a tlačítka jako SOUROZENCE, ne uvnitř
+ * zalamovacího rodiče jako `EditorPanel` — mezera z `gap` tam proto
+ * nevzniká a „Spustit zámek" se lepil k výběru ročníku (Karel, 5. 10. 2026).
+ */
+.editor__primary + .editor__primary,
+.editor__primary + .editor__actions {
+  margin-top: 0.75rem;
+}
+
 /* Instrukce k tiskovému dialogu. Stojí pod tlačítky, ne na papíře — viz
    komentář u `isCards` v EditorPanel. */
 .editor__print-hint {
