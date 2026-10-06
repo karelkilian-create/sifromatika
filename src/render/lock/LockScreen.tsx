@@ -11,7 +11,8 @@
  *  - **Chybné slovo = zatřesení a nic dalšího.** Žádné počítání chyb ani
  *    zamčení po N pokusech — učitel by před třídou hledal, jak hru odemknout.
  *  - **Písmena:** v „celé třídě" přibývají po každém slově, ve „skupinách"
- *    se ukážou naráz na konci, slovo po slově (§2).
+ *    se ukážou naráz na konci, slovo po slově (§2). Hotový sloupec slov
+ *    zůstane stát, dokud učitel neotevře zámek.
  *  - **Časomíra běží nahoru**, ne dolů. Odpočet mladší děti stresuje.
  *  - **Učitelské ovládání bez PINu** — malé tlačítko v rohu.
  */
@@ -98,16 +99,11 @@ export function LockScreen({ model, onClose }: LockScreenProps) {
     return () => window.clearInterval(timer)
   }, [phase])
 
-  // Závěrečné odhalení ve skupinách: slovo po slově, pak otevření.
+  // Závěrečné odhalení ve skupinách: slovo po slově. Po posledním se sloupec
+  // zastaví, aby si ho děti prohlédly; zámek otevře až učitel tlačítkem.
   useEffect(() => {
-    if (phase !== 'reveal') return
-    const timer = window.setTimeout(() => {
-      if (revealed < accepted.length) setRevealed(revealed + 1)
-      else {
-        setEndedAt((current) => current ?? Date.now())
-        setPhase('open')
-      }
-    }, revealed === 0 ? 600 : REVEAL_STEP_MS)
+    if (phase !== 'reveal' || revealed >= accepted.length) return
+    const timer = window.setTimeout(() => setRevealed(revealed + 1), revealed === 0 ? 600 : REVEAL_STEP_MS)
     return () => window.clearTimeout(timer)
   }, [phase, revealed, accepted.length])
 
@@ -177,6 +173,8 @@ export function LockScreen({ model, onClose }: LockScreenProps) {
         setEndedAt(Date.now())
         setPhase('open')
       } else {
+        // Hodiny stojí od posledního slova; prohlížení sloupce se nepočítá.
+        setEndedAt(Date.now())
         setGroup(null)
         setRevealed(0)
         setPhase('reveal')
@@ -318,6 +316,11 @@ export function LockScreen({ model, onClose }: LockScreenProps) {
                 )
               })}
             </ul>
+            {revealed === accepted.length && (
+              <button type="button" className="lock__big-button" onClick={() => setPhase('open')} autoFocus>
+                Otevřít zámek
+              </button>
+            )}
           </div>
         )}
 
