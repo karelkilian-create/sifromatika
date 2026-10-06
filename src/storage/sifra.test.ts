@@ -137,6 +137,7 @@ describe('.sifra — uložení a načtení', () => {
             mode: 'class',
             groupCount: 3,
             stationKind: 'auto',
+            upToTwenty: false,
             sequences: false,
             decimals: false,
             percents: false,

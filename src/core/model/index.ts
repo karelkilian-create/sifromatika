@@ -424,6 +424,12 @@ export interface EscapeConfig {
    * aritmetiku. Témata přibyla po první hře ve třídě (5. 10. 2026).
    */
   generatorMix?: Readonly<Record<string, number>>
+  /**
+   * Obor do dvaceti místo do sta (jen druhá třída s výběrem odpovědí,
+   * `upToTwentyIsChoice`). `difficulty` je už zúžená; pole je tu proto, že
+   * profil se ze souboru odvozuje znovu z ročníku a zúžení by se ztratilo.
+   */
+  upToTwenty?: boolean
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

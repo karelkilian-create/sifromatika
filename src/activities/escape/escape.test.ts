@@ -591,3 +591,74 @@ describe('payload', () => {
     expect(parseEscapePayload({ ...config.payload, groupCount: 99 })?.groupCount).toBe(ESCAPE_GROUP_LIMITS.max)
   })
 })
+
+/*
+ * Druháci začínají rok sčítáním do dvaceti a profil dvojky je do sta. Karel
+ * kvůli tomu 6. 10. 2026 zrušil domluvenou hru s kolegyní.
+ */
+describe('do dvaceti', () => {
+  const shared = (grade: Grade, crossesTen = true) => ({
+    grade,
+    title: '',
+    crossesTen,
+    operations: { add: true, sub: true, mul: true, div: true },
+  })
+  const state = (changes: Partial<typeof escapeModule.initialState> = {}) => ({
+    ...escapeModule.initialState,
+    upToTwenty: true,
+    ...changes,
+  })
+
+  it.each([true, false])('druhá třída s výběrem: nic nepřesáhne dvacet (přechod %s)', (crossesTen) => {
+    for (const length of LENGTHS) {
+      for (let seed = 0; seed < 4; seed++) {
+        const config = escapeModule.toConfig(
+          state({ length, mode: 'groups', groupCount: 6 }),
+          shared(2, crossesTen),
+          `dvacet-${length}-${seed}`,
+        )
+        expect(config.payload.upToTwenty).toBe(true)
+        const sheet = sheetOf(generateEscape(config))
+        expect(sheet.verification).toEqual({ ok: true })
+        for (const station of sheet.stations) {
+          for (const slot of station.slots) {
+            const numbers = (slot.task.prompt.text.match(/\d+/gu) ?? []).map(Number)
+            for (const number of numbers) expect(number, slot.task.prompt.text).toBeLessThanOrEqual(20)
+            for (const option of slot.options) expect(option.value, slot.task.prompt.text).toBeLessThanOrEqual(20)
+          }
+        }
+      }
+    }
+  })
+
+  it('jinde se nepropíše: šifrovací tabulka, třetí třída', () => {
+    for (const config of [
+      escapeModule.toConfig(state({ stationKind: 'grid' }), shared(2), 's'),
+      escapeModule.toConfig(state({ stationKind: 'choice' }), shared(3), 's'),
+    ]) {
+      expect(config.payload.upToTwenty).toBeUndefined()
+      expect(config.payload.difficulty.numberRange.max).toBe(100)
+    }
+  })
+
+  it('přežije uložení a otevření, i do formuláře', () => {
+    const config = escapeModule.toConfig(state(), shared(2), 'soubor')
+    const parsed = parseEscapePayload(JSON.parse(JSON.stringify(config.payload)))
+    expect(parsed).toEqual(config.payload)
+    expect(parsed?.difficulty.numberRange.max).toBe(20)
+    expect(escapeModule.fromConfig({ ...config, payload: parsed! }).upToTwenty).toBe(true)
+  })
+
+  it('soubor, který tvrdí „do 20" u tabulky, se otevře do sta', () => {
+    const config = escapeModule.toConfig(state({ stationKind: 'grid' }), shared(2), 'lez')
+    const parsed = parseEscapePayload({ ...config.payload, upToTwenty: true })
+    expect(parsed?.upToTwenty).toBeUndefined()
+    expect(parsed?.difficulty.numberRange.max).toBe(100)
+  })
+
+  it('vypnuté nemění hru', () => {
+    const off = escapeModule.toConfig(state({ upToTwenty: false }), shared(2), 'stejna')
+    expect('upToTwenty' in off.payload).toBe(false)
+    expect(off.payload.difficulty.numberRange.max).toBe(100)
+  })
+})

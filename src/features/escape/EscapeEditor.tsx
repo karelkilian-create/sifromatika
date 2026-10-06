@@ -19,6 +19,8 @@ import {
   ESCAPE_STATIONS,
   crossesTenIsChoice,
   gradeProfile,
+  upToTwentyIsChoice,
+  withUpToTwenty,
 } from '../../core/constraints/index.js'
 import {
   decompositionAvailable,
@@ -115,7 +117,11 @@ export function EscapeEditor({
   canPrint,
 }: EscapeEditorProps) {
   const escape = state.byActivity.escape
-  const profile = gradeProfile(state.shared.grade)
+  const stationKind = escape.stationKind === 'auto' ? defaultStationKind(state.shared.grade) : escape.stationKind
+  const upToTwentyShown = upToTwentyIsChoice(state.shared.grade, stationKind)
+  // Témata se nabízejí podle oboru, se kterým se opravdu bude hrát.
+  const gradeDefaults = gradeProfile(state.shared.grade)
+  const profile = upToTwentyShown && escape.upToTwenty ? withUpToTwenty(gradeDefaults) : gradeDefaults
   const storyId = resolveStory(escape, state.shared.grade)
   const offered = offeredMessage(storyId, escape.length)
   const message = escape.message ?? offered
@@ -294,6 +300,17 @@ export function EscapeEditor({
               onChange={() => patchShared({ crossesTen: !state.shared.crossesTen })}
             />
             Sčítání a odčítání s přechodem přes desítku
+          </label>
+        )}
+
+        {upToTwentyShown && (
+          <label className="checkbox">
+            <input
+              type="checkbox"
+              checked={escape.upToTwenty}
+              onChange={() => patchEscape({ upToTwenty: !escape.upToTwenty })}
+            />
+            Počítat jen do 20
           </label>
         )}
       </div>

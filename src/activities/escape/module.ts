@@ -10,7 +10,7 @@
 import type { ActivityModule } from '../contract.js'
 import { applyShared } from '../shared-state.js'
 import { gridGeneratorMix, topicsFromGeneratorMix, type GridTopics } from '../../tasks/mix.js'
-import { ESCAPE_GROUP_LIMITS } from '../../core/constraints/index.js'
+import { ESCAPE_GROUP_LIMITS, upToTwentyIsChoice, withUpToTwenty } from '../../core/constraints/index.js'
 import type {
   EscapeConfig,
   EscapeLength,
@@ -58,6 +58,12 @@ export interface EscapeEditorState extends GridTopics {
    * zvolí výslovně, ročník jeho volbu nepřepíše.
    */
   stationKind: 'auto' | EscapeStationKind
+  /**
+   * Obor do dvaceti. Platí jen tam, kde je to volba (`upToTwentyIsChoice`);
+   * jinde zůstává zapamatované, ale do hry se nepropíše — stejně jako
+   * přechod přes desítku mimo druhou třídu.
+   */
+  upToTwenty: boolean
 }
 
 /**
@@ -71,6 +77,7 @@ const initialState: EscapeEditorState = {
   mode: 'class',
   groupCount: ESCAPE_GROUP_LIMITS.fallback,
   stationKind: 'auto',
+  upToTwenty: false,
   // Všechna témata zapnutá, ze stejného důvodu jako u šifry. Navíc tu jde
   // o obtížnost: sedmáci s 2 stanovišti na skupinu měli hru za 15 minut,
   // protože samé běžné příklady s výsledkem 11–99 jsou pro ně lehké
@@ -110,11 +117,16 @@ export const escapeModule = {
     config.payload.story = story
     config.payload.message = state.message ?? offeredMessage(story, state.length)
     config.payload.groupCount = state.groupCount
-    config.payload.generatorMix = gridGeneratorMix(state, config.payload.difficulty)
     // Do souboru jde vždy konkrétní druh, ne `auto`: uložená hra se musí
     // otevřít stejná, i kdyby se výchozí druh pro ročník jednou změnil.
     config.payload.stationKind =
       state.stationKind === 'auto' ? defaultStationKind(shared.grade) : state.stationKind
+    // Zúžení před výběrem témat: co se do dvaceti nevejde, nemá se nabízet.
+    if (state.upToTwenty && upToTwentyIsChoice(shared.grade, config.payload.stationKind)) {
+      config.payload.upToTwenty = true
+      config.payload.difficulty = withUpToTwenty(config.payload.difficulty)
+    }
+    config.payload.generatorMix = gridGeneratorMix(state, config.payload.difficulty)
     return config
   },
 
@@ -139,6 +151,7 @@ export const escapeModule = {
       // která ho při změně ročníku nepřekvapí.
       stationKind:
         payload.stationKind === defaultStationKind(payload.difficulty.grade) ? 'auto' : payload.stationKind,
+      upToTwenty: payload.upToTwenty === true,
     }
   },
 

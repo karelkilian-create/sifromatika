@@ -5,7 +5,12 @@
  * souboru nemá vtahovat generátor. Stejné pravidlo jako u ostatních aktivit.
  */
 
-import { ESCAPE_MESSAGE_MAX_CHARS, clampGroupCount } from '../../core/constraints/index.js'
+import {
+  ESCAPE_MESSAGE_MAX_CHARS,
+  clampGroupCount,
+  upToTwentyIsChoice,
+  withUpToTwenty,
+} from '../../core/constraints/index.js'
 import type { EscapeConfig, EscapeLength, EscapeMode, EscapeStationKind } from '../../core/model/index.js'
 import { isRecord, parseDifficulty, parseGeneratorMix, parseTaskMix } from '../payload-utils.js'
 import { findStory } from './stories.js'
@@ -41,8 +46,8 @@ export function parseEscapePayload(raw: unknown): EscapeConfig | null {
   if (!LENGTHS.includes(raw.length as EscapeLength)) return null
   if (!MODES.includes(raw.mode as EscapeMode)) return null
 
-  const difficulty = parseDifficulty(raw.difficulty)
-  if (difficulty === null) return null
+  const parsed = parseDifficulty(raw.difficulty)
+  if (parsed === null) return null
 
   const taskMix = parseTaskMix(raw.taskMix)
   if (taskMix === null) return null
@@ -51,19 +56,26 @@ export function parseEscapePayload(raw: unknown): EscapeConfig | null {
   // jen aritmetiku. Stejně jako u šifry.
   const generatorMix = parseGeneratorMix(raw.generatorMix, GENERATORS)
 
+  // Chybí-li, soubor vznikl dřív, než výběr odpovědí existoval — a tehdy
+  // měla každá hra šifrovací tabulku.
+  const stationKind = STATION_KINDS.includes(raw.stationKind as EscapeStationKind)
+    ? (raw.stationKind as EscapeStationKind)
+    : 'grid'
+  // „Do 20" jen tam, kde je to volba; jinde by soubor tvrdil něco, co hra
+  // nedělá.
+  const upToTwenty = raw.upToTwenty === true && upToTwentyIsChoice(parsed.grade, stationKind)
+  const difficulty = upToTwenty ? withUpToTwenty(parsed) : parsed
+
   return {
     story: raw.story,
     length: raw.length as EscapeLength,
     message: raw.message.slice(0, ESCAPE_MESSAGE_MAX_CHARS),
     mode: raw.mode as EscapeMode,
     groupCount: clampGroupCount(raw.groupCount),
-    // Chybí-li, soubor vznikl dřív, než výběr odpovědí existoval — a tehdy
-    // měla každá hra šifrovací tabulku.
-    stationKind: STATION_KINDS.includes(raw.stationKind as EscapeStationKind)
-      ? (raw.stationKind as EscapeStationKind)
-      : 'grid',
+    stationKind,
     difficulty,
     taskMix,
     generatorMix: Object.keys(generatorMix).length > 0 ? generatorMix : { arithmetic: 1 },
+    ...(upToTwenty ? { upToTwenty: true } : {}),
   }
 }

@@ -7,7 +7,7 @@
  * u třetí třídy vede na kombinaci, kterou nelze splnit.
  */
 
-import type { DifficultyProfile, Grade, RelaxationLog } from '../model/index.js'
+import type { DifficultyProfile, EscapeStationKind, Grade, RelaxationLog } from '../model/index.js'
 
 /**
  * Kolik nejvýš smí být na kartičce, aby to dítě spočítalo z hlavy.
@@ -81,6 +81,9 @@ export function gradeProfile(grade: Grade): DifficultyProfile {
        * všechny v prvním řádku. Etapu „do 20" proto zastupuje `crossesTen`,
        * který je u tohohle ročníku přepínatelný — a rozdíl mezi zářím
        * a jarem je stejně on, ne horní mez oboru.
+       *
+       * Výjimkou je únikovka s výběrem odpovědí, kde kódy políček nejsou:
+       * tam si učitel obor na dvacet zúžit může (`upToTwentyIsChoice`).
        */
       return {
         grade,
@@ -335,6 +338,27 @@ export const ONE_PAGE_LETTERS = 20
  * stolu (docs/navrh-unikova-hra.md §4); rozhodne třída.
  */
 export const ESCAPE_STATIONS = { short: 4, medium: 6, long: 8 } as const
+
+/**
+ * Únikovka ve druhé třídě: smí učitel zúžit obor na dvacet?
+ *
+ * Jen u stanovišť s výběrem odpovědí. Profil dvojky je do sta, protože kód
+ * políčka v šifrovací tabulce je 11–99 (viz `gradeProfile`); výběr odpovědí
+ * žádné kódy nemá, takže tam etapa „do 20" ze začátku druhé třídy projde.
+ * Přepínač je proto únikovky, ne sdílený — v šifře ani v bingu (24 různých
+ * výsledků) by nefungoval. Přidáno na přání kolegyně (Karel, 6. 10. 2026).
+ */
+export function upToTwentyIsChoice(grade: Grade, stationKind: EscapeStationKind): boolean {
+  return grade === 2 && stationKind === 'choice'
+}
+
+/** Horní mez oboru, když učitel u únikovky zvolí „do 20". */
+export const ESCAPE_SMALL_RANGE_MAX = 20
+
+/** Profil zúžený na dvacet. Jediné místo, kde se mez přepisuje. */
+export function withUpToTwenty(profile: DifficultyProfile): DifficultyProfile {
+  return { ...profile, numberRange: { ...profile.numberRange, max: ESCAPE_SMALL_RANGE_MAX } }
+}
 
 /**
  * Nejvýš kolik různých písmen tajenky dodá jedno slovo stanoviště.
