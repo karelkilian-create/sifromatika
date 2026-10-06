@@ -157,3 +157,32 @@ describe('délka členů', () => {
     }
   })
 })
+
+/*
+ * Ve druhé třídě s odškrtnutým přechodem dala řada `16 13 10 ? 4` — krok
+ * řady je odčítání jako každé jiné (6. 10. 2026).
+ */
+describe('druhá třída bez přechodu přes desítku', () => {
+  const crosses = (terms: number[]) =>
+    terms.some((term, index) => {
+      if (index === 0) return false
+      const previous = terms[index - 1]!
+      return term > previous ? (previous % 10) + ((term - previous) % 10) >= 10 : previous % 10 < (previous - term) % 10
+    })
+
+  it.each([100, 20])('každá slíbená hodnota se vyrobí a řada desítku nepřekročí (obor do %i)', (max) => {
+    const profile = { ...gradeProfile(2), crossesTen: false, numberRange: { min: 0, max } }
+    const values = [...sequenceGenerator.reachableValues(profile, {}, REQUIRE_WHOLE_RESULTS)]
+    expect(values.length).toBeGreaterThan(5)
+    for (const target of values) {
+      for (let seed = 0; seed < 3; seed++) {
+        const task = sequenceGenerator.generateForValue(target, context(profile), createRng(`bez-${target}-${seed}`))
+        expect(task, `${target}`).not.toBeNull()
+        if (task?.prompt.kind !== 'sequence') continue
+        const terms = parseSequence(task.solutionSteps[0]!.text.split(': ')[1]!).map((term) => term!)
+        expect(crosses(terms), task.solutionSteps[0]!.text).toBe(false)
+      }
+    }
+  })
+
+})

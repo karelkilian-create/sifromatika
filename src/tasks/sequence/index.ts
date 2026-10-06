@@ -30,6 +30,7 @@ import {
   MIN_VISIBLE_TERMS,
   type SequenceTerms,
 } from '../../core/sequence/index.js'
+import { crossesTenOnAdd, crossesTenOnSub } from '../shapes.js'
 
 /**
  * Kolik členů má řada na listu.
@@ -296,6 +297,27 @@ function isPrintable(terms: readonly number[], profile: DifficultyProfile): bool
   return true
 }
 
+/**
+ * Přejde řada někde přes desítku?
+ *
+ * Krok řady je sčítání nebo odčítání jako každé jiné: `16 13 10` je
+ * `13 − 3` s přechodem. Učitel, který si ve druhé třídě přechod odškrtl,
+ * ho nesmí dostat ani tady (Karel, 6. 10. 2026).
+ */
+function crossesTenSomewhere(terms: readonly number[]): boolean {
+  for (let index = 1; index < terms.length; index++) {
+    const previous = terms[index - 1]!
+    const step = terms[index]! - previous
+    if (step > 0 ? crossesTenOnAdd(previous, step) : crossesTenOnSub(previous, -step)) return true
+  }
+  return false
+}
+
+/** Tvary, jejichž krok je sčítání nebo odčítání — jen ty se na přechod ptají. */
+function isAdditive(shape: Shape): boolean {
+  return shape.operation === 'add' || shape.operation === 'sub'
+}
+
 function withGap(terms: readonly number[], hidden: number): SequenceTerms {
   return terms.map((term, index) => (index === hidden ? null : term))
 }
@@ -372,6 +394,7 @@ function tryBuild(
 ): Task | null {
   const terms = shape.build(target, hidden, variant, ctx.profile)
   if (terms === null || !isPrintable(terms, ctx.profile)) return null
+  if (!ctx.profile.crossesTen && isAdditive(shape) && crossesTenSomewhere(terms)) return null
 
   const prompt = withGap(terms, hidden)
   const text = formatSequence(prompt)
@@ -419,6 +442,25 @@ export const sequenceGenerator: TaskGenerator = {
     // konstantní rozdíl i podíl — a to umí jen samá stejná čísla, která
     // `isPrintable` nepustí.
     const shapes = new Set(shapesFor(profile, mix).map((shape) => shape.id))
+
+    // Bez přechodu přes desítku (jen druhá třída) neplatí odhad z kroků 2–3:
+    // trojka se do jedné desítky s pěti členy nevejde vůbec. Hlásí se proto
+    // jen hodnoty, pro které řada bez přechodu opravdu existuje. Ostatní
+    // ročníky tudy nejdou, takže se jim výstup nemění.
+    if (!profile.crossesTen) {
+      for (const shape of SHAPES) {
+        if (!shapes.has(shape.id) || !isAdditive(shape)) continue
+        for (const variant of shape.variants(profile)) {
+          for (let target = 1; target <= max; target++) {
+            for (let hidden = 1; hidden < LENGTH; hidden++) {
+              const terms = shape.build(target, hidden, variant, profile)
+              if (terms !== null && isPrintable(terms, profile) && !crossesTenSomewhere(terms)) values.add(target)
+            }
+          }
+        }
+      }
+      return values
+    }
 
     if (shapes.has('step-up') || shapes.has('step-down')) {
       for (let step = 2; step <= 3; step++) {
