@@ -24,13 +24,12 @@ import {
 } from '../../core/constraints/index.js'
 import {
   decompositionAvailable,
-  hasUsableTopic,
   termsAvailable,
   usableTopics,
   type TopicSelection,
 } from '../../tasks/mix.js'
 import { normalizeMessage, truncateToLetters } from '../../core/text/index.js'
-import type { EditorState } from './state.js'
+import { withGrade, type EditorState } from './state.js'
 
 /** „1 písmeno", „3 písmena", „7 písmen" — jinak by hláška drhla při každém psaní. */
 function czechLetterWord(count: number): string {
@@ -185,26 +184,8 @@ export function EditorPanel({
     patchTopics({ [topic]: !topicsState[topic] })
   }
 
-  const changeGrade = (grade: Grade) => {
-    // Zaškrtnutá témata se přepnutím ročníku NEMAŽOU — učitel, který se vrátí
-    // z šesté do osmé, má své mocniny najít tam, kde je nechal. Doplní se jen
-    // záchrana pro případ, že by v novém ročníku nezbylo použitelné nic —
-    // a to zvlášť pro každou hru, protože každá si témata drží samostatně.
-    const next = gradeProfile(grade)
-    const rescue = <S extends TopicSelection>(slice: S): S =>
-      hasUsableTopic(slice, next) ? slice : { ...slice, arithmetic: true }
-
-    onChange({
-      ...state,
-      shared: { ...state.shared, grade },
-      byActivity: {
-        ...state.byActivity,
-        pexeso: rescue(pexeso),
-        domino: rescue(domino),
-        bingo: rescue(bingo),
-      },
-    })
-  }
+  // Nový ročník vrátí operace i témata na výchozí stav, viz `withGrade`.
+  const changeGrade = (grade: Grade) => onChange(withGrade(state, grade))
 
   return (
     <form className="editor no-print" onSubmit={(event) => event.preventDefault()}>

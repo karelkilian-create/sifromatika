@@ -22,7 +22,8 @@ import {
 } from '../../activities/registry.js'
 import { sharedFromConfig } from '../../activities/shared-state.js'
 import type { SharedEditorState } from '../../activities/contract.js'
-import type { ActivityId, ProjectConfig } from '../../core/model/index.js'
+import type { ActivityId, Grade, ProjectConfig } from '../../core/model/index.js'
+import type { TopicSelection } from '../../tasks/mix.js'
 
 export interface EditorState {
   activity: ActivityId
@@ -41,6 +42,50 @@ export const INITIAL_EDITOR_STATE: EditorState = {
     crossesTen: true,
   },
   byActivity: initialActivityStates(),
+}
+
+const TOPIC_KEYS: readonly (keyof TopicSelection)[] = [
+  'arithmetic',
+  'sequences',
+  'decimals',
+  'percents',
+  'powers',
+  'fractions',
+  'equations',
+  'decomposition',
+  'terms',
+]
+
+/**
+ * Přepnutí ročníku. Operace, přechod přes desítku a témata všech aktivit se
+ * vrátí na výchozí stav, tedy zaškrtnuté. Ročník má přednost: co profil
+ * neumí, ořízne `usableTopics`.
+ *
+ * Dřív se zaškrtnutí přenášelo, aby učitel po návratu ze šesté do osmé našel
+ * své mocniny. Jenže co se odškrtlo pro druháky, zůstalo odškrtnuté i osmákům,
+ * a ti pak dostali samé sčítání a odčítání (Karel, 10. 10. 2026). Nový ročník
+ * je nový list; zbytek nastavení (tajenka, příběh, délka hry) zůstává.
+ */
+export function withGrade(state: EditorState, grade: Grade): EditorState {
+  const initial = initialActivityStates()
+  const byActivity = { ...state.byActivity }
+  for (const id of Object.keys(byActivity) as (keyof ActivityStates)[]) {
+    const reset: Record<string, unknown> = {}
+    for (const key of TOPIC_KEYS) {
+      if (key in initial[id]) reset[key] = (initial[id] as unknown as Record<string, unknown>)[key]
+    }
+    byActivity[id] = { ...byActivity[id], ...reset } as never
+  }
+  return {
+    ...state,
+    shared: {
+      ...state.shared,
+      grade,
+      operations: INITIAL_EDITOR_STATE.shared.operations,
+      crossesTen: INITIAL_EDITOR_STATE.shared.crossesTen,
+    },
+    byActivity,
+  }
 }
 
 export function toConfig(state: EditorState, seed: string): ProjectConfig {

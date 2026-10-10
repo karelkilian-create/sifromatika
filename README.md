@@ -176,7 +176,7 @@ tiskového dialogu ani offline režim. Plán je v [roadmapě](docs/sifromatika-n
 
 ## Testování
 
-847 testů. Kromě obvyklých jednotkových testů dva druhy, na kterých projekt stojí:
+849 testů. Kromě obvyklých jednotkových testů dva druhy, na kterých projekt stojí:
 
 - **Property testy** — 10 000 náhodných konfigurací musí dát nula nepoužitelných listů.
   Ruční testy tenhle prostor kombinací nepokryjí.

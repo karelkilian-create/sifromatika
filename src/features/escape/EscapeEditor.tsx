@@ -24,16 +24,14 @@ import {
 } from '../../core/constraints/index.js'
 import {
   decompositionAvailable,
-  hasUsableTopic,
   termsAvailable,
   type GridTopics,
-  type TopicSelection,
 } from '../../tasks/mix.js'
 import { normalizeMessage } from '../../core/text/index.js'
 import { defaultStationKind, escapeStationCount, offeredMessage } from '../../activities/escape/index.js'
 import { resolveStory, type EscapeEditorState } from '../../activities/escape/module.js'
 import { STORIES, defaultStoryId, findStory } from '../../activities/escape/stories.js'
-import type { EditorState } from '../editor/state.js'
+import { withGrade, type EditorState } from '../editor/state.js'
 import type { PrintPart } from '../../core/document/index.js'
 
 const LENGTH_NAMES: Record<EscapeLength, string> = { short: 'Krátká', medium: 'Střední', long: 'Dlouhá' }
@@ -136,22 +134,8 @@ export function EscapeEditor({
   const patchShared = (changes: Partial<SharedEditorState>) =>
     onChange({ ...state, shared: { ...state.shared, ...changes } })
 
-  /**
-   * Ročník je sdílený, takže se přepne i hrám v „Pracovních listech". Táž
-   * záchrana jako v `EditorPanel`: hra, které by v novém ročníku nezbylo
-   * žádné téma, dostane zpátky počítání.
-   */
-  const changeGrade = (grade: Grade) => {
-    const next = gradeProfile(grade)
-    const rescue = <S extends TopicSelection>(slice: S): S =>
-      hasUsableTopic(slice, next) ? slice : { ...slice, arithmetic: true }
-    const { pexeso, domino, bingo } = state.byActivity
-    onChange({
-      ...state,
-      shared: { ...state.shared, grade },
-      byActivity: { ...state.byActivity, pexeso: rescue(pexeso), domino: rescue(domino), bingo: rescue(bingo) },
-    })
-  }
+  /** Ročník je sdílený, takže se přepne i hrám v „Pracovních listech"; viz `withGrade`. */
+  const changeGrade = (grade: Grade) => onChange(withGrade(state, grade))
 
   const toggleOperation = (operation: OperationTag) => {
     const next = { ...state.shared.operations, [operation]: !state.shared.operations[operation] }
