@@ -26,7 +26,7 @@ export interface LockStation {
   boardSentence: string
 }
 
-/** Skupina a její stanoviště, v pořadí, v jakém je skupina zadává. */
+/** Skupina a její stanoviště v pořadí balíčku. Zadávat je smí v libovolném. */
 export interface LockGroup {
   name: string
   /** Barva skupiny jako slovo; odstín vybere renderer. */

@@ -20,6 +20,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { LockScreenModel } from '../../core/screen/index.js'
 import { normalizeMessage } from '../../core/text/index.js'
+import { matchStation } from './match.js'
 import { Scene } from './scenes.js'
 import './lock.css'
 
@@ -41,6 +42,11 @@ type Phase =
 /** Slovo z klávesnice na A–Z: `zámek` → `ZAMEK`. */
 function plain(input: string): string {
   return normalizeMessage(input).letters.join('')
+}
+
+/** „zbývají 2", „zbývá 5". */
+function remainingWords(count: number): string {
+  return count <= 4 ? `zbývají ${count}` : `zbývá ${count}`
 }
 
 function formatTime(ms: number): string {
@@ -80,11 +86,17 @@ export function LockScreen({ model, onClose }: LockScreenProps) {
   const total = model.stations.length
   const acceptedSet = useMemo(() => new Set(accepted), [accepted])
 
-  /** Stanoviště, jehož slovo se teď čeká, nebo `null`. */
-  const expected = useMemo(() => {
-    if (group === null) return null
-    return model.groups[group]?.stations.find((index) => !acceptedSet.has(index)) ?? null
-  }, [group, model.groups, acceptedSet])
+  /**
+   * Stanoviště, jejichž slovo tabule teď uzná. V celé třídě jen to další
+   * v pořadí, ve skupinách kterékoli neuznané stanoviště vybrané skupiny.
+   */
+  const remaining = useMemo(() => {
+    if (group === null) return []
+    const open = model.groups[group]?.stations.filter((index) => !acceptedSet.has(index)) ?? []
+    return model.mode === 'class' ? open.slice(0, 1) : open
+  }, [group, model.groups, model.mode, acceptedSet])
+  /** První čekající stanoviště, nebo `null`, když skupina má hotovo. */
+  const expected = remaining[0] ?? null
 
   // Písmena v rámečcích. Ve skupinách až při odhalení, slovo po slově.
   const shownLetters = useMemo(() => {
@@ -117,10 +129,11 @@ export function LockScreen({ model, onClose }: LockScreenProps) {
   )
 
   const submit = useCallback(() => {
-    if (expected === null || input === '') return
-    if (plain(input) === model.stations[expected]!.word) accept(expected)
+    if (input === '') return
+    const station = matchStation(model, remaining, plain(input))
+    if (station !== null) accept(station)
     else setShake((count) => count + 1)
-  }, [expected, input, model.stations, accept])
+  }, [input, model, remaining, accept])
 
   const typing = phase === 'play' && expected !== null && justAccepted === null
 
@@ -282,9 +295,13 @@ export function LockScreen({ model, onClose }: LockScreenProps) {
             <p className="lock__prompt">
               {model.mode === 'class'
                 ? `Slovo ze stanoviště ${accepted.length + 1}`
-                : `Skupina ${model.groups[group!]!.name}: slovo ze stanoviště ${
-                    model.groups[group!]!.stations.indexOf(expected) + 1
-                  }`}
+                : remaining.length === 1
+                  ? `Skupina ${model.groups[group!]!.name}: slovo ze stanoviště ${
+                      model.groups[group!]!.stations.indexOf(expected) + 1
+                    }`
+                  : `Skupina ${model.groups[group!]!.name}: slovo z kteréhokoli stanoviště (${remainingWords(
+                      remaining.length,
+                    )})`}
             </p>
             <div className="lock__input" key={shake} data-shake={shake > 0 ? 'yes' : undefined}>
               {input === '' ? <span className="lock__placeholder">napište slovo</span> : input}
