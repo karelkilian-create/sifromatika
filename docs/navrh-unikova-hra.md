@@ -769,7 +769,8 @@ První dvě hry (Hrobka, střední hra): sedmá třída se 4 skupinami celá za
 15 minut, nejrychlejší skupina za 8; šestá třída se 6 skupinami za 16
 minut, nejrychlejší za 4. Odhad v §4 (30–45 minut) se tak ve skupinách
 nepotvrdil: každá skupina řeší jen svůj podíl stanovišť. Režim „celá třída",
-pro který odhad sedí nejvíc, se zatím nehrál.
+pro který odhad sedí nejvíc, se zatím nehrál. Formulář proto od 10. 10.
+čas u délky hry neukazuje (Karel); vrátí se, až ho podloží hry ve třídách.
 
 - **Stanoviště mají témata jako šifra** (5. 10.). Mezi běžné příklady se
   míchají řady, desetinná čísla, procenta, zlomky, rovnice a pojmy

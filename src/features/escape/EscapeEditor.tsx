@@ -36,20 +36,15 @@ import type { PrintPart } from '../../core/document/index.js'
 
 const LENGTH_NAMES: Record<EscapeLength, string> = { short: 'Krátká', medium: 'Střední', long: 'Dlouhá' }
 
-/** Odhad pro celou třídu, od stolu (§4). Ve skupinách rozhoduje nejpomalejší skupina. */
-const CLASS_DURATION: Record<EscapeLength, string> = {
-  short: '20–30 min',
-  medium: '30–45 min',
-  long: 'kolem hodiny',
-}
-
 /**
  * Popisek délky hry. Ve skupinách počet stanovišť NA SKUPINU, protože ten
  * učitele zajímá — kolik stanovišť se vytiskne celkem, ukáže náhled.
  */
 function lengthLabel(length: EscapeLength, mode: EscapeMode, groupCount: number): string {
   if (mode === 'class') {
-    return `${LENGTH_NAMES[length]} — ${stationsText(ESCAPE_STATIONS[length])}, ${CLASS_DURATION[length]}`
+    // Bez odhadu času: ten z §4 byl od stolu a hry ve třídách mu neodpovídaly
+    // (Karel, 10. 10. 2026). Vrátí se, až bude podložený.
+    return `${LENGTH_NAMES[length]} — ${stationsText(ESCAPE_STATIONS[length])}`
   }
   const perGroup = escapeStationCount(length, groupCount) / groupCount
   return `${LENGTH_NAMES[length]} — ${stationsText(perGroup)} na skupinu`
