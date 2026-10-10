@@ -14,6 +14,7 @@ import {
   ESCAPE_WORD_LENGTH,
 } from '../../core/constraints/index.js'
 import type { EscapeLength, EscapeMode, EscapeStationKind, Grade } from '../../core/model/index.js'
+import { pagesFor } from '../../core/document/index.js'
 import { createRng } from '../../core/rng/index.js'
 import { normalizeMessage } from '../../core/text/index.js'
 import { verifyChoiceSheet, verifyEscapeChain, type EscapeChain } from '../../core/verify/index.js'
@@ -383,6 +384,15 @@ describe('papír a tabule', () => {
       }
     }
     expect(pages[pages.length - 1]!.label).toBe('Přehled pro učitele')
+  })
+
+  it('stanoviště a přehled se v celé třídě tisknou zvlášť', () => {
+    const document = escapeDocument(sheetOf(game('medium', 'tisk')))
+    const pupils = pagesFor(document, 'pupils').pages
+    const teacher = pagesFor(document, 'teacher').pages
+    expect(pupils).toHaveLength(ESCAPE_STATIONS.medium)
+    expect(pupils.every((page) => !page.label.includes('Přehled'))).toBe(true)
+    expect(teacher.map((page) => page.label)).toEqual(['Přehled pro učitele'])
   })
 
   it('ve skupinách jdou stanoviště po skupinách a každé říká, kdy k tabuli', () => {

@@ -802,5 +802,14 @@ pro který odhad sedí nejvíc, se zatím nehrál.
   potom se rozhodne o **společném stolu stanovišť** (víc listů než skupin,
   kdo dodělá, vezme si další). Ten by změnil vazbu stanoviště na skupinu
   a tím i skládání tajenky, viz §2.
-- **Tisk v režimu „celá třída"**: kopie z tiskového dialogu násobí
-  i přehled pro učitele. Čeká na první hru v tomto režimu.
+
+### Tisk v režimu „celá třída" (10. 10.)
+
+Stanoviště se tisknou v kopiích (na dítě, dvojici nebo skupinu) a kopie
+z tiskového dialogu násobily i přehled pro učitele. V „celé třídě" jsou
+proto dvě tlačítka, „Vytisknout stanoviště" a „Vytisknout přehled". Stránka
+přehledu nese v modelu `forTeacher` a náhled se na dobu tisku zúží na
+tisknuté stránky, takže první z nich nemá zalomení a papír navíc nevznikne
+(ověřeno tiskem do PDF: 5 stránek → 4 + 1). Ve skupinách zůstává jedno
+tlačítko, tam se tiskne jednou. Ostatní aktivity (list a řešení) mají
+stejný problém a zatím ho neřeší; `forTeacher` by jim stačilo nastavit.

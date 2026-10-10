@@ -34,6 +34,7 @@ import { defaultStationKind, escapeStationCount, offeredMessage } from '../../ac
 import { resolveStory, type EscapeEditorState } from '../../activities/escape/module.js'
 import { STORIES, defaultStoryId, findStory } from '../../activities/escape/stories.js'
 import type { EditorState } from '../editor/state.js'
+import type { PrintPart } from '../../core/document/index.js'
 
 const LENGTH_NAMES: Record<EscapeLength, string> = { short: 'Krátká', medium: 'Střední', long: 'Dlouhá' }
 
@@ -96,7 +97,8 @@ export interface EscapeEditorProps {
   state: EditorState
   onChange: (next: EditorState) => void
   onReroll: () => void
-  onPrint: () => void
+  /** Bez části tiskne všechno; v „celé třídě" se stanoviště a přehled tisknou zvlášť. */
+  onPrint: (part?: PrintPart) => void
   onSave: () => void
   onShare: () => void
   onOpen: () => void
@@ -323,9 +325,20 @@ export function EscapeEditor({
         <button type="button" className="button" onClick={onReroll}>
           Jiná varianta
         </button>
-        <button type="button" className="button" onClick={onPrint} disabled={!canPrint}>
-          Vytisknout
-        </button>
+        {escape.mode === 'groups' ? (
+          <button type="button" className="button" onClick={() => onPrint()} disabled={!canPrint}>
+            Vytisknout
+          </button>
+        ) : (
+          <>
+            <button type="button" className="button" onClick={() => onPrint('pupils')} disabled={!canPrint}>
+              Vytisknout stanoviště
+            </button>
+            <button type="button" className="button" onClick={() => onPrint('teacher')} disabled={!canPrint}>
+              Vytisknout přehled
+            </button>
+          </>
+        )}
         <button type="button" className="button" onClick={onSave} disabled={!canPrint}>
           Uložit
         </button>
@@ -340,8 +353,8 @@ export function EscapeEditor({
       <p className="editor__print-hint">
         {escape.mode === 'groups'
           ? 'Vytiskněte jednou — listy všech skupin jsou v tisku už rozdělené, skupina po skupině.'
-          : 'Stanoviště vytiskněte jednou na dítě nebo dvojici; přehled pro učitele stačí jednou.' +
-            ' Kolik kopií, nastavíte v dialogu tisku.'}
+          : 'Stanoviště vytiskněte pro každé dítě, dvojici nebo skupinu; kolik kopií, nastavíte' +
+            ' v dialogu tisku. Přehled pro učitele se tiskne zvlášť.'}
       </p>
 
       <details className="editor__advanced">

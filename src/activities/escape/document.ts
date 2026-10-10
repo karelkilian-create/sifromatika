@@ -142,6 +142,7 @@ function overviewPage(sheet: EscapeSheet): DocumentPage {
 
   return {
     label: 'Přehled pro učitele',
+    forTeacher: true,
     blocks: [
       { kind: 'heading', level: 1, text: `${sheet.title} — přehled pro učitele` },
       { kind: 'callout', text: sheet.message.original },

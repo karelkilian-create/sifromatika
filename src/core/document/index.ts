@@ -180,7 +180,20 @@ export interface DocumentPage {
    * „Řešení"). Na papír se netiskne — od toho je `heading`.
    */
   label: string
+  /**
+   * Stránka jen pro učitele. Kde se tiskne zvlášť (únikovka v „celé třídě",
+   * stanoviště v desítkách kopií), smí ji tisk vynechat nebo vzít samotnou.
+   */
+  forTeacher?: boolean
   blocks: readonly DocumentBlock[]
+}
+
+/** Které stránky jdou do tisku: všechny, jen pro děti, nebo jen pro učitele. */
+export type PrintPart = 'pupils' | 'teacher'
+
+/** Dokument jen se stránkami pro danou část tisku. */
+export function pagesFor(document: DocumentModel, part: PrintPart): DocumentModel {
+  return { ...document, pages: document.pages.filter((page) => (page.forTeacher === true) === (part === 'teacher')) }
 }
 
 export interface DocumentModel {

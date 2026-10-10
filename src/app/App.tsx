@@ -19,6 +19,7 @@ import { randomSeed } from '../core/rng/index.js'
 import { SifromatikaMark } from '../render/brand/index.js'
 import { LockScreen } from '../render/lock/LockScreen.js'
 import { DocumentView } from '../render/screen/index.js'
+import { pagesFor, type PrintPart } from '../core/document/index.js'
 import { DiplomaScreen } from '../features/diploma/DiplomaScreen.js'
 import { ActivityNav } from '../features/editor/ActivityNav.js'
 import { EscapeEditor } from '../features/escape/EscapeEditor.js'
@@ -224,6 +225,19 @@ export function App() {
   )
   /** Běží zámek na tabuli? */
   const [locked, setLocked] = useState(false)
+  /**
+   * Tisk jen části dokumentu. Náhled se na tu chvíli zúží na tisknuté
+   * stránky, takže první z nich nemá zalomení před sebou a papír navíc
+   * nevznikne. Po zavření dialogu se vrátí celý.
+   */
+  const [printPart, setPrintPart] = useState<PrintPart | null>(null)
+  useEffect(() => {
+    if (printPart === null) return
+    const reset = () => setPrintPart(null)
+    window.addEventListener('afterprint', reset)
+    window.print()
+    return () => window.removeEventListener('afterprint', reset)
+  }, [printPart])
   const [seed, setSeed] = useState(initial.seed)
   const [fileNotice, setFileNotice] = useState<FileNotice | null>(initial.notice)
   /** Odkaz k ručnímu zkopírování — třetí plán sdílení, viz `handleShare`. */
@@ -482,7 +496,7 @@ export function App() {
             setSeed(randomSeed())
             afterEdit()
           }}
-          onPrint={() => window.print()}
+          onPrint={(part) => (part === undefined ? window.print() : setPrintPart(part))}
           onSave={handleSave}
           onShare={handleShare}
           onOpen={() => fileInput.current?.click()}
@@ -558,7 +572,9 @@ export function App() {
               ani u binga, které jich bude mít víc než dvě. */}
           {generated.document !== null && (
             <Preview>
-              <DocumentView document={generated.document} />
+              <DocumentView
+                document={printPart === null ? generated.document : pagesFor(generated.document, printPart)}
+              />
             </Preview>
           )}
         </>
