@@ -564,6 +564,11 @@ export function App() {
         </>
       )}
 
+      <footer className="app__footer no-print">
+        Něco nesedí, něco chybí, nebo by se vám hodilo jinak? Napište nám:{' '}
+        <a href="mailto:kontakt@sifromatika.cz">kontakt@sifromatika.cz</a>
+      </footer>
+
       {locked && generated.screen !== null && <LockScreen model={generated.screen} onClose={stopLock} />}
     </div>
   )
