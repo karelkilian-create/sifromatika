@@ -1,7 +1,8 @@
 # Úniková hra — návrh
 
 **Stav: schváleno 2. 10. 2026**, rozhodnutí viz §13 (návrh z 28. 9. 2026, `main` na commitu `df1fa41`,
-`GENERATOR_VERSION` 12, pět hotových aktivit).
+`GENERATOR_VERSION` 12, pět hotových aktivit). Fáze 1 je postavená a hraná
+ve třídách; co se při stavbě a po prvních hrách změnilo, je v §14.
 
 Vzniklo z rozhovoru o třech promptech od jiných AI (`rozsireni_projektu_2.md`)
 a z bodu 3 v `docs/SIFROMATIKA-EVALUATION.md`. Z promptů se převzalo, co
@@ -324,8 +325,8 @@ Učitel si hru vygeneruje, vytiskne, a na počítači u tabule klikne
 „Spustit zámek".
 
 - **Výběr skupiny** — ve skupinovém režimu nejdřív velká barevná tlačítka
-  skupin, pak slova té skupiny jedno po druhém. V režimu „celá třída" rovnou
-  slovo aktuálního stanoviště.
+  skupin, pak slova té skupiny v libovolném pořadí (§14). V režimu „celá
+  třída" rovnou slovo aktuálního stanoviště.
 - **Klávesnice na obrazovce** — velká písmena A–Z, Smazat, Odeslat. Žádný hover,
   tlačítka pro prst. Fyzická klávesnice funguje taky. Porovnání ignoruje
   velikost písmen a diakritiku.
@@ -733,3 +734,73 @@ s tablety.
 
 Interaktivní tabuli třída, kde se bude hrát poprvé, má, takže pořadí
 práce zůstává: zámek na tabuli patří do fáze 1.
+
+---
+
+## 14. Co se odchýlilo od návrhu
+
+Stav k 10. 10. 2026. Hraje se z náhledu (větev `unikovka`); na produkci
+únikovka zatím není. Změny, které už mají svůj zápis výš, jsou tu jen
+s odkazem.
+
+### Při stavbě (3.–4. 10.)
+
+- **Obecný slovník není.** §3 a §8 s ním počítaly jako se zálohou pro
+  vlastní tajenku. První verze ho nemá: vlastní tajenka projde, jen když ji
+  postaví slova příběhu; jinak hláška. Riziko 7 v §12 tím platí naplno.
+  Otevřená otázka „kam patří obecný slovník" (§8) zůstává otevřená.
+- **Dva příběhy, ne jeden.** §13 bod 3 říkal začít *Pokladem*. Karel ale
+  učí šestky a sedmičku, takže před první hrou přibyla *Hrobka faraona*
+  pro 6.–8. ročník (`docs/unikova-hra-hrobka.md`). Příběh i tajenka se
+  vybírají podle ročníku, dokud učitel nezvolí sám.
+- **Krátká tajenka Hrobky je `KLETBA`, ne `FARAON`** ze seznamu příběhů.
+  Krátká hra má ve skupinách až šest stanovišť (zaokrouhlení z §4)
+  a tajenka s pěti různými písmeny by se nepostavila.
+- **Stejně práce pro každou skupinu** — zaokrouhlení počtu stanovišť na
+  násobek skupin, viz §4.
+- **Výběr ze tří odpovědí místo tabulky**, výchozí pro druhou třídu, viz §7.
+- **Karta skupiny se netiskne**, viz §7 bod 2.
+- **Přehled pro učitele ve dvou sloupcích** na jedné stránce, viz §7 bod 3.
+- **Obrázek na úvodu zámku**, kreslené SVG, viz §6.
+
+### Po prvních hrách (5.–10. 10.)
+
+První dvě hry (Hrobka, střední hra): sedmá třída se 4 skupinami celá za
+15 minut, nejrychlejší skupina za 8; šestá třída se 6 skupinami za 16
+minut, nejrychlejší za 4. Odhad v §4 (30–45 minut) se tak ve skupinách
+nepotvrdil: každá skupina řeší jen svůj podíl stanovišť. Režim „celá třída",
+pro který odhad sedí nejvíc, se zatím nehrál.
+
+- **Stanoviště mají témata jako šifra** (5. 10.). Mezi běžné příklady se
+  míchají řady, desetinná čísla, procenta, zlomky, rovnice a pojmy
+  v poměru 3 : 1, ve výchozím stavu zaškrtnuté. Důvod: počet stanovišť
+  na skupinu je daný počtem různých písmen tajenky, takže délku hry ve
+  skupinách prodlouží spíš obtížnost úloh než víc stanovišť. Výslovně těžší úlohy na stanovišti se
+  odložily, dokud nebude zkušenost s tématy.
+- **Zámek otevírá učitel** (6. 10.). §5 počítal s tím, že po odhalení
+  písmen přijde rovnou otevření. Sloupec slov ale přeskočil dřív, než si ho
+  děti prohlédly. Teď zůstane stát a zámek otevře tlačítko „Otevřít zámek".
+  Hodiny stojí od posledního uznaného slova.
+- **„Počítat jen do 20" pro druhou třídu** (6. 10.). Profil dvojky je do
+  sta kvůli kódům políček v tabulce; výběr odpovědí kódy nemá, takže tam
+  etapa ze začátku roku projde. Přepínač se ukáže jen u druhé třídy
+  s výběrem odpovědí. Spolu s tím: řady bez přechodu přes desítku ho
+  opravdu nepřekročí (dřív dávaly `16 13 10 ? 4`).
+- **Skupina zadává slova v libovolném pořadí** (10. 10.). §5 chtěl slova
+  „jedno po druhém". Skupina si ale balíček rozdělí a druhé stanoviště
+  bývá hotové dřív; tabule ho odmítla zatřesením, jako by bylo špatně. Teď
+  po výběru barvy uzná slovo kteréhokoli neuznaného stanoviště té skupiny
+  a sama pozná, které to je. Slova jiných skupin neuzná. Jednotlivá
+  tlačítka pro stanoviště se zvažovala a nepřevzala: dítě by mohlo vybrat
+  jedničku a napsat slovo z dvojky. Režim „celá třída" jde dál po řadě.
+
+### Otevřené po hrách
+
+- **Rozptyl mezi skupinami.** V šesté třídě dělila nejrychlejší
+  a nejpomalejší skupinu čtyřnásobek času. Skupiny si děti volily samy,
+  takže se slabší počtáři sešli. Příště se mají skupiny losovat. Teprve
+  potom se rozhodne o **společném stolu stanovišť** (víc listů než skupin,
+  kdo dodělá, vezme si další). Ten by změnil vazbu stanoviště na skupinu
+  a tím i skládání tajenky, viz §2.
+- **Tisk v režimu „celá třída"**: kopie z tiskového dialogu násobí
+  i přehled pro učitele. Čeká na první hru v tomto režimu.

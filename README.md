@@ -33,6 +33,16 @@ jiná. Kartičky, kameny i karty se dotýkají, takže se stříhají pár rovn�
 list, a na každé stránce je kontrolní úsečka 100 mm — tiskárna, která zmenšuje, se tím
 prozradí dřív, než učitel sáhne po nůžkách.
 
+Ve vlastní záložce je **úniková hra**. Děti ve skupinách (nebo celá třída)
+řeší stanoviště, malé šifry, ze kterých vyjde slovo z příběhu, třeba `MAPA` nebo
+`TRUHLA`. Slova zadávají do zámku na tabuli a ta z nich skládá finální tajenku.
+Která písmena ze slova patří do tajenky, prozradí až tabule, takže se musí spočítat
+celé stanoviště. Učitel vybere příběh, délku hry, ročník a počet skupin; stanoviště,
+přehled pro učitele i zámek vyrobí Šifromatika. Hra potřebuje obrazovku, kterou vidí
+celá třída, a počítač, na kterém se slova zadávají. Interaktivní tabule je
+nejpohodlnější, ale stačí i projektor s klávesnicí. Druháci místo šifrovací tabulky
+vybírají ze tří odpovědí. Proč hra vypadá takhle, je v [návrhu](docs/navrh-unikova-hra.md).
+
 ## Na čem si dává práci
 
 Šifrovačku jde vygenerovat i špatně. Tyhle věci proto řeší Šifromatika záměrně:
@@ -146,7 +156,8 @@ Podrobněji:
 **Verze 0.1.** Použitelná: vytvoří list, ověří ho a vytiskne.
 
 Umí pět aktivit — šifru se souřadnicovou i lineární tabulkou, list číselných řad, pexeso,
-domino a bingo — pro **2. až 8. ročník**. Vedle čtyř základních operací zvládne rozklad na desítky
+domino a bingo — a únikovou hru se dvěma příběhy (*Poklad* pro 2.–5. a *Hrobka
+faraona* pro 6.–8. ročník), vše pro **2. až 8. ročník**. Vedle čtyř základních operací zvládne rozklad na desítky
 a jednotky (`3 · 10 + 7`), pořadí operací a závorky,
 celá čísla, mocniny a odmocniny, desetinná čísla (`3,5 · 4`), procenta (`25 % z 80`),
 zlomky (`3/4 z 80`, ve hrách i `1/2 + 1/4`, `2/3 · 3/5` a `1/2 : 1/4`), rovnice
@@ -165,7 +176,7 @@ tiskového dialogu ani offline režim. Plán je v [roadmapě](docs/sifromatika-n
 
 ## Testování
 
-628 testů. Kromě obvyklých jednotkových testů dva druhy, na kterých projekt stojí:
+846 testů. Kromě obvyklých jednotkových testů dva druhy, na kterých projekt stojí:
 
 - **Property testy** — 10 000 náhodných konfigurací musí dát nula nepoužitelných listů.
   Ruční testy tenhle prostor kombinací nepokryjí.
