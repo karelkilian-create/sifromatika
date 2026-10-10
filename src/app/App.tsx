@@ -161,11 +161,15 @@ const VIEW_LABELS: Record<AppView, string> = {
   diploma: 'Diplom',
 }
 
+/** Části, které se teprve ladí ve třídách. Štítek zmizí smazáním řádku. */
+const BETA_VIEWS: ReadonlySet<AppView> = new Set(['escape'])
+
 const VIEW_SUBTITLES: Record<AppView, string> = {
   worksheets:
     'Pracovní listy z matematiky na pár kliknutí — vyber aktivitu a ročník, zadej téma a vytiskni pracovní list a list s řešením.',
   escape:
-    'Matematická úniková hra za minutu — děti počítají na stanovištích, slova zadávají do zámku na tabuli a skládají z nich tajné heslo.',
+    'Matematická úniková hra za minutu — děti počítají na stanovištích, slova zadávají do zámku na tabuli a skládají z nich tajné heslo.' +
+    ' Je to beta: hrála se zatím v několika třídách a ještě se ladí. Zkušenost ze třídy uvítáme na kontakt@sifromatika.cz.',
   diploma: 'Diplom pro žáky, kteří se prokousali až na konec. Ke stažení a vyplnění ve Wordu.',
 }
 
@@ -445,6 +449,7 @@ export function App() {
                 onClick={() => changeView(id)}
               >
                 {VIEW_LABELS[id]}
+                {BETA_VIEWS.has(id) && <span className="view-nav__beta">beta</span>}
               </button>
             ))}
           </nav>

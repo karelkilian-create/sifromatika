@@ -152,6 +152,15 @@ body {
   cursor: pointer;
 }
 
+.view-nav__beta {
+  margin-left: 0.35rem;
+  font-size: 0.7em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.75;
+}
+
 .view-nav__item--selected {
   color: #fff;
   background: var(--ui-accent);
