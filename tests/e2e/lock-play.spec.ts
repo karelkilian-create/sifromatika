@@ -104,3 +104,24 @@ test('učitel umí vrátit slovo a uznat slovo bez zadání', async ({ page }) =
   await lock.getByRole('button', { name: 'Ukončit hru' }).click()
   await expect(lock).toBeHidden()
 })
+
+test('Zmizelý obraz: dlouhá hra projde až k závěru', async ({ page }) => {
+  await openEscape(page)
+  await choose(page, 'Příběh', 'Zmizelý obraz')
+  await choose(page, 'Délka hry', 'Dlouhá')
+  await expect(page.getByRole('button', { name: 'Spustit zámek' })).toBeEnabled()
+  const answers = await readAnswers(page)
+  const message = (await page.locator('.solution-message').innerText()).trim()
+  expect(message).toBe('PACHATEL JE NOČNÍ UKLÍZEČ')
+  const lock = await startLock(page)
+
+  for (const answer of answers) {
+    await page.keyboard.type(plain(answer.word))
+    await page.keyboard.press('Enter')
+    await expect(lock.locator('.lock__ok')).toHaveText(`✓ Slovo ${answer.word} platí!`)
+    await bigButton(page).click()
+  }
+
+  await expect(lock.locator('.lock__message')).toHaveText(message)
+  await expect(lock.getByText(/Pachatelem byl noční uklízeč/)).toBeVisible()
+})

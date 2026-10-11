@@ -19,6 +19,78 @@ export function Scene({ id }: { id: string | undefined }): ReactElement | null {
 const SCENES: Record<string, () => ReactElement> = {
   poklad: PokladScene,
   hrobka: HrobkaScene,
+  obraz: ObrazScene,
+}
+
+/** Sál muzea: uprostřed prázdný rám s odříznutými okraji, kamera v rohu, stopy na podlaze. */
+function ObrazScene() {
+  return (
+    <svg className="lock__scene" viewBox="0 0 800 400" role="img" aria-label="Sál muzea s prázdným rámem na zdi">
+      {/* Zeď a obklad */}
+      <rect width="800" height="400" fill="#7d2f3a" />
+      <rect y="250" width="800" height="70" fill="#5e222b" />
+      <line x1="0" y1="250" x2="800" y2="250" stroke="#d9b45a" strokeWidth="5" />
+
+      {/* Parkety */}
+      <rect y="320" width="800" height="80" fill="#a8743f" />
+      <g stroke="#865a2e" strokeWidth="3">
+        {[345, 372].map((y) => (
+          <line key={y} x1="0" y1={y} x2="800" y2={y} />
+        ))}
+        {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((col) => (
+          <line key={col} x1={col * 100 + 20} y1="320" x2={col * 100 - 20} y2="400" />
+        ))}
+      </g>
+
+      {/* Obrazy po stranách */}
+      <rect x="60" y="80" width="150" height="120" fill="#d9b45a" stroke="#8a6a24" strokeWidth="4" />
+      <rect x="74" y="94" width="122" height="92" fill="#8fc0d8" />
+      <path d="M74 186 l40 -46 l30 30 l20 -20 l32 36 z" fill="#4f7d3a" />
+      <circle cx="170" cy="118" r="12" fill="#f2d16b" />
+      <rect x="600" y="70" width="130" height="150" fill="#d9b45a" stroke="#8a6a24" strokeWidth="4" />
+      <rect x="614" y="84" width="102" height="122" fill="#3b4a5e" />
+      <circle cx="665" cy="130" r="24" fill="#e8c39e" />
+      <path d="M626 206 q39 -60 78 0 z" fill="#2a2f3a" />
+
+      {/* Prázdný rám: zbyly jen odříznuté proužky plátna */}
+      <rect x="290" y="50" width="220" height="180" fill="#d9b45a" stroke="#8a6a24" strokeWidth="5" />
+      <rect x="310" y="70" width="180" height="140" fill="#4a1a22" />
+      <path
+        d="M310 70 h180 v8 l-12 3 l-20 -2 l-24 4 l-30 -3 l-28 3 l-26 -2 l-22 3 l-18 -3 z"
+        fill="#c98f4a"
+      />
+      <path d="M310 210 h180 v-7 l-16 -2 l-26 3 l-30 -3 l-24 2 l-30 -3 l-22 3 l-22 -2 l-10 2 z" fill="#c98f4a" />
+      <rect x="370" y="238" width="60" height="10" fill="#d9b45a" stroke="#8a6a24" strokeWidth="2" />
+
+      {/* Kamera v rohu */}
+      <rect x="742" y="0" width="10" height="34" fill="#2a2a2a" />
+      <rect x="700" y="30" width="62" height="26" rx="5" fill="#e6e6e6" stroke="#2a2a2a" strokeWidth="4" />
+      <circle cx="710" cy="43" r="6" fill="#d83a2e" />
+
+      {/* Šňůra se sloupky */}
+      <g fill="#d9b45a" stroke="#8a6a24" strokeWidth="3">
+        <rect x="246" y="300" width="12" height="60" />
+        <rect x="542" y="300" width="12" height="60" />
+        <ellipse cx="252" cy="362" rx="20" ry="6" />
+        <ellipse cx="548" cy="362" rx="20" ry="6" />
+      </g>
+      <path d="M258 306 q142 40 284 0" fill="none" stroke="#b02a2a" strokeWidth="7" />
+
+      {/* Stopy na podlaze */}
+      <g fill="#6b4422" opacity="0.7">
+        {[
+          [120, 388, -14],
+          [168, 372, -8],
+          [214, 386, -14],
+          [262, 374, -8],
+          [600, 384, 10],
+          [650, 370, 16],
+        ].map(([x, y, angle]) => (
+          <ellipse key={`${x}-${y}`} cx={x} cy={y} rx="14" ry="6" transform={`rotate(${angle} ${x} ${y})`} />
+        ))}
+      </g>
+    </svg>
+  )
 }
 
 /** Vchod do hrobky zavalený kamenem; v nápisu nad ním chybí písmena. */

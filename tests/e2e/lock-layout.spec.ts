@@ -53,6 +53,7 @@ const GAMES = [
   // Hrobka má delší úvod než Poklad: „Začít hru" bylo pod okrajem i s výchozí tajenkou.
   { name: 'Hrobka', story: 'Hrobka', length: 'Dlouhá', message: null },
   { name: 'Hrobka, tajenka na 39 znaků', story: 'Hrobka', length: 'Dlouhá', message: 'FARAON SPÍ V ZLATÉ HROBCE, POZOR, MUMIE' },
+  { name: 'Zmizelý obraz', story: 'Zmizelý obraz', length: 'Dlouhá', message: null },
 ] as const
 
 for (const screen of SCREENS) {

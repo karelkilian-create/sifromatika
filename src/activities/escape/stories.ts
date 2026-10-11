@@ -344,8 +344,160 @@ const HROBKA: Story = {
   ],
 }
 
+const OBRAZ: Story = {
+  id: 'obraz',
+  label: 'Zmizelý obraz',
+  audience: 'older',
+  intro:
+    'Ráno našla ředitelka muzea v hlavním sále prázdný rám. Nejcennější obraz sbírky ' +
+    'v noci zmizel a poplach se ani neozval. Kdo to udělal, prozradí stopy po celé ' +
+    'budově — v každé jsou schovaná čísla. Spočítejte příklady a vyřešte případ!',
+  motto: 'Jeden tým, jeden případ. Každé písmeno se počítá.',
+  outro:
+    'Případ je vyřešený. Pachatelem byl noční uklízeč: znal každý kout muzea i místa, ' +
+    'kam kamery nevidí. Obraz se našel srolovaný v jeho úklidovém vozíku, celý ' +
+    'a nepoškozený. Každé písmeno jste si vypočítali sami!',
+  messages: {
+    short: 'PACHATEL',
+    medium: 'PACHATEL JE UKLÍZEČ',
+    long: 'PACHATEL JE NOČNÍ UKLÍZEČ',
+  },
+  words: [
+    {
+      word: 'STOPA',
+      sheet: 'Přes vyleštěnou podlahu vede řada šlápot. U poslední jsou čísla.',
+      board: 'Stopa boty velikosti 44. Podlaha byla v noci čerstvě vytřená — kdo po ní chodil?',
+    },
+    {
+      word: 'OTISK',
+      sheet: 'Na skle vitríny je mastná šmouha od prstu. Pod ní jsou drobná čísla.',
+      board: 'Otisk prstu! Policie ho porovná se všemi, kdo mají od muzea klíče.',
+    },
+    {
+      word: 'ALIBI',
+      sheet: 'Na stole ředitelky leží jízdenka z Vídně se včerejším datem. Na zadní straně jsou čísla.',
+      board: 'Ředitelka má alibi: celou noc seděla ve vlaku z Vídně.',
+    },
+    {
+      word: 'SVĚDEK',
+      sheet: 'Pán z domu naproti v noci nemohl spát a díval se z okna. Do bloku si zapisoval čísla aut, která projela kolem.',
+      board: 'Svědek viděl ve dvě ráno v muzeu světlo. Jen chvíli, jen v jednom patře.',
+    },
+    {
+      word: 'KAMERA',
+      sheet: 'V rohu stropu bliká červené světýlko. Na jeho krytu jsou čísla.',
+      board: 'Kamera v sále se ve dvě ráno na deset minut vypnula. Náhoda?',
+    },
+    {
+      word: 'LUPA',
+      sheet: 'V šuplíku leží kulaté sklo s rukojetí. Na rukojeti jsou čísla.',
+      board: 'Lupa ukáže, že rám někdo pečlivě otřel hadrem.',
+    },
+    {
+      word: 'POUTA',
+      sheet: 'Na opasku policisty cinkají dva kovové kroužky spojené řetízkem.',
+      board: 'Pouta jsou připravená. Zbývá zjistit, komu je nasadit.',
+    },
+    {
+      word: 'ZÁMEK',
+      sheet: 'Dveře do skladu obrazů mají kovovou krabičku s klíčovou dírkou. Kolem ní jsou vyrytá čísla.',
+      board: 'Zámek není vylomený. Kdo šel dovnitř, měl klíč.',
+    },
+    {
+      word: 'MOTIV',
+      sheet: 'V kanceláři leží výpis z aukce. U jedné položky jsou podtržená čísla.',
+      board: 'Motiv je jasný: obraz má cenu několika milionů korun.',
+    },
+    {
+      word: 'PLÁTNO',
+      sheet: 'V prázdném rámu zůstal u okraje odříznutý proužek s kouskem malby. Jsou na něm čísla.',
+      board: 'Plátno bylo z rámu vyříznuté. Srolované se dá schovat skoro kamkoli.',
+    },
+    {
+      word: 'BARVA',
+      sheet: 'Na prahu dveří leží drobné modré šupinky. Vedle nich jsou čísla.',
+      board: 'Barva se z obrazu odloupla, když ho někdo spěšně roloval.',
+    },
+    {
+      word: 'HLÍDAČ',
+      sheet: 'Ve vrátnici visí na věšáku čepice s odznakem. Na odznaku jsou čísla.',
+      board: 'Hlídač celou noc seděl u monitorů. Prý neviděl nic zvláštního.',
+    },
+    {
+      word: 'ALARM',
+      sheet: 'Na zdi u vchodu je panel s tlačítky a malým displejem.',
+      board: 'Alarm se v noci nespustil. Kdo ho vypnul, znal kód.',
+    },
+    {
+      word: 'KLÍČ',
+      sheet: 'Ve vrátnici visí na háčcích svazky. U jednoho je štítek s čísly.',
+      board: 'Klíč od sálu ráno visel na svém místě. Kdo si ho v noci půjčil a zase vrátil?',
+    },
+    {
+      word: 'OKNO',
+      sheet: 'Na parapetu v prvním patře je pár škrábanců a čísla.',
+      board: 'Okno je zevnitř zavřené na kliku. Zloděj tudy neutekl — byl celou dobu uvnitř.',
+    },
+    {
+      word: 'PODPIS',
+      sheet: 'V knize návštěv je na posledním řádku klikyhák. Pod ním jsou čísla.',
+      board: 'Podpis je od včerejšího odpoledne. Večer už do muzea nikdo cizí nepřišel.',
+    },
+    {
+      word: 'STÍN',
+      sheet: 'Na záběru z kamery je na zdi tmavá silueta. V rohu obrazovky jsou čísla.',
+      board: 'Stín na zdi tlačí před sebou něco na kolečkách.',
+    },
+    {
+      word: 'CHODBA',
+      sheet: 'Dlouhý průchod mezi sály osvětluje jen nouzové světlo. Na zdi jsou čísla.',
+      board: 'Chodbou se dá dojít do skladu, aniž vás zachytí jediná kamera. Kdo to ví?',
+    },
+    {
+      word: 'MALÍŘ',
+      sheet: 'Na mosazné cedulce pod prázdným rámem je jméno a dva letopočty. A pár čísel navíc.',
+      board: 'Malíř obraz namaloval před sto lety. Dnes je to nejcennější dílo muzea.',
+    },
+    {
+      word: 'ŠTĚTEC',
+      sheet: 'V dílně restaurátora stojí ve sklenici tenké násadky s chloupky na konci. Na jedné jsou čísla.',
+      board: 'Štětec je suchý a čistý. Restaurátor byl celý týden na dovolené.',
+    },
+    {
+      word: 'BATOH',
+      sheet: 'Pod lavičkou v šatně někdo zapomněl tašku na záda. Na přezce jsou čísla.',
+      board: 'V batohu je svačina a sešit. Patří školákovi z včerejší exkurze.',
+    },
+    {
+      word: 'JIZVA',
+      sheet: 'Na fotce z kamery u vchodu má muž na tváři světlou čáru. Pod fotkou jsou čísla.',
+      board: 'Muž s jizvou je kurýr, který včera přivezl balík. Odešel v pět odpoledne.',
+    },
+  ],
+  spareWords: [
+    // Y (11. 10. 2026).
+    {
+      word: 'BRÝLE',
+      sheet: 'Pod topením v sále leží tmavé obroučky se skly. Na nožičce jsou čísla.',
+      board: 'Brýle! Někdo je v noci ztratil, když se skláněl k rámu.',
+    },
+    // F (11. 10. 2026).
+    {
+      word: 'FOTKA',
+      sheet: 'Na nástěnce pro zaměstnance visí snímek celého týmu muzea. Na zadní straně jsou čísla.',
+      board: 'Fotka zaměstnanců: ředitelka, hlídač, pokladní a v rohu muž s mopem.',
+    },
+    // G (11. 10. 2026).
+    {
+      word: 'GARÁŽ',
+      sheet: 'Ve dvoře muzea jsou plechová vrata. Někdo na ně sprejem napsal čísla.',
+      board: 'V garáži stojí dodávka muzea. Motor je ještě teplý.',
+    },
+  ],
+}
+
 /** Příběhy v pořadí nabídky: jeden pro mladší a jeden pro starší (4. 10. 2026). */
-export const STORIES: readonly Story[] = [POKLAD, HROBKA]
+export const STORIES: readonly Story[] = [POKLAD, HROBKA, OBRAZ]
 
 /**
  * Příběh, který hra nabídne, dokud učitel nevybere sám: podle ročníku
