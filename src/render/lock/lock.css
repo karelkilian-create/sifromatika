@@ -153,6 +153,8 @@
   justify-content: center;
   width: 100%;
   flex: 1;
+  /* Bez toho by se plocha nezmenšila pod obsah a obrázek níž by neměl kam ustoupit. */
+  min-height: 0;
 }
 
 .lock__panel {
@@ -164,8 +166,15 @@
   text-align: center;
 }
 
+/*
+ * Obrázek ustupuje textu: plných 38vh, když je místo, jinak se zmenší, aby
+ * „Začít hru" zůstalo nad spodním okrajem (Hrobka má delší úvod než Poklad,
+ * dlouhá tajenka zabere dva řádky rámečků). Pod 18vh nejde — pak už se roluje.
+ */
 .lock__scene {
   display: block;
+  flex: 0 1 38vh;
+  min-height: 18vh;
   width: auto;
   height: 38vh;
   max-width: 100%;

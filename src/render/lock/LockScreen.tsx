@@ -17,7 +17,7 @@
  *  - **Učitelské ovládání bez PINu** — malé tlačítko v rohu.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import type { LockScreenModel } from '../../core/screen/index.js'
 import { normalizeMessage } from '../../core/text/index.js'
 import { matchStation } from './match.js'
@@ -25,6 +25,15 @@ import { Scene } from './scenes.js'
 import './lock.css'
 
 const KEYBOARD_ROWS = ['QWERTZUIOP', 'ASDFGHJKL', 'YXCVBNM'].map((row) => row.split(''))
+
+/**
+ * Rámečky tajenky smí zabrat nejvýš dva řádky v plné velikosti. Víc se na
+ * projektoru 1024×768 nad úvod a klávesnici nevejde; delší tajenka se proto
+ * zmenší (po krocích `BOX_SCALE_STEP`), nejvýš na `BOX_SCALE_MIN`.
+ */
+const BOX_ROWS_AT_FULL_SIZE = 2
+const BOX_SCALE_STEP = 0.05
+const BOX_SCALE_MIN = 0.5
 
 /** Jak dlouho se ve skupinách ukazuje jedno slovo při závěrečném odhalení. */
 const REVEAL_STEP_MS = 1800
@@ -362,9 +371,11 @@ export function LockScreen({ model, onClose }: LockScreenProps) {
  * délku celku, ne to, kolik dá které slovo (§5).
  */
 function Boxes({ model, shown, open }: { model: LockScreenModel; shown: ReadonlySet<string>; open: boolean }) {
+  const ref = useRef<HTMLDivElement>(null)
+  useFitBoxes(ref, model.wordLengths)
   let position = 0
   return (
-    <div className={`lock__boxes${open ? ' lock__boxes--open' : ''}`} aria-label="Tajenka">
+    <div ref={ref} className={`lock__boxes${open ? ' lock__boxes--open' : ''}`} aria-label="Tajenka">
       {model.wordLengths.map((length, wordIndex) => {
         const start = position
         position += length
@@ -386,6 +397,36 @@ function Boxes({ model, shown, open }: { model: LockScreenModel; shown: Readonly
       })}
     </div>
   )
+}
+
+/**
+ * Zmenší rámečky, dokud nejsou nižší než `BOX_ROWS_AT_FULL_SIZE` řádků
+ * v plné velikosti. Kolik řádků vyjde, záleží na šířce obrazovky a na tom,
+ * kde se zalomí slova — proto se měří, ne odhaduje z počtu znaků. Písmena
+ * přibývající do rámečků rozměry nemění, měří se jen při jiné tajence
+ * a změně okna.
+ */
+function useFitBoxes(ref: RefObject<HTMLDivElement | null>, wordLengths: readonly number[]) {
+  // Klíč místo pole: model se může přepočítat s novým polem stejných délek.
+  const layout = wordLengths.join(' ')
+  useLayoutEffect(() => {
+    const boxes = ref.current
+    if (boxes === null) return
+    const fit = () => {
+      boxes.style.fontSize = ''
+      const first = boxes.querySelector<HTMLElement>('.lock__box')
+      if (first === null) return
+      const rowGap = parseFloat(getComputedStyle(boxes).rowGap) || 0
+      const limit = BOX_ROWS_AT_FULL_SIZE * first.offsetHeight + (BOX_ROWS_AT_FULL_SIZE - 1) * rowGap + 1
+      for (let scale = 1; boxes.offsetHeight > limit && scale > BOX_SCALE_MIN; ) {
+        scale = Math.max(BOX_SCALE_MIN, scale - BOX_SCALE_STEP)
+        boxes.style.fontSize = `${scale}em`
+      }
+    }
+    fit()
+    window.addEventListener('resize', fit)
+    return () => window.removeEventListener('resize', fit)
+  }, [ref, layout])
 }
 
 function AcceptedPanel({
