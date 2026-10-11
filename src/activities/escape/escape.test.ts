@@ -470,6 +470,23 @@ describe('papír a tabule', () => {
   })
 })
 
+describe('závěr s vlastní tajenkou', () => {
+  it('Zmizelý obraz: nabízená tajenka jmenuje pachatele, vlastní dostane neutrální závěr', () => {
+    const offered = escapeScreen(sheetOf(game('long', 'zaver', { grade: 7, story: 'obraz', message: 'pachatel je noční uklízeč' })))
+    expect(offered.outro).toContain('noční uklízeč')
+    const own = escapeScreen(
+      sheetOf(game('long', 'zaver', { grade: 7, story: 'obraz', message: 'PACHATELEM JE ŘEDITELKA MUZEA' })),
+    )
+    expect(own.outro).not.toContain('uklízeč')
+    expect(own.outro).toContain('Případ je vyřešený')
+  })
+
+  it('Poklad má jeden závěr pro každou tajenku', () => {
+    const story = STORIES.find((candidate) => candidate.id === 'poklad')!
+    expect(escapeScreen(sheetOf(game('short', 'vlastni', { message: 'MALÍ PIRÁTI' }))).outro).toBe(story.outro)
+  })
+})
+
 describe('výběr odpovědí', () => {
   it('druhá třída ho dostane sama, ostatní šifrovací tabulku', () => {
     expect(defaultEscapeConfig(2, 'v').payload.stationKind).toBe('choice')

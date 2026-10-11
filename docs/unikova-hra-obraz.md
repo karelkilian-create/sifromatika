@@ -38,6 +38,19 @@ v nich nepadne. Každá věta přitom stojí sama.
 
 > Případ je vyřešený. Pachatelem byl noční uklízeč: znal každý kout muzea i místa, kam kamery nevidí. Obraz se našel srolovaný v jeho úklidovém vozíku, celý a nepoškozený. Každé písmeno jste si vypočítali sami!
 
+### Závěr pro vlastní tajenku (11. 10. 2026)
+
+Závěr výš jmenuje pachatele. Kdyby učitel napsal třeba
+`PACHATELEM JE ŘEDITELKA MUZEA`, tabule by si protiřečila. S tajenkou, která
+není jedna ze tří nabízených, se proto ukáže tohle:
+
+> Případ je vyřešený a obraz se vrátil na své místo, celý a nepoškozený.
+> Každé písmeno jste si vypočítali sami!
+
+Ze stejného důvodu `ALIBI` říká „ředitelka **tvrdí**", ne „má alibi":
+s uklízečem je to slepá ulička, s ředitelkou falešné alibi. Stopy
+k uklízeči se s jiným pachatelem stanou falešnými stopami.
+
 ---
 
 ## Věty ke slovům
@@ -46,7 +59,7 @@ v nich nepadne. Každá věta přitom stojí sama.
 |---|---|---|
 | STOPA | Přes vyleštěnou podlahu vede řada šlápot. U poslední jsou čísla. | Stopa boty velikosti 44. Podlaha byla v noci čerstvě vytřená — kdo po ní chodil? |
 | OTISK | Na skle vitríny je mastná šmouha od prstu. Pod ní jsou drobná čísla. | Otisk prstu! Policie ho porovná se všemi, kdo mají od muzea klíče. |
-| ALIBI | Na stole ředitelky leží jízdenka z Vídně se včerejším datem. Na zadní straně jsou čísla. | Ředitelka má alibi: celou noc seděla ve vlaku z Vídně. |
+| ALIBI | Na stole ředitelky leží jízdenka z Vídně se včerejším datem. Na zadní straně jsou čísla. | Ředitelka tvrdí, že celou noc seděla ve vlaku z Vídně. |
 | SVĚDEK | Pán z domu naproti v noci nemohl spát a díval se z okna. Do bloku si zapisoval čísla aut, která projela kolem. | Svědek viděl ve dvě ráno v muzeu světlo. Jen chvíli, jen v jednom patře. |
 | KAMERA | V rohu stropu bliká červené světýlko. Na jeho krytu jsou čísla. | Kamera v sále se ve dvě ráno na deset minut vypnula. Náhoda? |
 | LUPA | V šuplíku leží kulaté sklo s rukojetí. Na rukojeti jsou čísla. | Lupa ukáže, že rám někdo pečlivě otřel hadrem. |

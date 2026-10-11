@@ -125,3 +125,24 @@ test('Zmizelý obraz: dlouhá hra projde až k závěru', async ({ page }) => {
   await expect(lock.locator('.lock__message')).toHaveText(message)
   await expect(lock.getByText(/Pachatelem byl noční uklízeč/)).toBeVisible()
 })
+
+test('Zmizelý obraz s vlastní tajenkou: závěr pachatele nejmenuje', async ({ page }) => {
+  await openEscape(page)
+  await choose(page, 'Příběh', 'Zmizelý obraz')
+  await choose(page, 'Délka hry', 'Dlouhá')
+  await field(page, 'Tajenka').locator('input').fill('PACHATELEM JE ŘEDITELKA MUZEA')
+  await expect(page.getByRole('button', { name: 'Spustit zámek' })).toBeEnabled()
+  const answers = await readAnswers(page)
+  const lock = await startLock(page)
+
+  for (const answer of answers) {
+    await page.keyboard.type(plain(answer.word))
+    await page.keyboard.press('Enter')
+    await expect(lock.locator('.lock__ok')).toHaveText(`✓ Slovo ${answer.word} platí!`)
+    await bigButton(page).click()
+  }
+
+  await expect(lock.locator('.lock__message')).toHaveText('PACHATELEM JE ŘEDITELKA MUZEA')
+  await expect(lock.getByText(/Případ je vyřešený a obraz se vrátil/)).toBeVisible()
+  await expect(lock.getByText(/uklízeč/)).toHaveCount(0)
+})

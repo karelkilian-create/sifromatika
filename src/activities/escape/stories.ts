@@ -37,6 +37,12 @@ export interface Story {
   motto: string
   /** Tabule po finále. */
   outro: string
+  /**
+   * Tabule po finále, když učitel napsal vlastní tajenku. Jen u příběhu,
+   * jehož `outro` mluví o obsahu tajenky — Zmizelý obraz jmenuje pachatele,
+   * a s „PACHATELEM JE ŘEDITELKA" by závěr lhal (11. 10. 2026).
+   */
+  ownMessageOutro?: string
   /** Jedna tajenka na každou délku hry; delší rozvíjí kratší. */
   messages: Readonly<Record<EscapeLength, string>>
   words: readonly StoryWord[]
@@ -357,6 +363,9 @@ const OBRAZ: Story = {
     'Případ je vyřešený. Pachatelem byl noční uklízeč: znal každý kout muzea i místa, ' +
     'kam kamery nevidí. Obraz se našel srolovaný v jeho úklidovém vozíku, celý ' +
     'a nepoškozený. Každé písmeno jste si vypočítali sami!',
+  ownMessageOutro:
+    'Případ je vyřešený a obraz se vrátil na své místo, celý a nepoškozený. ' +
+    'Každé písmeno jste si vypočítali sami!',
   messages: {
     short: 'PACHATEL',
     medium: 'PACHATEL JE UKLÍZEČ',
@@ -376,7 +385,7 @@ const OBRAZ: Story = {
     {
       word: 'ALIBI',
       sheet: 'Na stole ředitelky leží jízdenka z Vídně se včerejším datem. Na zadní straně jsou čísla.',
-      board: 'Ředitelka má alibi: celou noc seděla ve vlaku z Vídně.',
+      board: 'Ředitelka tvrdí, že celou noc seděla ve vlaku z Vídně.',
     },
     {
       word: 'SVĚDEK',

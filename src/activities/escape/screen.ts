@@ -6,6 +6,7 @@
  */
 
 import type { LockScreenModel } from '../../core/screen/index.js'
+import { normalizeMessage } from '../../core/text/index.js'
 import type { EscapeSheet } from './index.js'
 
 export function escapeScreen(sheet: EscapeSheet): LockScreenModel {
@@ -15,7 +16,7 @@ export function escapeScreen(sheet: EscapeSheet): LockScreenModel {
     scene: sheet.story.id,
     intro: sheet.story.intro,
     motto: sheet.story.motto,
-    outro: sheet.story.outro,
+    outro: outroFor(sheet),
     messageText: sheet.message.original.trim(),
     messageLetters: sheet.message.letters,
     wordLengths: sheet.message.wordLengths,
@@ -31,4 +32,22 @@ export function escapeScreen(sheet: EscapeSheet): LockScreenModel {
       stations: group.stations,
     })),
   }
+}
+
+/**
+ * Závěr příběhu. S vlastní tajenkou učitele neutrální, pokud ho příběh má:
+ * závěr psaný k nabízeným tajenkám by jinak mohl tvrdit něco jiného než ona.
+ * Shoda se bere podle písmen a slov, ne podle zápisu („Pachatel je uklízeč"
+ * je pořád nabízená tajenka).
+ */
+function outroFor(sheet: EscapeSheet): string {
+  const { story, message } = sheet
+  if (story.ownMessageOutro === undefined) return story.outro
+  const key = (letters: readonly string[], wordLengths: readonly number[]) => `${letters.join('')}|${wordLengths.join(' ')}`
+  const own = key(message.letters, message.wordLengths)
+  const offered = Object.values(story.messages).some((text) => {
+    const normalized = normalizeMessage(text)
+    return key(normalized.letters, normalized.wordLengths) === own
+  })
+  return offered ? story.outro : story.ownMessageOutro
 }
