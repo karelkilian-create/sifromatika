@@ -40,6 +40,19 @@ export interface Story {
   /** Jedna tajenka na každou délku hry; delší rozvíjí kratší. */
   messages: Readonly<Record<EscapeLength, string>>
   words: readonly StoryWord[]
+  /**
+   * Slova jen pro písmena, která v `words` chybí. Přidají se ke slovníku,
+   * až když je tajenka bez nich nepostaví — tajenky, které šly postavit
+   * dřív, se tak losují ze stejných slov a uložené hry se nezmění. Nové
+   * slovo do `words` by naopak přelosovalo každou hru příběhu, a tedy
+   * žádalo inkrement `GENERATOR_VERSION` pro všechny aktivity.
+   */
+  spareWords: readonly StoryWord[]
+}
+
+/** Všechna slova příběhu včetně rezervy — pro kontroly vět a ověření řetězce. */
+export function allStoryWords(story: Story): readonly StoryWord[] {
+  return [...story.words, ...story.spareWords]
 }
 
 const POKLAD: Story = {
@@ -172,6 +185,7 @@ const POKLAD: Story = {
       board: 'Ve skále je škvíra. Proleze jen malá ruka.',
     },
   ],
+  spareWords: [],
 }
 
 const HROBKA: Story = {
@@ -293,6 +307,14 @@ const HROBKA: Story = {
       word: 'VÁZA',
       sheet: 'V rohu stojí vysoká hliněná nádoba s uchem. Na hrdle jsou čísla.',
       board: 'Ve váze je obilí. Egypťané dávali mrtvým jídlo na cestu do posmrtného života.',
+    },
+  ],
+  spareWords: [
+    // J: „… ZMIZELA, JSME VOLNÍ" je přirozené pokračování dlouhé tajenky (11. 10. 2026).
+    {
+      word: 'VĚJÍŘ',
+      sheet: 'Na podlaze leží dlouhá tyč zakončená půlkruhem z pštrosích per. Na držadle jsou čísla.',
+      board: 'Vějíř! Sluhové s ním ovívali vládce, aby mu v horku nebylo zle.',
     },
   ],
 }

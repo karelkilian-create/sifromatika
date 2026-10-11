@@ -52,7 +52,7 @@ import { distractorsFor } from '../../tasks/distractors.js'
 import { pickGenerator } from '../../tasks/mix.js'
 import { findTaskGenerator, taskGenerators } from '../../tasks/registry.js'
 import { APP_VERSION, GENERATOR_VERSION } from '../../version.js'
-import { defaultStoryId, findStory, type Story, type StoryWord } from './stories.js'
+import { allStoryWords, defaultStoryId, findStory, type Story, type StoryWord } from './stories.js'
 
 /** Slovo stanoviště v obou podobách a s větami příběhu. */
 export interface EscapeWord {
@@ -188,17 +188,23 @@ export function messageWords(message: NormalizedMessage): string[] {
 /**
  * Slova, která smí na stanoviště: z tematického slovníku, správně dlouhá
  * a nikoli slovo tajenky. Slovo tajenky by prozradilo kus finále (§3).
+ * Rezerva příběhu (`spareWords`) se přidá, jen když hlavní slovník nemá
+ * některé písmeno tajenky — jinak by se změnily i hry, které už existují.
  */
 export function candidateWords(story: Story, message: NormalizedMessage): EscapeWord[] {
   const forbidden = new Set(messageWords(message))
-  return story.words
-    .map((entry) => ({ letters: plainWord(entry.word), story: entry }))
-    .filter(
-      (word) =>
-        word.letters.length >= ESCAPE_WORD_LENGTH.min &&
-        word.letters.length <= ESCAPE_WORD_LENGTH.max &&
-        !forbidden.has(word.letters),
-    )
+  const usable = (entries: readonly StoryWord[]) =>
+    entries
+      .map((entry) => ({ letters: plainWord(entry.word), story: entry }))
+      .filter(
+        (word) =>
+          word.letters.length >= ESCAPE_WORD_LENGTH.min &&
+          word.letters.length <= ESCAPE_WORD_LENGTH.max &&
+          !forbidden.has(word.letters),
+      )
+  const words = usable(story.words)
+  const covered = [...message.histogram.keys()].every((letter) => words.some((word) => word.letters.includes(letter)))
+  return covered ? words : [...words, ...usable(story.spareWords)]
 }
 
 /** Kolik kroků smí hledání udělat, než to vzdá. Pojistka, ne ladicí knoflík. */
@@ -674,7 +680,7 @@ export function generateEscape(config: EscapeProject): EscapeOutcome {
   const chain = verifyEscapeChain({
     messageLetters: message.letters,
     messageWords: messageWords(message),
-    dictionary: new Set(story.words.map((entry) => plainWord(entry.word))),
+    dictionary: new Set(allStoryWords(story).map((entry) => plainWord(entry.word))),
     stations: stations.map((station) => ({ word: station.word.letters, picks: station.picks })),
     groups: groups.map((group) => group.stations),
     maxPicks: ESCAPE_MAX_PICKS,

@@ -27,13 +27,14 @@ import {
   generateEscape,
   messageWords,
   offeredMessage,
+  candidateWords,
   plainWord,
   type EscapeSheet,
 } from './index.js'
 import { parseEscapePayload } from './payload.js'
 import { escapeScreen } from './screen.js'
 import { escapeModule } from './module.js'
-import { STORIES, defaultStoryId } from './stories.js'
+import { STORIES, allStoryWords, defaultStoryId } from './stories.js'
 
 const LENGTHS: EscapeLength[] = ['short', 'medium', 'long']
 
@@ -75,7 +76,7 @@ function plainText(text: string): string {
 }
 
 describe.each(STORIES.map((story) => [story.id, story] as const))('příběh %s', (_, story) => {
-  const words = story.words.map((entry) => plainWord(entry.word))
+  const words = allStoryWords(story).map((entry) => plainWord(entry.word))
   const tajenkaWords = new Set(
     LENGTHS.flatMap((length) => messageWords(normalizeMessage(story.messages[length]))),
   )
@@ -96,14 +97,14 @@ describe.each(STORIES.map((story) => [story.id, story] as const))('příběh %s'
 
   it('věta na listu neobsahuje své slovo', () => {
     // Kmen bez posledního písmene chytí i jiný tvar: TRUHLA → „truhly".
-    for (const entry of story.words) {
+    for (const entry of allStoryWords(story)) {
       const stem = plainWord(entry.word).slice(0, -1)
       expect(plainText(entry.sheet), `${entry.word}: ${entry.sheet}`).not.toContain(stem)
     }
   })
 
   it('žádná věta mimo závěr neprozradí slovo tajenky', () => {
-    const texts = [story.intro, story.motto, ...story.words.flatMap((entry) => [entry.sheet, entry.board])]
+    const texts = [story.intro, story.motto, ...allStoryWords(story).flatMap((entry) => [entry.sheet, entry.board])]
     for (const text of texts) {
       for (const word of tajenkaWords) {
         // Spojky a zájmena (JE) jsou v každé větě a nic neprozradí. Pravidlo
@@ -293,6 +294,26 @@ describe('hlášky místo potichu upravené hry', () => {
     if (!outcome.ok) expect(outcome.reason).toContain('B')
   })
 
+  it('rezerva příběhu přijde na řadu, jen když hlavní slovník písmeno nemá', () => {
+    for (const story of STORIES) {
+      const spare = new Set(story.spareWords.map((entry) => plainWord(entry.word)))
+      for (const length of LENGTHS) {
+        const words = candidateWords(story, normalizeMessage(story.messages[length]))
+        expect(words.filter((word) => spare.has(word.letters)), `${story.id} ${length}`).toEqual([])
+      }
+    }
+  })
+
+  it('Hrobka postaví tajenku s J z rezervy', () => {
+    for (const mode of ['class', 'groups'] as const) {
+      const sheet = sheetOf(
+        game('long', `jsme-volni-${mode}`, { mode, grade: 6, story: 'hrobka', message: 'FARAONOVA KLETBA ZMIZELA, JSME VOLNÍ' }),
+      )
+      const station = sheet.stations.find((candidate) => candidate.picks.includes('J'))
+      expect(station?.word.letters, mode).toBe('VEJIR')
+    }
+  })
+
   it('tajenka bez písmen', () => {
     expect(game('short', 'prazdna', { message: '123 ?' }).ok).toBe(false)
   })
@@ -309,7 +330,7 @@ describe('kontrola řetězu chytí poškozenou hru', () => {
   const chain = (): Editable => ({
     messageLetters: sheet.message.letters,
     messageWords: messageWords(sheet.message),
-    dictionary: new Set(sheet.story.words.map((entry) => plainWord(entry.word))),
+    dictionary: new Set(allStoryWords(sheet.story).map((entry) => plainWord(entry.word))),
     stations: sheet.stations.map((station) => ({ word: station.word.letters, picks: [...station.picks] })),
     groups: sheet.groups.map((group) => [...group.stations]),
     maxPicks: ESCAPE_MAX_PICKS,

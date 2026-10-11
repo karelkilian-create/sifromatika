@@ -1,6 +1,6 @@
 # Úniková hra — Hrobka faraona (texty)
 
-**Stav: prošel autor** (4. 10. 2026) s jednou úpravou: věta u `POUŠŤ` se obrací k dětem jako ostatní („byste nedošli“). Patří k
+**Stav: prošel autor** (4. 10. 2026; rezerva VĚJÍŘ 11. 10.) s jednou úpravou: věta u `POUŠŤ` se obrací k dětem jako ostatní („byste nedošli“). Patří k
 [návrhu únikové hry](navrh-unikova-hra.md), §6, a k
 [seznamu příběhů](unikova-hra-pribehy.md). Slovník je ten, který autor
 prošel 3. 10.; tady k němu přibývají úvod, závěr a dvě věty ke každému slovu.
@@ -86,6 +86,21 @@ Tabule po finále. Platí pro všechny tři tajenky.
 | CHODBA | Světlo baterky osvětlí úzký průlez, který se stáčí do tmy. Na stěně jsou čísla. | Chodba vede dolů, hlouběji pod zem. Ze tmy táhne studený vzduch. |
 | PAST | Jeden kámen v podlaze je trochu vyšší než ostatní. Je na něm vyryto číslo. | Past! Kdo na ten kámen šlápne, spustí ze stropu písek. Obejděte ho. |
 | VÁZA | V rohu stojí vysoká hliněná nádoba s uchem. Na hrdle jsou čísla. | Ve váze je obilí. Egypťané dávali mrtvým jídlo na cestu do posmrtného života. |
+
+### Rezerva (11. 10. 2026)
+
+Slovo, které generátor vezme, **jen když tajenka obsahuje písmeno, jež
+hlavní slovník nemá** (`spareWords` ve `stories.ts`). Tajenky, které šly
+postavit dřív, se tak losují ze stejných slov a uložené hry se nezmění —
+nové slovo v hlavním slovníku by přelosovalo každou hru Hrobky a žádalo
+inkrement `GENERATOR_VERSION`, který přehází listy všech aktivit.
+
+Důvod: `FARAONOVA KLETBA ZMIZELA, JSME VOLNÍ` je přirozené pokračování
+dlouhé tajenky, a `J` ve slovníku nebylo.
+
+| Slovo | Na listu | Na tabuli |
+|---|---|---|
+| VĚJÍŘ | Na podlaze leží dlouhá tyč zakončená půlkruhem z pštrosích per. Na držadle jsou čísla. | Vějíř! Sluhové s ním ovívali vládce, aby mu v horku nebylo zle. |
 
 ### Slovo z obecného slovníku
 
