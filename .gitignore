@@ -46,3 +46,7 @@ Screenshot_*
 # repozitář pod MIT licencí. Odkaz a název souboru v návrhu na dohledání
 # stačí — viz docs/navrh-druha-trida.md a docs/navrh-treti-trida.md.
 /Matematika*.pdf
+
+# Playwright (npm run test:e2e)
+/test-results/
+/playwright-report/
