@@ -185,7 +185,26 @@ const POKLAD: Story = {
       board: 'Ve skále je škvíra. Proleze jen malá ruka.',
     },
   ],
-  spareWords: [],
+  spareWords: [
+    // B a Y (11. 10. 2026). Y je v každém přídavném jméně na -ý: „ZLATÝ", „MODRÝ".
+    {
+      word: 'RYBA',
+      sheet: 'U břehu skáče z vody něco stříbrného. Na šupinách jsou čísla.',
+      board: 'Ryba! Piráti by si ji k večeři upekli na ohni.',
+    },
+    // F (11. 10. 2026).
+    {
+      word: 'FLAŠKA',
+      sheet: 'Vlna vyplavila na břeh zelené sklo. Uvnitř je papír s čísly.',
+      board: 'Flaška se vzkazem! Kdo ji asi poslal přes moře?',
+    },
+    // G (11. 10. 2026).
+    {
+      word: 'MANGO',
+      sheet: 'Na stromě visí žlutý sladký plod. Na slupce jsou čísla.',
+      board: 'Mango! Je zralé a voní. Dobrá svačina pro celou posádku.',
+    },
+  ],
 }
 
 const HROBKA: Story = {
@@ -310,6 +329,12 @@ const HROBKA: Story = {
     },
   ],
   spareWords: [
+    // Y (11. 10. 2026). Je v každém přídavném jméně na -ý: „ZLATÝ", „MODRÝ".
+    {
+      word: 'DÝKA',
+      sheet: 'V prachu leží něco ostrého se zlatou rukojetí. Na čepeli jsou čísla.',
+      board: 'Dýka! U Tutanchamona se našla podobná. Její čepel je ze železa z meteoritu.',
+    },
     // J: „… ZMIZELA, JSME VOLNÍ" je přirozené pokračování dlouhé tajenky (11. 10. 2026).
     {
       word: 'VĚJÍŘ',

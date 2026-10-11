@@ -1,6 +1,6 @@
 # Úniková hra — Poklad (texty)
 
-**Stav: prošel autor** (3. 10. 2026), bez připomínek. Patří k
+**Stav: prošel autor** (3. 10. 2026), bez připomínek; rezerva 11. 10. Patří k
 [návrhu únikové hry](navrh-unikova-hra.md), §6, a k
 [seznamu příběhů](unikova-hra-pribehy.md). Slovník je ten, který autor
 prošel 3. 10.; tady k němu přibývají úvod, závěr a dvě věty ke každému slovu.
@@ -84,6 +84,23 @@ Tabule po finále, po animaci otevření. Platí pro všechny tři tajenky.
 | KLÍČ | Ve staré botě něco chrastí. | Klíč! Jenže zámek na truhle nemá dírku. Je asi od něčeho jiného. |
 | KAJUTA | Na vraku lodi jsou malé dveře. Na nich jsou čísla. | V kajutě visí houpací síť. Na stole leží svíčka. |
 | SKÁLA | Uprostřed ostrova stojí něco velikého a šedého. | Ve skále je škvíra. Proleze jen malá ruka. |
+
+### Rezerva (11. 10. 2026)
+
+Slova, která generátor vezme, **jen když tajenka obsahuje písmeno, jež
+hlavní slovník nemá** (`spareWords` ve `stories.ts`) — tady B, F, G a Y.
+Uložené hry se tím nemění; proč, viz [Hrobka](unikova-hra-hrobka.md),
+oddíl Rezerva. Y je v každém přídavném jméně na -ý, takže na něj vlastní
+tajenka narazí často.
+
+| Slovo | Na listu | Na tabuli |
+|---|---|---|
+| RYBA | U břehu skáče z vody něco stříbrného. Na šupinách jsou čísla. | Ryba! Piráti by si ji k večeři upekli na ohni. |
+| FLAŠKA | Vlna vyplavila na břeh zelené sklo. Uvnitř je papír s čísly. | Flaška se vzkazem! Kdo ji asi poslal přes moře? |
+| MANGO | Na stromě visí žlutý sladký plod. Na slupce jsou čísla. | Mango! Je zralé a voní. Dobrá svačina pro celou posádku. |
+
+`FLAŠKA` je hovorová; spisovná náhrada s F byla `KUFR`, ale plete se
+s `TRUHLA`. Autor nechal flašku.
 
 ### Slovo z obecného slovníku
 

@@ -91,6 +91,14 @@ describe.each(STORIES.map((story) => [story.id, story] as const))('příběh %s'
     expect(new Set(words).size).toBe(words.length)
   })
 
+  it('slovník s rezervou pokryje abecedu kromě Q, W a X', () => {
+    // Vlastní tajenka nesmí narazit na běžné písmeno. Q, W a X se v české
+    // tajence skoro neobjeví; formulář je ohlásí jménem.
+    const letters = new Set(words.join(''))
+    const missing = [...'ABCDEFGHIJKLMNOPRSTUVYZ'].filter((letter) => !letters.has(letter))
+    expect(missing).toEqual([])
+  })
+
   it('žádné slovo stanoviště není slovem tajenky', () => {
     for (const word of words) expect(tajenkaWords.has(word), word).toBe(false)
   })
@@ -289,9 +297,9 @@ describe('hlášky místo potichu upravené hry', () => {
   })
 
   it('písmeno, které nemá žádné slovo příběhu, se řekne jménem', () => {
-    const outcome = game('short', 'chybi', { message: 'BYLO NEBYLO' })
+    const outcome = game('short', 'chybi', { message: 'TAXI DO PRAHY' })
     expect(outcome.ok).toBe(false)
-    if (!outcome.ok) expect(outcome.reason).toContain('B')
+    if (!outcome.ok) expect(outcome.reason).toContain('písmeno X')
   })
 
   it('rezerva příběhu přijde na řadu, jen když hlavní slovník písmeno nemá', () => {
@@ -300,6 +308,19 @@ describe('hlášky místo potichu upravené hry', () => {
       for (const length of LENGTHS) {
         const words = candidateWords(story, normalizeMessage(story.messages[length]))
         expect(words.filter((word) => spare.has(word.letters)), `${story.id} ${length}`).toEqual([])
+      }
+    }
+  })
+
+  it.each([
+    ['poklad', 'GRATULUJI, BYLO TO FAJN'],
+    ['hrobka', 'ZLATÝ BŮH JSME MY'],
+  ])('%s postaví tajenku s písmeny z rezervy: %s', (story, message) => {
+    for (const mode of ['class', 'groups'] as const) {
+      // Krátká hra má na tolik různých písmen málo stanovišť.
+      for (const length of ['medium', 'long'] as const) {
+        const outcome = game(length, `rezerva-${mode}`, { mode, story, message })
+        expect(outcome.ok, `${mode} ${length}: ${outcome.ok ? '' : outcome.reason}`).toBe(true)
       }
     }
   })

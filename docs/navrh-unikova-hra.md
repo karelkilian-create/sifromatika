@@ -207,6 +207,11 @@ Učitel slova stanovišť nezadává. Vybere je Šifromatika:
    `KOTVA`, `LOPATA`, `KOMPAS`, `ZAMEK`… Dítě neluští náhodné slovo, ale stopu.
 2. **Obecný slovník** je záloha pro písmena, na která téma nestačí. Stává se to
    jen u tajenky, kterou učitel přepsal.
+   ⚠ **Nahrazeno rezervou příběhu (11. 10. 2026).** Chyběla jen 1–4 písmena
+   na příběh (hlavně Y), a obecné slovo by na tabuli vypadlo z příběhu.
+   Každý příběh má proto pár vlastních slov s větami (`spareWords`), která
+   se použijí jen pro písmeno, jež hlavní slovník nemá. Test hlídá, že
+   slovník s rezervou pokryje abecedu kromě Q, W a X.
 3. **Když nestačí ani ten**, aplikace to řekne hláškou — stejně jako dnes
    šifra, když se tajenka nevejde. Nikdy potichu nevynechá písmeno.
 

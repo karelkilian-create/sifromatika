@@ -1,6 +1,6 @@
 # Úniková hra — Hrobka faraona (texty)
 
-**Stav: prošel autor** (4. 10. 2026; rezerva VĚJÍŘ 11. 10.) s jednou úpravou: věta u `POUŠŤ` se obrací k dětem jako ostatní („byste nedošli“). Patří k
+**Stav: prošel autor** (4. 10. 2026; rezerva 11. 10.) s jednou úpravou: věta u `POUŠŤ` se obrací k dětem jako ostatní („byste nedošli“). Patří k
 [návrhu únikové hry](navrh-unikova-hra.md), §6, a k
 [seznamu příběhů](unikova-hra-pribehy.md). Slovník je ten, který autor
 prošel 3. 10.; tady k němu přibývají úvod, závěr a dvě věty ke každému slovu.
@@ -96,10 +96,12 @@ nové slovo v hlavním slovníku by přelosovalo každou hru Hrobky a žádalo
 inkrement `GENERATOR_VERSION`, který přehází listy všech aktivit.
 
 Důvod: `FARAONOVA KLETBA ZMIZELA, JSME VOLNÍ` je přirozené pokračování
-dlouhé tajenky, a `J` ve slovníku nebylo.
+dlouhé tajenky, a `J` ve slovníku nebylo. `DÝKA` doplňuje `Y`, které je
+v každém přídavném jméně na -ý.
 
 | Slovo | Na listu | Na tabuli |
 |---|---|---|
+| DÝKA | V prachu leží něco ostrého se zlatou rukojetí. Na čepeli jsou čísla. | Dýka! U Tutanchamona se našla podobná. Její čepel je ze železa z meteoritu. |
 | VĚJÍŘ | Na podlaze leží dlouhá tyč zakončená půlkruhem z pštrosích per. Na držadle jsou čísla. | Vějíř! Sluhové s ním ovívali vládce, aby mu v horku nebylo zle. |
 
 ### Slovo z obecného slovníku
