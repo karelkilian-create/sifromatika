@@ -185,7 +185,7 @@ export function LockScreen({ model, onClose }: LockScreenProps) {
     if (expected !== null && phase === 'play') accept(expected)
   }
 
-  /** Po větě příběhu dál: v celé třídě další stanoviště, ve skupinách další slovo. */
+  /** Po větě příběhu dál: v celé třídě další stanoviště, ve skupinách výběr skupiny. */
   const continueAfterSentence = () => {
     setJustAccepted(null)
     if (accepted.length === total) {
@@ -203,8 +203,9 @@ export function LockScreen({ model, onClose }: LockScreenProps) {
       }
       return
     }
-    // Skupina s hotovými slovy se vrací k výběru skupin.
-    if (model.mode === 'groups' && expected === null) setGroup(null)
+    // Ve skupinách po každém slově zpět na výběr: s každým slovem chodí
+    // k tabuli jiná skupina a nemá klikat na „Zpět na výběr skupiny".
+    if (model.mode === 'groups') setGroup(null)
   }
 
   const elapsed = startedAt === null ? 0 : (endedAt ?? now) - startedAt
@@ -454,7 +455,7 @@ function AcceptedPanel({
     : last
       ? 'Odhalit tajenku'
       : groupHasMore
-        ? 'Další slovo'
+        ? 'Pokračovat'
         : 'Hotovo, další skupina'
 
   return (

@@ -84,21 +84,21 @@ function stationPage(sheet: EscapeSheet, station: EscapeStation): DocumentPage {
   return { label: stationHeading(sheet, station), blocks }
 }
 
-/** Ve skupinách: kdy a s čím jít k tabuli. V „celé třídě" to řídí tabule. */
+/**
+ * Ve skupinách: kdy a s čím jít k tabuli. V „celé třídě" to řídí tabule.
+ *
+ * S každým slovem zvlášť, jakmile vyjde: tabule od 10. 10. uzná slovo
+ * kteréhokoli stanoviště skupiny. Dřív tu stálo „až budete mít obě slova",
+ * a to skupinu, která si balíček rozdělila, zbytečně drželo u stolu.
+ */
 function boardNote(sheet: EscapeSheet, station: EscapeStation): DocumentBlock {
   const group = sheet.groups[station.group]!
-  const count = group.stations.length
   return {
     kind: 'paragraph',
     runs: [
-      { text: 'Až bude mít vaše skupina ' },
-      // Skupina má jedno až čtyři stanoviště (nejdelší hra na dvě skupiny).
-      { text: count === 1 ? 'tohle slovo' : count === 2 ? 'obě slova' : `všechna ${count} slova`, strong: true },
-      {
-        text:
-          `, jděte k tabuli, vyberte barvu skupiny (${group.name.toLowerCase()})` +
-          ` a ${count === 1 ? 'slovo' : 'slova'} zadejte.`,
-      },
+      { text: 'Až vám vyjde slovo, ' },
+      { text: 'jděte k tabuli', strong: true },
+      { text: `, vyberte barvu skupiny (${group.name.toLowerCase()}) a slovo zadejte.` },
     ],
   }
 }
@@ -131,7 +131,7 @@ function overviewPage(sheet: EscapeSheet): DocumentPage {
   const steps = groups
     ? '1. Každé skupině dejte listy jejích stanovišť. ' +
       '2. Na počítači u tabule klikněte na „Spustit zámek" a přečtěte úvod. ' +
-      '3. Skupina, která má všechna slova, jde k tabuli, vybere svou barvu a slova zadá. ' +
+      '3. S každým vyluštěným slovem jde skupina k tabuli, vybere svou barvu a slovo zadá. ' +
       '4. Písmena tajenky tabule ukáže, až budou mít slova všechny skupiny. ' +
       '5. Zasekne-li se hra, tlačítko v rohu tabule umí uznat slovo bez zadání.'
     : '1. Každému dítěti nebo dvojici dejte listy stanovišť. ' +

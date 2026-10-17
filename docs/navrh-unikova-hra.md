@@ -431,8 +431,9 @@ s tím nic dalšího nedělá — jak moc to vadí, ukáže až třída.
 2. ~~**Karta skupiny**~~ — **zrušena 4. 10. 2026** (Karel): úvod ukazuje
    tabule, barvu nese nadpis stanoviště a rámečky na slova opakovaly ty pod
    tabulkou. Ve skupinách je místo ní na konci každého stanoviště věta
-   „Až bude mít vaše skupina obě slova, jděte k tabuli, vyberte barvu
-   skupiny a slova zadejte." Úvod se na list nepřesunul, opakoval by se na
+   „Až vám vyjde slovo, jděte k tabuli, vyberte barvu skupiny a slovo
+   zadejte." (Do 17. 10. „až bude mít vaše skupina obě slova"; tabule ale
+   od 10. 10. bere slova po jednom.) Úvod se na list nepřesunul, opakoval by se na
    každém stanovišti.
 3. **Přehled pro učitele** — pět řádků návodu, jak hru spustit, a řešení
    po stanovištích ve dvou sloupcích. Nadpis oddílu nese skupinu, slovo

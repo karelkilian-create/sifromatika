@@ -450,7 +450,7 @@ describe('papír a tabule', () => {
     ])
     const last = pages[0]!.blocks.at(-1)!
     expect(last.kind === 'paragraph' && last.runs.map((run) => run.text).join('')).toBe(
-      'Až bude mít vaše skupina obě slova, jděte k tabuli, vyberte barvu skupiny (modrá) a slova zadejte.',
+      'Až vám vyjde slovo, jděte k tabuli, vyberte barvu skupiny (modrá) a slovo zadejte.',
     )
   })
 

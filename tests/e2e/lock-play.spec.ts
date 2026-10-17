@@ -63,9 +63,10 @@ test('skupiny: každá skupina zadá svá slova, tajenka se odhalí na konci', a
 
   const lock = await startLock(page)
   for (const [group, words] of byGroup) {
-    await lock.locator('.lock__group', { hasText: group }).click()
     // Ve skupinách se slova smí zadat v libovolném pořadí — schválně odzadu.
+    // Po každém slově se tabule vrací na výběr skupiny.
     for (const answer of words.toReversed()) {
+      await lock.locator('.lock__group', { hasText: group }).click()
       for (const letter of plain(answer.word)) {
         await lock.locator('.lock__key', { hasText: new RegExp(`^${letter}$`) }).click()
       }
