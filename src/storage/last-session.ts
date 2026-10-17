@@ -84,3 +84,15 @@ export function readLastSession(): SifraFile | null {
   const parsed = parseSifra(text)
   return parsed.ok ? parsed.file : null
 }
+
+/**
+ * Zapomenout poslední nastavení. Pro případ, kdy právě ono shazuje aplikaci
+ * (`app/ErrorBoundary`): jinak by po načtení stránky spadla znovu.
+ */
+export function clearLastSession(): void {
+  try {
+    storage()?.removeItem(KEY)
+  } catch {
+    // Viz hlavička: mlčky dál.
+  }
+}
